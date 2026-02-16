@@ -1,0 +1,38 @@
+.dashboard {
+  min-height: 100vh;
+  background-color: #F2F4F7;
+}
+
+.dashboard-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 32px;
+  background-color: #FFFFFF;
+  border-bottom: 1px solid #E4E7EC;
+}
+
+.dashboard-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #1D2939;
+  margin: 0;
+}
+
+.dashboard-logout {
+  color: #667085;
+}
+
+.dashboard-logout:hover {
+  color: #34495E;
+}
+
+.dashboard-main {
+  padding: 48px 32px;
+}
+
+.dashboard-welcome {
+  font-size: 15px;
+  color: #667085;
+  margin: 0;
+}

@@ -1,0 +1,116 @@
+.login-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background-color: #F2F4F7;
+}
+
+.login-backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: #F2F4F7;
+  z-index: -1;
+}
+
+.login-container {
+  width: 100%;
+  max-width: 400px;
+}
+
+.login-card {
+  background-color: #FFFFFF;
+  border: 1px solid #E4E7EC;
+  border-radius: 8px;
+  padding: 48px 40px;
+  box-shadow: 0 1px 3px rgba(52, 73, 94, 0.08);
+}
+
+.login-header {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.login-title {
+  font-size: 28px;
+  font-weight: 600;
+  color: #1D2939;
+  letter-spacing: -0.5px;
+  margin: 0 0 8px 0;
+}
+
+.login-subtitle {
+  font-size: 14px;
+  color: #667085;
+  margin: 0;
+}
+
+.login-form {
+  margin: 0;
+}
+
+.login-form .ant-form-item {
+  margin-bottom: 24px;
+}
+
+.login-form .ant-input-affix-wrapper,
+.login-form .ant-input-password {
+  border-color: #E4E7EC;
+  border-radius: 6px;
+}
+
+.login-form .ant-input-affix-wrapper:hover,
+.login-form .ant-input-affix-wrapper:focus,
+.login-form .ant-input-affix-wrapper-focused {
+  border-color: #5D6D7E;
+  box-shadow: 0 0 0 2px rgba(52, 73, 94, 0.15);
+}
+
+.login-form .ant-input {
+  color: #1D2939;
+}
+
+.login-form .ant-input::placeholder {
+  color: #667085;
+}
+
+.login-input-icon {
+  color: #667085;
+  font-size: 16px;
+}
+
+.login-submit-item {
+  margin-bottom: 0;
+  margin-top: 8px;
+}
+
+.login-submit-btn {
+  height: 48px;
+  font-size: 15px;
+  font-weight: 500;
+  border-radius: 6px;
+  background-color: #34495E;
+  border-color: #34495E;
+}
+
+.login-submit-btn:hover {
+  background-color: #5D6D7E;
+  border-color: #5D6D7E;
+}
+
+.login-footer {
+  text-align: center;
+  font-size: 12px;
+  color: #667085;
+  margin-top: 24px;
+}
+
+/* Override Ant Design theme for login page */
+.login-page .ant-form-item-explain-error {
+  font-size: 12px;
+}
+
+.login-page .ant-input-password-icon {
+  color: #667085;
+}
