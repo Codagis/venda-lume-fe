@@ -145,6 +145,7 @@ export default function Settings() {
     }
   }, [isRoot, tenants, user?.tenantId])
 
+
   const openModal = (type, id = null) => {
     setModal({ open: true, type, id })
     form.resetFields()
