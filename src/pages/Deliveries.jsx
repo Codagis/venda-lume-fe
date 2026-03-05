@@ -1,0 +1,676 @@
+import { useState, useEffect, useCallback } from 'react'
+import {
+  Form,
+  Input,
+  Select,
+  Button,
+  Card,
+  Row,
+  Col,
+  Table,
+  Drawer,
+  DatePicker,
+  Statistic,
+  message,
+  Space,
+  Tag,
+  Dropdown,
+  Steps,
+  Descriptions,
+} from 'antd'
+import {
+  CarOutlined,
+  PlusOutlined,
+  SearchOutlined,
+  FilterOutlined,
+  MoreOutlined,
+  UserOutlined,
+  ClockCircleOutlined,
+  CheckCircleOutlined,
+  CloseCircleOutlined,
+} from '@ant-design/icons'
+import dayjs from 'dayjs'
+import { useAuth } from '../contexts/AuthContext'
+import * as deliveryService from '../services/deliveryService'
+import * as tenantService from '../services/tenantService'
+import DeliveryMap from '../components/DeliveryMap'
+import './Deliveries.css'
+
+const { TextArea } = Input
+const { RangePicker } = DatePicker
+
+const STATUS_OPTIONS = [
+  { value: 'PENDING', label: 'Pendente' },
+  { value: 'ASSIGNED', label: 'Atribuída' },
+  { value: 'ACCEPTED', label: 'Aceita' },
+  { value: 'PICKING_UP', label: 'Coletando' },
+  { value: 'PICKED_UP', label: 'Coletado' },
+  { value: 'IN_TRANSIT', label: 'Em trânsito' },
+  { value: 'ARRIVED', label: 'Chegou' },
+  { value: 'DELIVERED', label: 'Entregue' },
+  { value: 'FAILED', label: 'Falhou' },
+  { value: 'CANCELLED', label: 'Cancelada' },
+  { value: 'RETURNED', label: 'Devolvido' },
+]
+
+const PRIORITY_OPTIONS = [
+  { value: 'LOW', label: 'Baixa' },
+  { value: 'NORMAL', label: 'Normal' },
+  { value: 'HIGH', label: 'Alta' },
+  { value: 'URGENT', label: 'Urgente' },
+]
+
+const STATUS_COLORS = {
+  PENDING: 'orange',
+  ASSIGNED: 'blue',
+  ACCEPTED: 'cyan',
+  PICKING_UP: 'geekblue',
+  PICKED_UP: 'purple',
+  IN_TRANSIT: 'volcano',
+  ARRIVED: 'gold',
+  DELIVERED: 'green',
+  FAILED: 'red',
+  CANCELLED: 'default',
+  RETURNED: 'magenta',
+}
+
+function formatMoney(val) {
+  if (val == null) return '-'
+  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val)
+}
+
+function formatDate(d) {
+  if (!d) return '-'
+  return dayjs(d).format('DD/MM/YYYY HH:mm')
+}
+
+export default function Deliveries() {
+  const { user } = useAuth()
+  const isRoot = user?.isRoot === true
+  const [formCreate] = Form.useForm()
+  const [formAssign] = Form.useForm()
+  const [formStatus] = Form.useForm()
+
+  const [tenants, setTenants] = useState([])
+  const [selectedTenantId, setSelectedTenantId] = useState(null)
+  const [deliveries, setDeliveries] = useState([])
+  const [activeDeliveries, setActiveDeliveries] = useState([])
+  const [salesWithoutDelivery, setSalesWithoutDelivery] = useState([])
+  const [deliveryPersons, setDeliveryPersons] = useState([])
+  const [allUsers, setAllUsers] = useState([])
+  const [loading, setLoading] = useState(false)
+  const [loadingCreate, setLoadingCreate] = useState(false)
+  const [detailDrawerOpen, setDetailDrawerOpen] = useState(false)
+  const [selectedDelivery, setSelectedDelivery] = useState(null)
+  const [assignDrawerOpen, setAssignDrawerOpen] = useState(false)
+  const [statusDrawerOpen, setStatusDrawerOpen] = useState(false)
+  const [createDrawerOpen, setCreateDrawerOpen] = useState(false)
+  const [filtersExpanded, setFiltersExpanded] = useState(false)
+  const [filters, setFilters] = useState({
+    search: '',
+    status: undefined,
+    deliveryPersonId: undefined,
+    dateRange: null,
+    listType: 'all',
+  })
+
+  const effectiveTenantId = isRoot ? selectedTenantId : user?.tenantId
+
+  const loadTenants = useCallback(async () => {
+    if (!isRoot) return
+    try {
+      const data = await tenantService.listTenants()
+      setTenants(data || [])
+      if (data?.length && !selectedTenantId) setSelectedTenantId(data[0].id)
+    } catch (e) {
+      message.error(e?.message || 'Erro ao carregar empresas.')
+    }
+  }, [isRoot])
+
+  const loadDeliveries = useCallback(async () => {
+    if (isRoot && !effectiveTenantId) return
+    setLoading(true)
+    try {
+      const filter = { page: 0, size: 200 }
+      if (filters.search?.trim()) filter.search = filters.search.trim()
+      if (filters.status) filter.status = filters.status
+      if (filters.deliveryPersonId) filter.deliveryPersonId = filters.deliveryPersonId
+      if (filters.dateRange?.[0]) filter.startDate = filters.dateRange[0].format('YYYY-MM-DD') + 'T00:00:00'
+      if (filters.dateRange?.[1]) filter.endDate = filters.dateRange[1].format('YYYY-MM-DD') + 'T23:59:59'
+
+      const [allRes, activeRes] = await Promise.all([
+        deliveryService.searchDeliveries(filter, isRoot ? effectiveTenantId : undefined),
+        deliveryService.listActiveDeliveries(isRoot ? effectiveTenantId : undefined),
+      ])
+      setDeliveries(allRes?.content ?? [])
+      setActiveDeliveries(activeRes ?? [])
+    } catch (e) {
+      message.error(e?.message || 'Erro ao carregar entregas.')
+      setDeliveries([])
+      setActiveDeliveries([])
+    } finally {
+      setLoading(false)
+    }
+  }, [effectiveTenantId, isRoot, filters])
+
+  const loadSalesWithoutDelivery = useCallback(async () => {
+    if (!effectiveTenantId && isRoot) return
+    try {
+      const data = await deliveryService.listSalesWithoutDelivery(isRoot ? effectiveTenantId : undefined)
+      setSalesWithoutDelivery(data ?? [])
+    } catch (e) {
+      setSalesWithoutDelivery([])
+    }
+  }, [effectiveTenantId, isRoot])
+
+  const loadDeliveryPersons = useCallback(async () => {
+    if (!effectiveTenantId && isRoot) return
+    try {
+      const data = await deliveryService.listDeliveryPersons(isRoot ? effectiveTenantId : undefined)
+      setDeliveryPersons(data ?? [])
+    } catch (e) {
+      setDeliveryPersons([])
+    }
+  }, [effectiveTenantId, isRoot])
+
+  useEffect(() => {
+    if (isRoot) loadTenants()
+  }, [isRoot])
+
+  // Consulta só é aplicada ao clicar em Filtrar (não auto-load)
+
+  useEffect(() => {
+    if (effectiveTenantId !== undefined) loadDeliveryPersons()
+  }, [effectiveTenantId, loadDeliveryPersons])
+
+  const loadAllUsers = useCallback(async () => {
+    try {
+      const data = await userService.listUsers()
+      setAllUsers(data || [])
+    } catch (e) {
+      setAllUsers([])
+    }
+  }, [])
+
+  useEffect(() => {
+    if (createDrawerOpen) {
+      loadSalesWithoutDelivery()
+    }
+  }, [createDrawerOpen, loadSalesWithoutDelivery])
+
+  useEffect(() => {
+    if (assignDrawerOpen) loadDeliveryPersons()
+  }, [assignDrawerOpen, loadDeliveryPersons])
+
+  const stats = {
+    pending: deliveries.filter((d) => ['PENDING', 'ASSIGNED'].includes(d.status)).length,
+    inTransit: deliveries.filter((d) =>
+      ['ACCEPTED', 'PICKING_UP', 'PICKED_UP', 'IN_TRANSIT', 'ARRIVED'].includes(d.status)
+    ).length,
+    deliveredToday: deliveries.filter(
+      (d) => d.status === 'DELIVERED' && d.deliveredAt && dayjs(d.deliveredAt).isSame(dayjs(), 'day')
+    ).length,
+    total: deliveries.length,
+  }
+
+  const listToShow = (filters.listType === 'active' ? activeDeliveries : deliveries)
+
+  const openDetail = (d) => {
+    setSelectedDelivery(d)
+    setDetailDrawerOpen(true)
+  }
+
+  const openAssign = (d) => {
+    setSelectedDelivery(d)
+    formAssign.resetFields()
+    formAssign.setFieldsValue({ deliveryPersonId: d.deliveryPersonId || undefined })
+    setAssignDrawerOpen(true)
+  }
+
+  const openStatus = (d) => {
+    setSelectedDelivery(d)
+    formStatus.resetFields()
+    formStatus.setFieldsValue({
+      status: d.status,
+      failureReason: d.failureReason,
+      returnReason: d.returnReason,
+      deliveryNotes: d.deliveryNotes,
+      receivedBy: d.receivedBy,
+    })
+    setStatusDrawerOpen(true)
+  }
+
+  const handleCreateDelivery = async (values) => {
+    if (!values.saleId) {
+      message.warning('Selecione uma venda.')
+      return
+    }
+    setLoadingCreate(true)
+    try {
+      const payload = {
+        saleId: values.saleId,
+        priority: values.priority,
+        scheduledAt: values.scheduledAt?.toISOString(),
+        instructions: values.instructions?.trim() || undefined,
+      }
+      if (isRoot && effectiveTenantId) payload.tenantId = effectiveTenantId
+      await deliveryService.createDelivery(payload)
+      message.success('Entrega criada com sucesso!')
+      setCreateDrawerOpen(false)
+      formCreate.resetFields()
+      loadDeliveries()
+      loadSalesWithoutDelivery()
+    } catch (e) {
+      message.error(e?.message || 'Erro ao criar entrega.')
+    } finally {
+      setLoadingCreate(false)
+    }
+  }
+
+  const handleAssign = async () => {
+    const values = await formAssign.validateFields().catch(() => null)
+    if (!values || !selectedDelivery) return
+    try {
+      await deliveryService.assignDeliveryPerson(selectedDelivery.id, values.deliveryPersonId)
+      message.success('Entregador atribuído!')
+      setAssignDrawerOpen(false)
+      loadDeliveries()
+      const updated = await deliveryService.getDeliveryById(selectedDelivery.id)
+      setSelectedDelivery(updated)
+    } catch (e) {
+      message.error(e?.message || 'Erro ao atribuir.')
+    }
+  }
+
+  const handleUpdateStatus = async () => {
+    const values = await formStatus.validateFields().catch(() => null)
+    if (!values || !selectedDelivery) return
+    try {
+      const payload = {
+        status: values.status,
+        failureReason: values.failureReason?.trim() || undefined,
+        returnReason: values.returnReason?.trim() || undefined,
+        deliveryNotes: values.deliveryNotes?.trim() || undefined,
+        receivedBy: values.receivedBy?.trim() || undefined,
+      }
+      await deliveryService.updateDeliveryStatus(selectedDelivery.id, payload)
+      message.success('Status atualizado!')
+      setStatusDrawerOpen(false)
+      loadDeliveries()
+      const updated = await deliveryService.getDeliveryById(selectedDelivery.id)
+      setSelectedDelivery(updated)
+    } catch (e) {
+      message.error(e?.message || 'Erro ao atualizar status.')
+    }
+  }
+
+  const getStatusSteps = (d) => {
+    const statusOrder = ['PENDING', 'ASSIGNED', 'ACCEPTED', 'PICKING_UP', 'PICKED_UP', 'IN_TRANSIT', 'ARRIVED', 'DELIVERED']
+    const idx = statusOrder.indexOf(d.status)
+    const current = idx >= 0 ? idx : 0
+    return statusOrder.slice(0, current + 1).map((s, i) => ({
+      title: STATUS_OPTIONS.find((o) => o.value === s)?.label ?? s,
+      status: i < current ? 'finish' : i === current ? 'process' : 'wait',
+    }))
+  }
+
+  const columns = [
+    { title: 'Nº', dataIndex: 'deliveryNumber', key: 'deliveryNumber', width: 100 },
+    { title: 'Venda', dataIndex: 'saleNumber', key: 'saleNumber', width: 90 },
+    { title: 'Destinatário', dataIndex: 'recipientName', key: 'recipientName', ellipsis: true },
+    { title: 'Telefone', dataIndex: 'recipientPhone', key: 'recipientPhone', width: 120 },
+    {
+      title: 'Endereço',
+      key: 'address',
+      ellipsis: true,
+      render: (_, r) => (
+        <span title={r.address}>
+          {r.address?.length > 40 ? r.address.slice(0, 40) + '...' : r.address || '-'}
+        </span>
+      ),
+    },
+    {
+      title: 'Status',
+      dataIndex: 'status',
+      key: 'status',
+      width: 110,
+      render: (v) => <Tag color={STATUS_COLORS[v] || 'default'}>{STATUS_OPTIONS.find((o) => o.value === v)?.label ?? v}</Tag>,
+    },
+    { title: 'Entregador', dataIndex: 'deliveryPersonName', key: 'deliveryPersonName', width: 120, ellipsis: true },
+    {
+      title: 'Valor',
+      dataIndex: 'saleTotal',
+      key: 'saleTotal',
+      width: 100,
+      render: (v) => formatMoney(v),
+    },
+    {
+      title: '',
+      key: 'actions',
+      width: 50,
+      render: (_, record) => (
+        <Dropdown
+          menu={{
+            items: [
+              { key: 'detail', label: 'Ver detalhes', onClick: () => openDetail(record) },
+              ...(record.status === 'PENDING' || record.status === 'ASSIGNED'
+                ? [{ key: 'assign', label: 'Atribuir entregador', onClick: () => openAssign(record) }]
+                : []),
+              { key: 'status', label: 'Atualizar status', onClick: () => openStatus(record) },
+            ],
+          }}
+          trigger={['click']}
+        >
+          <Button type="text" size="small" icon={<MoreOutlined />} />
+        </Dropdown>
+      ),
+    },
+  ]
+
+  return (
+    <div className="deliveries-page">
+      <main className="deliveries-main">
+        <div className="deliveries-container">
+          <div className="deliveries-header-card">
+            <div className="deliveries-header-icon">
+              <CarOutlined />
+            </div>
+            <div className="deliveries-header-content">
+              <h2 className="deliveries-title">Entregas</h2>
+              <p className="deliveries-subtitle">
+                Gerencie e acompanhe as entregas em tempo real. Atribua entregadores, atualize o status e acompanhe o trajeto.
+              </p>
+            </div>
+          </div>
+
+          {isRoot && (
+            <div className="deliveries-tenant-card">
+              <label>Empresa</label>
+              <Select
+                placeholder="Selecione a empresa"
+                options={tenants.map((t) => ({ value: t.id, label: t.name }))}
+                value={selectedTenantId}
+                onChange={setSelectedTenantId}
+                style={{ width: 280 }}
+                allowClear={false}
+              />
+            </div>
+          )}
+
+          <div className="deliveries-stats-row">
+            <Row gutter={16}>
+              <Col xs={24} sm={12} md={6}>
+                <Card className="deliveries-stat-card">
+                  <Statistic title="Pendentes" value={stats.pending} />
+                </Card>
+              </Col>
+              <Col xs={24} sm={12} md={6}>
+                <Card className="deliveries-stat-card">
+                  <Statistic title="Em rota" value={stats.inTransit} />
+                </Card>
+              </Col>
+              <Col xs={24} sm={12} md={6}>
+                <Card className="deliveries-stat-card">
+                  <Statistic title="Entregues hoje" value={stats.deliveredToday} />
+                </Card>
+              </Col>
+              <Col xs={24} sm={12} md={6}>
+                <Card className="deliveries-stat-card">
+                  <Statistic title="Total" value={stats.total} />
+                </Card>
+              </Col>
+            </Row>
+          </div>
+
+          <div className="deliveries-toolbar deliveries-toolbar-stacked">
+            <Card className="deliveries-filters-card">
+              <Row gutter={16} align="middle">
+                <Col xs={24} sm={12} md={6}>
+                  <label>Todas / Ativas</label>
+                  <Select
+                    value={filters.listType}
+                    onChange={(v) => setFilters((f) => ({ ...f, listType: v }))}
+                    options={[
+                      { value: 'all', label: 'Todas' },
+                      { value: 'active', label: 'Ativas' },
+                    ]}
+                    style={{ width: '100%' }}
+                  />
+                </Col>
+                <Col xs={24} sm={12} md={6}>
+                  <div className="deliveries-filters-toggle" style={{ marginTop: 24 }}>
+                    <Button icon={<FilterOutlined />} onClick={() => setFiltersExpanded((v) => !v)}>
+                      {filtersExpanded ? 'Ocultar filtros' : 'Mostrar filtros'}
+                    </Button>
+                  </div>
+                </Col>
+              </Row>
+              {filtersExpanded && (
+                <Row gutter={16} align="bottom" style={{ marginTop: 16 }}>
+                  <Col xs={24} sm={12} md={6}>
+                    <label>Buscar</label>
+                    <Input
+                      placeholder="Nº, destinatário, endereço"
+                      prefix={<SearchOutlined />}
+                      value={filters.search}
+                      onChange={(e) => setFilters((f) => ({ ...f, search: e.target.value }))}
+                      onPressEnter={loadDeliveries}
+                      allowClear
+                      style={{ width: '100%' }}
+                    />
+                  </Col>
+                  <Col xs={24} sm={12} md={6}>
+                    <label>Status</label>
+                    <Select
+                      placeholder="Todos"
+                      options={STATUS_OPTIONS}
+                      value={filters.status}
+                      onChange={(v) => setFilters((f) => ({ ...f, status: v }))}
+                      style={{ width: '100%' }}
+                      allowClear
+                    />
+                  </Col>
+                  <Col xs={24} sm={12} md={6}>
+                    <label>Entregador</label>
+                    <Select
+                      placeholder="Todos"
+                      options={deliveryPersons.map((p) => ({ value: p.id, label: p.fullName || p.username }))}
+                      value={filters.deliveryPersonId}
+                      onChange={(v) => setFilters((f) => ({ ...f, deliveryPersonId: v }))}
+                      style={{ width: '100%' }}
+                      allowClear
+                    />
+                  </Col>
+                  <Col xs={24} sm={12} md={6}>
+                    <label>Período</label>
+                    <RangePicker
+                      value={filters.dateRange}
+                      onChange={(v) => setFilters((f) => ({ ...f, dateRange: v }))}
+                      style={{ width: '100%' }}
+                    />
+                  </Col>
+                  <Col xs={24} md={6}>
+                    <label style={{ visibility: 'hidden' }}>.</label>
+                    <Button type="primary" icon={<SearchOutlined />} onClick={loadDeliveries} loading={loading} block>
+                      Filtrar
+                    </Button>
+                  </Col>
+                </Row>
+              )}
+            </Card>
+            <div className="deliveries-toolbar-actions">
+              <Button type="primary" icon={<PlusOutlined />} onClick={() => setCreateDrawerOpen(true)} className="deliveries-add-btn">
+                Nova entrega
+              </Button>
+            </div>
+          </div>
+
+          <Table
+            rowKey="id"
+            columns={columns}
+            dataSource={listToShow}
+            loading={loading}
+            pagination={{ pageSize: 15, showSizeChanger: true, showTotal: (t) => `${t} entrega(s)` }}
+            className="deliveries-table"
+          />
+        </div>
+      </main>
+
+      <Drawer
+        title={`Entrega ${selectedDelivery?.deliveryNumber || ''}`}
+        open={detailDrawerOpen}
+        onClose={() => setDetailDrawerOpen(false)}
+        width={520}
+        extra={
+          <Space>
+            {(selectedDelivery?.status === 'PENDING' || selectedDelivery?.status === 'ASSIGNED') && (
+              <Button icon={<UserOutlined />} onClick={() => openAssign(selectedDelivery)}>
+                Atribuir
+              </Button>
+            )}
+            <Button type="primary" onClick={() => openStatus(selectedDelivery)}>
+              Atualizar status
+            </Button>
+          </Space>
+        }
+      >
+        {selectedDelivery && (
+          <>
+            <Steps
+              direction="vertical"
+              size="small"
+              current={Math.max(0, getStatusSteps(selectedDelivery).length - 1)}
+              items={getStatusSteps(selectedDelivery).map((s) => ({
+                title: s.title,
+                status: s.status,
+              }))}
+            />
+            <Descriptions column={1} bordered size="small" style={{ marginTop: 24 }}>
+              <Descriptions.Item label="Venda">{selectedDelivery.saleNumber}</Descriptions.Item>
+              <Descriptions.Item label="Destinatário">{selectedDelivery.recipientName}</Descriptions.Item>
+              <Descriptions.Item label="Telefone">{selectedDelivery.recipientPhone}</Descriptions.Item>
+              <Descriptions.Item label="Endereço">{selectedDelivery.address}</Descriptions.Item>
+              {selectedDelivery.complement && (
+                <Descriptions.Item label="Complemento">{selectedDelivery.complement}</Descriptions.Item>
+              )}
+              <Descriptions.Item label="Entregador">{selectedDelivery.deliveryPersonName || '-'}</Descriptions.Item>
+              <Descriptions.Item label="Taxa entrega">{formatMoney(selectedDelivery.deliveryFee)}</Descriptions.Item>
+              <Descriptions.Item label="Valor total">{formatMoney(selectedDelivery.saleTotal)}</Descriptions.Item>
+              <Descriptions.Item label="Criado em">{formatDate(selectedDelivery.createdAt)}</Descriptions.Item>
+              {selectedDelivery.deliveredAt && (
+                <Descriptions.Item label="Entregue em">{formatDate(selectedDelivery.deliveredAt)}</Descriptions.Item>
+              )}
+            </Descriptions>
+            <DeliveryMap delivery={selectedDelivery} />
+          </>
+        )}
+      </Drawer>
+
+      <Drawer title="Atribuir entregador" open={assignDrawerOpen} onClose={() => setAssignDrawerOpen(false)} width={400}>
+        <Form form={formAssign} layout="vertical" onFinish={handleAssign}>
+          <Form.Item
+            name="deliveryPersonId"
+            label="Entregador"
+            rules={[{ required: true, message: 'Selecione o entregador' }]}
+          >
+            <Select
+              placeholder="Selecione o entregador"
+              options={deliveryPersons.map((p) => ({ value: p.id, label: p.fullName || p.username }))}
+              showSearch
+              optionFilterProp="label"
+            />
+          </Form.Item>
+          <Form.Item>
+            <Button type="primary" htmlType="submit">
+              Atribuir
+            </Button>
+          </Form.Item>
+        </Form>
+      </Drawer>
+
+      <Drawer title="Atualizar status" open={statusDrawerOpen} onClose={() => setStatusDrawerOpen(false)} width={420}>
+        <Form form={formStatus} layout="vertical" onFinish={handleUpdateStatus}>
+          <Form.Item name="status" label="Novo status" rules={[{ required: true }]}>
+            <Select options={STATUS_OPTIONS} placeholder="Selecione o status" />
+          </Form.Item>
+          <Form.Item noStyle shouldUpdate={(prev, curr) => prev.status !== curr.status}>
+            {({ getFieldValue }) =>
+              getFieldValue('status') === 'FAILED' ? (
+                <Form.Item name="failureReason" label="Motivo da falha">
+                  <TextArea rows={3} placeholder="Descreva o motivo" />
+                </Form.Item>
+              ) : null
+            }
+          </Form.Item>
+          <Form.Item noStyle shouldUpdate={(prev, curr) => prev.status !== curr.status}>
+            {({ getFieldValue }) =>
+              getFieldValue('status') === 'RETURNED' ? (
+                <Form.Item name="returnReason" label="Motivo da devolução">
+                  <TextArea rows={3} placeholder="Descreva o motivo" />
+                </Form.Item>
+              ) : null
+            }
+          </Form.Item>
+          <Form.Item noStyle shouldUpdate={(prev, curr) => prev.status !== curr.status}>
+            {({ getFieldValue }) =>
+              getFieldValue('status') === 'DELIVERED' ? (
+                <>
+                  <Form.Item name="receivedBy" label="Quem recebeu">
+                    <Input placeholder="Nome de quem recebeu" />
+                  </Form.Item>
+                  <Form.Item name="deliveryNotes" label="Observações">
+                    <TextArea rows={2} placeholder="Observações do entregador" />
+                  </Form.Item>
+                </>
+              ) : null
+            }
+          </Form.Item>
+          <Form.Item>
+            <Button type="primary" htmlType="submit">
+              Atualizar
+            </Button>
+          </Form.Item>
+        </Form>
+      </Drawer>
+
+      <Drawer
+        title="Nova entrega"
+        open={createDrawerOpen}
+        onClose={() => setCreateDrawerOpen(false)}
+        width={480}
+        destroyOnClose
+        extra={
+          <Space>
+            <Button onClick={() => setCreateDrawerOpen(false)}>Cancelar</Button>
+            <Button type="primary" loading={loadingCreate} onClick={() => formCreate.submit()}>
+              Criar entrega
+            </Button>
+          </Space>
+        }
+      >
+        <Form form={formCreate} layout="vertical" onFinish={handleCreateDelivery}>
+          <Form.Item name="saleId" label="Venda" rules={[{ required: true, message: 'Selecione a venda' }]}>
+            <Select
+              placeholder="Selecione uma venda sem entrega"
+              options={salesWithoutDelivery.map((s) => ({
+                value: s.id,
+                label: `${s.saleNumber} - ${s.customerName || 'Cliente'} - ${formatMoney(s.total)}`,
+              }))}
+              showSearch
+              optionFilterProp="label"
+            />
+          </Form.Item>
+          <Form.Item name="priority" label="Prioridade">
+            <Select options={PRIORITY_OPTIONS} placeholder="Normal" />
+          </Form.Item>
+          <Form.Item name="scheduledAt" label="Previsão de entrega">
+            <DatePicker showTime style={{ width: '100%' }} placeholder="Opcional" />
+          </Form.Item>
+          <Form.Item name="instructions" label="Instruções">
+            <TextArea rows={2} placeholder="Instruções para o entregador" />
+          </Form.Item>
+        </Form>
+      </Drawer>
+    </div>
+  )
+}

@@ -1,0 +1,330 @@
+.main-layout {
+  min-height: 100vh;
+  width: 100%;
+  background-color: #f2f4f7;
+  display: flex;
+}
+
+.main-layout-loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background-color: #f2f4f7;
+}
+
+.main-layout-sider {
+  position: fixed !important;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  z-index: 100;
+  background: #fff !important;
+  border-right: 1px solid rgba(5, 5, 5, 0.06);
+  overflow: auto;
+  transition: width 0.2s ease, transform 0.2s ease;
+}
+
+.main-layout-sider-closed {
+  width: 0 !important;
+  min-width: 0 !important;
+  overflow: hidden;
+  transform: translateX(-220px);
+}
+
+.main-layout-sider-open {
+  width: 220px !important;
+}
+
+.main-layout-sider-head {
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  border-bottom: 1px solid rgba(5, 5, 5, 0.06);
+  flex-shrink: 0;
+  background: #fff;
+}
+
+.main-layout-logo-with-img {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.main-layout-logo-img {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  border-radius: 6px;
+}
+
+.main-layout-logo {
+  font-size: 18px;
+  font-weight: 600;
+  color: #34495e;
+}
+
+/* Botão fechar menu (dentro do sider) */
+.main-layout-toggle {
+  flex-shrink: 0;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  margin: 0 -4px 0 0 !important;
+  padding: 0 !important;
+  color: rgba(0, 0, 0, 0.65) !important;
+  background: transparent !important;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  transition: color 0.2s, background 0.2s, border-color 0.2s;
+}
+
+.main-layout-toggle .anticon {
+  font-size: 18px;
+}
+
+.main-layout-toggle:hover {
+  color: #1677ff !important;
+  background: rgba(22, 119, 255, 0.06) !important;
+  border-color: rgba(22, 119, 255, 0.2);
+}
+
+.main-layout-main {
+  margin-left: 220px;
+  min-height: 100vh;
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  transition: margin-left 0.2s ease;
+}
+
+.main-layout-main-expanded {
+  margin-left: 0 !important;
+  flex: 1 1 100%;
+  width: 100%;
+}
+
+.main-layout-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 0 24px;
+  background: #fff;
+  border-bottom: 1px solid #e4e7ec;
+  flex-shrink: 0;
+}
+
+.main-layout-header-left {
+  display: flex;
+  align-items: center;
+  min-width: 100px;
+}
+
+/* Botão abrir menu (no header quando menu está fechado) */
+.main-layout-open-btn {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 8px;
+  height: 40px !important;
+  margin: 0 !important;
+  padding: 0 16px !important;
+  font-size: 14px;
+  font-weight: 500;
+  color: rgba(0, 0, 0, 0.88) !important;
+  background: #fff !important;
+  border: 1px solid #d9d9d9;
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+  transition: color 0.2s, border-color 0.2s, background 0.2s, box-shadow 0.2s;
+}
+
+.main-layout-open-btn .anticon {
+  font-size: 18px;
+}
+
+.main-layout-open-btn:hover {
+  color: #1677ff !important;
+  border-color: #1677ff !important;
+  background: rgba(22, 119, 255, 0.04) !important;
+  box-shadow: 0 2px 4px rgba(22, 119, 255, 0.15);
+}
+
+/* Menu no estilo Ant Design: limpo, barra de seleção à esquerda, hover suave */
+.main-layout-menu.ant-menu {
+  height: 100%;
+  padding: 8px 0;
+  border-inline-end: none !important;
+  background: transparent !important;
+}
+
+.main-layout-menu .ant-menu-item,
+.main-layout-menu .ant-menu-submenu-title {
+  position: relative;
+  height: 40px;
+  line-height: 40px;
+  margin: 2px 8px;
+  padding-inline: 16px !important;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.main-layout-menu .ant-menu-submenu .ant-menu-item {
+  position: relative;
+  height: 40px;
+  line-height: 40px;
+  margin: 2px 8px;
+  padding-inline: 16px 16px 16px 40px !important;
+  border-radius: 6px;
+}
+
+/* Hover: mesmo azul do item selecionado */
+.main-layout-menu .ant-menu-item:not(.ant-menu-item-selected):hover,
+.main-layout-menu .ant-menu-submenu-title:hover {
+  background: rgba(22, 119, 255, 0.1) !important;
+  color: #1677ff !important;
+}
+
+.main-layout-menu .ant-menu-item:not(.ant-menu-item-selected):hover .ant-menu-title-content,
+.main-layout-menu .ant-menu-item:not(.ant-menu-item-selected):hover .anticon,
+.main-layout-menu .ant-menu-submenu-title:hover .ant-menu-title-content,
+.main-layout-menu .ant-menu-submenu-title:hover .anticon {
+  color: #1677ff !important;
+}
+
+.main-layout-menu .ant-menu-item:not(.ant-menu-item-selected):hover::after {
+  display: block;
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: #1677ff;
+  border-radius: 0 2px 2px 0;
+}
+
+.main-layout-menu .ant-menu-submenu-title:hover::after {
+  display: block;
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: #1677ff;
+  border-radius: 0 2px 2px 0;
+}
+
+.main-layout-menu .ant-menu-submenu .ant-menu-item:not(.ant-menu-item-selected):hover {
+  background: rgba(22, 119, 255, 0.1) !important;
+  color: #1677ff !important;
+}
+
+.main-layout-menu .ant-menu-submenu .ant-menu-item:not(.ant-menu-item-selected):hover .ant-menu-title-content,
+.main-layout-menu .ant-menu-submenu .ant-menu-item:not(.ant-menu-item-selected):hover .anticon {
+  color: #1677ff !important;
+}
+
+.main-layout-menu .ant-menu-submenu .ant-menu-item:not(.ant-menu-item-selected):hover::after {
+  display: block;
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: #1677ff;
+  border-radius: 0 2px 2px 0;
+}
+
+/* Selecionado: barra à esquerda + fundo primary suave (estilo Ant Design) */
+.main-layout-menu .ant-menu-item-selected {
+  background: rgba(22, 119, 255, 0.1) !important;
+  color: #1677ff !important;
+}
+
+.main-layout-menu .ant-menu-item-selected::after {
+  display: block;
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: #1677ff;
+  border-radius: 0 2px 2px 0;
+}
+
+.main-layout-menu .ant-menu-item-selected .ant-menu-title-content,
+.main-layout-menu .ant-menu-item-selected .anticon {
+  color: #1677ff !important;
+}
+
+.main-layout-menu .ant-menu-item-selected:hover {
+  background: rgba(22, 119, 255, 0.15) !important;
+}
+
+.main-layout-menu .ant-menu-item-selected:hover .ant-menu-title-content,
+.main-layout-menu .ant-menu-item-selected:hover .anticon {
+  color: #1677ff !important;
+}
+
+.main-layout-menu .ant-menu-submenu .ant-menu-item-selected {
+  background: rgba(22, 119, 255, 0.1) !important;
+}
+
+.main-layout-menu .ant-menu-submenu .ant-menu-item-selected::after {
+  display: block;
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: #1677ff;
+  border-radius: 0 2px 2px 0;
+}
+
+/* Submenu expandido */
+.main-layout-menu .ant-menu-submenu-open > .ant-menu-submenu-title {
+  color: rgba(0, 0, 0, 0.88);
+}
+
+/* Ícones com espaçamento e cor alinhada ao texto */
+.main-layout-menu .ant-menu-item .anticon,
+.main-layout-menu .ant-menu-submenu-title .anticon {
+  font-size: 16px;
+}
+
+.main-layout-menu .ant-menu-sub .ant-menu-item {
+  padding-inline-start: 40px !important;
+}
+
+
+.main-layout-welcome {
+  font-size: 14px;
+  color: #667085;
+}
+
+/* Botão Sair: mesmo estilo do botão Abrir menu */
+.main-layout-logout {
+  /* herda .main-layout-open-btn: borda, fundo, altura, padding, etc. */
+}
+
+.main-layout-content {
+  flex: 1;
+  margin: 24px;
+  border-radius: 8px;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.main-layout-content-no-scroll {
+  overflow: hidden !important;
+}

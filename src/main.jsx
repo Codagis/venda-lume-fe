@@ -4,6 +4,7 @@ import { BrowserRouter } from 'react-router-dom'
 import { ConfigProvider } from 'antd'
 import ptBR from 'antd/locale/pt_BR'
 import { AuthProvider } from './contexts/AuthContext'
+import { ModulesProvider } from './contexts/ModulesContext'
 import App from './App.jsx'
 import 'antd/dist/reset.css'
 import './index.css'
@@ -17,6 +18,14 @@ const theme = {
     colorBgContainer: '#FFFFFF',
     borderRadius: 6,
   },
+  components: {
+    Select: {
+      optionActiveBg: '#e8ecf2',
+      optionSelectedBg: '#e4e7ec',
+      optionSelectedColor: '#34495e',
+      optionSelectedFontWeight: 600,
+    },
+  },
 }
 
 ReactDOM.createRoot(document.getElementById('root')).render(
@@ -24,7 +33,9 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     <BrowserRouter>
       <ConfigProvider locale={ptBR} theme={theme}>
         <AuthProvider>
-          <App />
+          <ModulesProvider>
+            <App />
+          </ModulesProvider>
         </AuthProvider>
       </ConfigProvider>
     </BrowserRouter>

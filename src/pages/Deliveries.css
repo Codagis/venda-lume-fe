@@ -1,0 +1,177 @@
+.deliveries-page {
+  min-height: 100vh;
+}
+
+.deliveries-main {
+  padding: 24px;
+}
+
+.deliveries-container {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.deliveries-header-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+  padding: 28px 32px;
+  margin-bottom: 24px;
+  background: #ffffff;
+  border: 1px solid #e4e7ec;
+  border-radius: 10px;
+  box-shadow: 0 1px 3px rgba(52, 73, 94, 0.06);
+}
+
+.deliveries-header-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  min-width: 52px;
+  background: linear-gradient(135deg, rgba(52, 73, 94, 0.08) 0%, rgba(52, 73, 94, 0.04) 100%);
+  border: 1px solid rgba(52, 73, 94, 0.12);
+  border-radius: 10px;
+  color: #34495e;
+  font-size: 22px;
+}
+
+.deliveries-header-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.deliveries-title {
+  font-size: 22px;
+  font-weight: 600;
+  color: #1d2939;
+  letter-spacing: -0.4px;
+  line-height: 1.3;
+  margin: 0 0 6px 0;
+}
+
+.deliveries-subtitle {
+  font-size: 14px;
+  color: #667085;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.deliveries-tenant-card {
+  margin-bottom: 20px;
+}
+
+.deliveries-tenant-card label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+  color: #34495e;
+}
+
+.deliveries-stats-row {
+  margin-bottom: 24px;
+}
+
+.deliveries-stat-card {
+  border-radius: 8px;
+  border: 1px solid #e4e7ec;
+}
+
+.deliveries-stat-card .ant-statistic-title {
+  font-size: 13px;
+  color: #667085;
+}
+
+.deliveries-stat-card .ant-statistic-content {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1d2939;
+}
+
+.deliveries-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: flex-start;
+  margin-bottom: 20px;
+}
+
+.deliveries-toolbar-stacked {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.deliveries-toolbar-stacked .deliveries-filters-card {
+  flex: none;
+  width: 100%;
+}
+
+.deliveries-toolbar-stacked .deliveries-toolbar-actions {
+  margin-top: 0;
+}
+
+.deliveries-filters-card {
+  flex: 1;
+  min-width: 300px;
+  border-radius: 8px;
+  border: 1px solid #e4e7ec;
+}
+
+.deliveries-filters-toggle .ant-btn {
+  color: #667085;
+}
+
+.deliveries-filters-toggle .ant-btn:hover {
+  color: #34495e;
+}
+
+.deliveries-filters-card label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 13px;
+  color: #34495e;
+}
+
+.deliveries-toolbar-actions {
+  flex-shrink: 0;
+}
+
+.deliveries-add-btn {
+  height: 36px;
+  font-weight: 500;
+  border-radius: 6px;
+  background-color: #34495e;
+  border-color: #34495e;
+}
+
+.deliveries-add-btn:hover {
+  background-color: #5d6d7e !important;
+  border-color: #5d6d7e !important;
+}
+
+.deliveries-tabs {
+  margin-bottom: 16px;
+}
+
+.deliveries-table {
+  background: #ffffff;
+  border: 1px solid #e4e7ec;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.deliveries-table .ant-table-thead > tr > th {
+  background: #f9fafb;
+  color: #34495e;
+  font-weight: 600;
+}
+
+.deliveries-table .ant-table-tbody > tr:hover > td {
+  background: #f9fafb !important;
+}
+
+/* Minhas Entregas: coluna de ações com mais padding para afastar da borda da tabela */
+.my-deliveries-actions-col.ant-table-cell {
+  padding: 16px 40px 16px 32px !important;
+}

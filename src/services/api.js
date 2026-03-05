@@ -1,7 +1,7 @@
 const API_BASE = import.meta.env.VITE_API_URL || '/api'
 
 function getAuthHeaders() {
-  const token = sessionStorage.getItem('commo_access_token')
+  const token = sessionStorage.getItem('vendalume_access_token')
   const headers = { 'Content-Type': 'application/json' }
   if (token) {
     headers.Authorization = `Bearer ${token}`
@@ -39,6 +39,13 @@ export async function refreshToken(refreshTokenValue) {
   return res.json()
 }
 
+function clearAuthAndRedirect() {
+  sessionStorage.removeItem('vendalume_access_token')
+  sessionStorage.removeItem('vendalume_refresh_token')
+  sessionStorage.removeItem('vendalume_user')
+  window.location.href = '/login'
+}
+
 export function apiFetch(path, options = {}) {
   return fetch(`${API_BASE}${path}`, {
     ...options,
@@ -46,5 +53,10 @@ export function apiFetch(path, options = {}) {
       ...getAuthHeaders(),
       ...options.headers,
     },
+  }).then((res) => {
+    if (res.status === 401) {
+      clearAuthAndRedirect()
+    }
+    return res
   })
 }

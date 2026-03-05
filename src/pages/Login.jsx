@@ -36,7 +36,7 @@ export default function Login() {
       <div className="login-container">
         <div className="login-card">
           <header className="login-header">
-            <h1 className="login-title">Commo</h1>
+            <h1 className="login-title">VendaLume</h1>
             <p className="login-subtitle">Acesse sua conta</p>
           </header>
 
@@ -93,7 +93,7 @@ export default function Login() {
             </Form.Item>
           </Form>
         </div>
-        <p className="login-footer">© Commo · Acesso restrito</p>
+        <p className="login-footer">© VendaLume · Acesso restrito</p>
       </div>
     </div>
   )

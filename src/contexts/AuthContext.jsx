@@ -3,9 +3,9 @@ import { login as apiLogin } from '../services/api'
 
 const AuthContext = createContext(null)
 
-const ACCESS_TOKEN_KEY = 'commo_access_token'
-const REFRESH_TOKEN_KEY = 'commo_refresh_token'
-const USER_KEY = 'commo_user'
+const ACCESS_TOKEN_KEY = 'vendalume_access_token'
+const REFRESH_TOKEN_KEY = 'vendalume_refresh_token'
+const USER_KEY = 'vendalume_user'
 
 export function AuthProvider({ children }) {
   const [isAuthenticated, setIsAuthenticated] = useState(() => {

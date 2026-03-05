@@ -1,0 +1,139 @@
+.stock-page {
+  min-height: 100vh;
+}
+
+.stock-main {
+  padding: 24px;
+}
+
+.stock-container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.stock-header-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+  padding: 28px 32px;
+  margin-bottom: 24px;
+  background: #FFFFFF;
+  border: 1px solid #E4E7EC;
+  border-radius: 10px;
+  box-shadow: 0 1px 3px rgba(52, 73, 94, 0.06);
+}
+
+.stock-header-card-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  min-width: 52px;
+  background: linear-gradient(135deg, rgba(52, 73, 94, 0.08) 0%, rgba(52, 73, 94, 0.04) 100%);
+  border: 1px solid rgba(52, 73, 94, 0.12);
+  border-radius: 10px;
+  color: #34495E;
+  font-size: 22px;
+}
+
+.stock-header-card-content {
+  flex: 1;
+}
+
+.stock-page-title {
+  font-size: 22px;
+  font-weight: 600;
+  color: #1D2939;
+  margin: 0 0 6px 0;
+}
+
+.stock-page-subtitle {
+  font-size: 14px;
+  color: #667085;
+  margin: 0;
+}
+
+.stock-tenant-row {
+  margin-bottom: 20px;
+}
+
+.stock-kpis {
+  margin-bottom: 24px;
+}
+
+.stock-kpi-card {
+  border-radius: 10px;
+  border: 1px solid #E4E7EC;
+}
+
+.stock-kpi-warning {
+  border-color: #F59E0B;
+  background: #FFFBEB;
+}
+
+.stock-filters-card {
+  margin-bottom: 20px;
+}
+
+.stock-table-card {
+  border-radius: 10px;
+  border: 1px solid #E4E7EC;
+}
+
+.stock-table-product-name {
+  font-weight: 500;
+  color: #1D2939;
+}
+
+.stock-table-product-sku {
+  font-size: 12px;
+  color: #667085;
+}
+
+.stock-qty-low {
+  color: #DC2626;
+  font-weight: 600;
+}
+
+.stock-qty-min {
+  font-size: 12px;
+  color: #64748B;
+}
+
+.stock-row-low > td {
+  background: #FFFBEB !important;
+}
+
+.stock-movement-drawer {
+  padding-top: 8px;
+}
+
+.stock-movement-product {
+  margin-bottom: 24px;
+  padding: 16px;
+  background: #F9FAFB;
+  border-radius: 8px;
+  border: 1px solid #E4E7EC;
+}
+
+.stock-movement-product-sku {
+  font-size: 12px;
+  color: #667085;
+  margin-top: 4px;
+}
+
+.stock-movement-product-qty {
+  margin-top: 8px;
+  font-size: 14px;
+}
+
+.stock-delta-positive {
+  color: #059669;
+  font-weight: 500;
+}
+
+.stock-delta-negative {
+  color: #DC2626;
+  font-weight: 500;
+}

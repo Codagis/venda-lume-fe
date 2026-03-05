@@ -1,4 +1,4 @@
-# Commo FE
+# VendaLume FE
 
 Frontend React com JavaScript e Vite.
 

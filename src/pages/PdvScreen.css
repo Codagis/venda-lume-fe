@@ -1,0 +1,230 @@
+/* PDV - Estilo do sistema (#f2f4f7, #34495e, #667085, #e4e7ec) */
+
+.pdv-page {
+  min-height: 100vh;
+  background: #f2f4f7;
+  padding: 24px;
+}
+
+.pdv-main {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.pdv-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding: 16px 20px;
+  background: #fff;
+  border-radius: 8px;
+  border: 1px solid #e4e7ec;
+}
+
+.pdv-header-left {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.pdv-logo {
+  max-height: 40px;
+  max-width: 120px;
+  object-fit: contain;
+}
+
+.pdv-header-right {
+  display: flex;
+  align-items: center;
+}
+
+/* Input de busca sem div branca */
+.pdv-search-wrap {
+  position: relative;
+  width: 420px;
+}
+
+.pdv-search-wrap .ant-input-affix-wrapper {
+  width: 100%;
+}
+
+/* Pagamento com mesma largura do input */
+.pdv-payment-card {
+  width: 420px;
+  max-width: 100%;
+}
+
+/* Reduz o espaço entre busca e pagamento */
+.pdv-search-wrap + .pdv-card {
+  margin-top: 4px !important;
+}
+
+.pdv-search-wrap .pdv-product-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;
+  margin-top: 4px;
+  background: #fff;
+  border: 1px solid #e4e7ec;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  z-index: 1000;
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.pdv-dropdown-loading {
+  padding: 16px;
+  color: #667085;
+}
+
+.pdv-dropdown-list {
+  padding: 4px 0;
+}
+
+.pdv-dropdown-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.pdv-dropdown-item:hover {
+  background: #f2f4f7;
+}
+
+.pdv-dropdown-name {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pdv-dropdown-price {
+  font-weight: 600;
+  color: #52c41a;
+  margin-right: 12px;
+}
+
+.pdv-card {
+  border-radius: 8px;
+  border: 1px solid #e4e7ec;
+}
+
+/* Inputs e selects com altura maior */
+.pdv-page .ant-input,
+.pdv-page .ant-input-number,
+.pdv-page .ant-input-number-input,
+.pdv-page .ant-select-selector {
+  min-height: 40px !important;
+  height: 40px !important;
+  line-height: 38px !important;
+}
+
+.pdv-page .ant-input-number .ant-input-number-input {
+  height: 38px !important;
+  min-height: 38px !important;
+  line-height: 38px !important;
+}
+
+.pdv-page .ant-select-single .ant-select-selector {
+  padding: 4px 11px !important;
+  align-items: center;
+}
+
+.pdv-page textarea.ant-input {
+  min-height: auto !important;
+  height: auto !important;
+  line-height: 1.5 !important;
+}
+
+.pdv-produtos-col {
+  min-width: 0;
+}
+
+.pdv-cart-card {
+  min-height: 320px;
+  height: 100%;
+}
+
+.pdv-cart-card .ant-card-body {
+  display: flex;
+  flex-direction: column;
+}
+
+.pdv-cart-card .ant-table-wrapper {
+  flex: 1;
+}
+
+/* Input de quantidade compacto na tabela de produtos */
+.pdv-qty-input {
+  width: 48px !important;
+}
+
+.pdv-qty-input.ant-input-number {
+  min-height: 24px !important;
+  height: 24px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+}
+
+.pdv-qty-input .ant-input-number-input-wrap {
+  height: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+}
+
+.pdv-qty-input .ant-input-number-input {
+  min-height: 22px !important;
+  height: 22px !important;
+  line-height: 22px !important;
+  font-size: 13px;
+  text-align: center;
+  padding: 0 4px;
+}
+
+.pdv-total-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.pdv-cart-footer {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #e4e7ec;
+}
+
+/* Cliente: input desabilitado + botão mesma altura */
+.pdv-cliente-compact .ant-btn {
+  height: 40px;
+  min-height: 40px;
+  padding: 4px 16px;
+}
+
+.pdv-cliente-compact .ant-input[readonly] {
+  cursor: pointer;
+}
+
+.pdv-customer-list {
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.pdv-customer-item {
+  padding: 12px;
+  border: 1px solid #e4e7ec;
+  border-radius: 6px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.pdv-customer-item:hover {
+  background: #f2f4f7;
+}

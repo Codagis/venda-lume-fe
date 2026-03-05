@@ -1,0 +1,193 @@
+.cost-control-page {
+  min-height: 100vh;
+}
+
+.cost-control-main {
+  padding: 24px;
+}
+
+.cost-control-container {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.cost-control-header-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+  padding: 28px 32px;
+  margin-bottom: 24px;
+  background: #FFFFFF;
+  border: 1px solid #E4E7EC;
+  border-radius: 10px;
+  box-shadow: 0 1px 3px rgba(52, 73, 94, 0.06);
+}
+
+.cost-control-header-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  min-width: 52px;
+  background: linear-gradient(135deg, rgba(52, 73, 94, 0.08) 0%, rgba(52, 73, 94, 0.04) 100%);
+  border: 1px solid rgba(52, 73, 94, 0.12);
+  border-radius: 10px;
+  color: #34495E;
+  font-size: 22px;
+}
+
+.cost-control-header-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.cost-control-title {
+  font-size: 22px;
+  font-weight: 600;
+  color: #1D2939;
+  letter-spacing: -0.4px;
+  line-height: 1.3;
+  margin: 0 0 6px 0;
+}
+
+.cost-control-subtitle {
+  font-size: 14px;
+  color: #667085;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.cost-control-tenant-card {
+  margin-bottom: 20px;
+}
+
+.cost-control-tenant-card label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+  color: #34495E;
+}
+
+.cost-control-filters-card {
+  margin-bottom: 16px;
+  border: 1px solid #E4E7EC;
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.cost-control-filters-toggle {
+  margin-bottom: 0;
+}
+
+.cost-control-filters-toggle .ant-btn {
+  color: #1D2939 !important;
+  border-color: #E4E7EC;
+}
+
+.cost-control-filters-toggle .ant-btn:hover {
+  color: #34495E !important;
+  border-color: #34495E;
+}
+
+.cost-control-filters-card .ant-btn-primary {
+  color: #fff !important;
+}
+
+.cost-control-filter-label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #34495E;
+}
+
+.cost-control-add-btn {
+  height: 36px;
+  font-weight: 500;
+  border-radius: 6px;
+  background-color: #34495E;
+  border-color: #34495E;
+}
+
+.cost-control-add-btn:hover {
+  background-color: #5D6D7E !important;
+  border-color: #5D6D7E !important;
+}
+
+.cost-control-table {
+  margin-top: 16px;
+  background: #FFFFFF;
+  border: 1px solid #E4E7EC;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.cost-control-table .ant-table-thead > tr > th {
+  background: #F9FAFB;
+  color: #34495E;
+  font-weight: 600;
+}
+
+.cost-control-table .ant-table-tbody > tr:hover > td {
+  background: #F9FAFB !important;
+}
+
+.cost-control-page .ant-tabs-tab {
+  font-weight: 500;
+}
+
+.cost-control-page .ant-tabs-ink-bar {
+  background: #34495E;
+}
+
+.cost-control-page .ant-tabs-tab.ant-tabs-tab-active .ant-tabs-tab-btn {
+  color: #34495E;
+}
+
+.cost-control-stats-row {
+  margin-bottom: 24px;
+}
+
+.cost-control-stat-card {
+  border-radius: 8px;
+  border: 1px solid #E4E7EC;
+}
+
+.cost-control-stat-card .ant-statistic-title {
+  font-size: 13px;
+  color: #667085;
+}
+
+.cost-control-stat-card .ant-statistic-content {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1D2939;
+}
+
+.cost-control-chart-card {
+  border-radius: 8px;
+  border: 1px solid #E4E7EC;
+}
+
+.cost-control-chart-card .ant-card-head {
+  border-bottom: 1px solid #E4E7EC;
+}
+
+.cost-control-drawer-form .ant-form-item {
+  margin-bottom: 18px;
+}
+
+.cost-control-drawer-form .ant-input,
+.cost-control-drawer-form .ant-select-selector {
+  border-radius: 6px;
+  border-color: #E4E7EC;
+}
+
+.cost-control-actions-btn {
+  color: #667085;
+}
+
+.cost-control-actions-btn:hover {
+  color: #34495E;
+}
