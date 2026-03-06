@@ -14,6 +14,7 @@ import * as cardMachineService from '../services/cardMachineService'
 import * as customerService from '../services/customerService'
 import * as deliveryService from '../services/deliveryService'
 import * as registerService from '../services/registerService'
+import { getDeviceImei } from '../utils/deviceId'
 import dayjs from 'dayjs'
 
 export function useSalesPDV() {
@@ -75,7 +76,12 @@ export function useSalesPDV() {
   const [loadingNfe, setLoadingNfe] = useState(false)
   const [tenantLogo, setTenantLogo] = useState(null)
   const [registers, setRegisters] = useState([])
+  const [registerByImei, setRegisterByImei] = useState(null)
   const [selectedRegisterId, setSelectedRegisterId] = useState(null)
+  const [pendingRegisterId, setPendingRegisterId] = useState(null)
+  const [pdvPasswordValue, setPdvPasswordValue] = useState('')
+  const [showPdvPasswordInput, setShowPdvPasswordInput] = useState(false)
+  const [loginRegisterId, setLoginRegisterId] = useState(null)
   const [loadingStartSession, setLoadingStartSession] = useState(false)
   const [loadingEndSession, setLoadingEndSession] = useState(false)
 
@@ -123,18 +129,36 @@ export function useSalesPDV() {
   useEffect(() => { if (isRoot) loadTenants() }, [isRoot, loadTenants])
 
   const loadRegisters = useCallback(async () => {
-    if (!effectiveTenantId) { setRegisters([]); return }
+    if (!effectiveTenantId) { setRegisters([]); setRegisterByImei(null); return }
     try {
-      const data = await registerService.listRegisters(isRoot ? effectiveTenantId : null, true)
-      setRegisters(Array.isArray(data) ? data : [])
+      const imei = getDeviceImei()
+      const byImei = await registerService.getRegisterByImei(imei, isRoot ? effectiveTenantId : null)
+      setRegisterByImei(byImei)
+      setRegisters([byImei])
+      setLoginRegisterId(byImei.id)
     } catch {
-      setRegisters([])
+      try {
+        const data = await registerService.listRegisters(isRoot ? effectiveTenantId : null, true, true, getDeviceImei())
+        const list = Array.isArray(data) ? data : []
+        setRegisters(list)
+        setRegisterByImei(null)
+        if (list.length === 1) setLoginRegisterId(list[0].id)
+      } catch {
+        setRegisters([])
+        setRegisterByImei(null)
+      }
     }
   }, [effectiveTenantId, isRoot])
 
   useEffect(() => { loadRegisters() }, [loadRegisters])
 
+  const effectiveRegistersList = registerByImei ? [registerByImei] : registers
+  const currentRegister = effectiveRegistersList.find((r) => r.id === (selectedRegisterId || pendingRegisterId))
+
   const handleRegisterChange = useCallback(async (registerId) => {
+    setShowPdvPasswordInput(false)
+    setPendingRegisterId(null)
+    setPdvPasswordValue('')
     if (selectedRegisterId && selectedRegisterId !== registerId) {
       setLoadingEndSession(true)
       try {
@@ -152,9 +176,16 @@ export function useSalesPDV() {
       setSelectedRegisterId(null)
       return
     }
+    const reg = effectiveRegistersList.find((r) => r.id === registerId)
+    if (reg?.hasAccessPassword) {
+      setPendingRegisterId(registerId)
+      setShowPdvPasswordInput(true)
+      setSelectedRegisterId(null)
+      return
+    }
     setLoadingStartSession(true)
     try {
-      await registerService.startSession(registerId, isRoot ? effectiveTenantId : null)
+      await registerService.startSession(registerId, isRoot ? effectiveTenantId : null, { deviceImei: getDeviceImei() })
       message.success('Sessão do PDV iniciada.')
       setSelectedRegisterId(registerId)
     } catch (e) {
@@ -163,7 +194,56 @@ export function useSalesPDV() {
     } finally {
       setLoadingStartSession(false)
     }
-  }, [selectedRegisterId, effectiveTenantId, isRoot])
+  }, [selectedRegisterId, effectiveTenantId, isRoot, effectiveRegistersList])
+
+  const confirmStartSessionWithPassword = useCallback(async () => {
+    if (!pendingRegisterId) return
+    const pwd = pdvPasswordValue?.trim()
+    if (!pwd) {
+      message.warning('Informe a senha do PDV.')
+      return
+    }
+    setLoadingStartSession(true)
+    try {
+      await registerService.startSession(pendingRegisterId, isRoot ? effectiveTenantId : null, { pdvPassword: pwd, deviceImei: getDeviceImei() })
+      message.success('Sessão do PDV iniciada.')
+      setSelectedRegisterId(pendingRegisterId)
+      setPendingRegisterId(null)
+      setPdvPasswordValue('')
+      setShowPdvPasswordInput(false)
+    } catch (e) {
+      message.error(e?.message || 'Senha do PDV incorreta ou não informada.')
+    } finally {
+      setLoadingStartSession(false)
+    }
+  }, [pendingRegisterId, pdvPasswordValue, effectiveTenantId, isRoot])
+
+  const submitPdvLogin = useCallback(async () => {
+    const registerId = loginRegisterId || pendingRegisterId
+    if (!registerId) {
+      message.warning('Selecione um caixa.')
+      return
+    }
+    const reg = effectiveRegistersList.find((r) => r.id === registerId)
+    if (reg?.hasAccessPassword && !pdvPasswordValue?.trim()) {
+      message.warning('Informe a senha do PDV.')
+      return
+    }
+    setLoadingStartSession(true)
+    try {
+      await registerService.startSession(registerId, isRoot ? effectiveTenantId : null, { pdvPassword: pdvPasswordValue?.trim() || '', deviceImei: getDeviceImei() })
+      message.success('Acesso liberado.')
+      setSelectedRegisterId(registerId)
+      setLoginRegisterId(null)
+      setPendingRegisterId(null)
+      setPdvPasswordValue('')
+      setShowPdvPasswordInput(false)
+    } catch (e) {
+      message.error(e?.message || 'Senha incorreta ou erro ao acessar.')
+    } finally {
+      setLoadingStartSession(false)
+    }
+  }, [loginRegisterId, pendingRegisterId, pdvPasswordValue, effectiveRegistersList, effectiveTenantId, isRoot])
 
   const endSessionAndClear = useCallback(async () => {
     if (!selectedRegisterId) return
@@ -571,8 +651,17 @@ export function useSalesPDV() {
     tenantLogo,
     selectedTenantId,
     setSelectedTenantId,
-    registers,
+    registers: effectiveRegistersList,
     selectedRegisterId,
+    pendingRegisterId,
+    pdvPasswordValue,
+    setPdvPasswordValue,
+    showPdvPasswordInput,
+    currentRegister,
+    loginRegisterId,
+    setLoginRegisterId,
+    confirmStartSessionWithPassword,
+    submitPdvLogin,
     handleRegisterChange,
     endSessionAndClear,
     loadingStartSession,

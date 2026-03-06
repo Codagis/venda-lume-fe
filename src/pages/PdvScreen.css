@@ -4,6 +4,66 @@
   padding: 24px;
 }
 
+.pdv-login-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.pdv-login-card {
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid #e4e7ec;
+  padding: 40px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+  text-align: center;
+}
+
+.pdv-login-logo-wrap {
+  display: inline-block;
+  padding: 16px 28px;
+  background: #f8fafc;
+  border-radius: 12px;
+  border: 1px solid #e4e7ec;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  margin-bottom: 28px;
+}
+
+.pdv-login-logo {
+  max-height: 80px;
+  max-width: 280px;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  display: block;
+}
+
+.pdv-login-imei-wrap {
+  margin-top: 28px;
+  padding-top: 20px;
+  border-top: 1px solid #e4e7ec;
+  width: 100%;
+  max-width: 320px;
+}
+
+.pdv-login-imei-compact .ant-input,
+.pdv-login-imei-compact .ant-btn {
+  height: 40px !important;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+}
+
+.pdv-login-imei-compact .ant-btn {
+  padding-left: 14px;
+  padding-right: 14px;
+}
+
+.pdv-login-imei-input {
+  font-family: ui-monospace, monospace;
+}
+
 .pdv-main {
   max-width: 1400px;
   margin: 0 auto;
@@ -26,10 +86,23 @@
   gap: 20px;
 }
 
+.pdv-logo-wrap {
+  display: flex;
+  align-items: center;
+  padding: 10px 20px;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid #e4e7ec;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+}
+
 .pdv-logo {
-  max-height: 40px;
-  max-width: 120px;
+  max-height: 80px;
+  max-width: 280px;
+  width: auto;
+  height: auto;
   object-fit: contain;
+  display: block;
 }
 
 .pdv-header-right {
@@ -219,4 +292,142 @@
 
 .pdv-customer-item:hover {
   background: #f2f4f7;
+}
+
+.pdv-success-modal .ant-modal-content {
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.pdv-success-content {
+  padding: 0;
+}
+
+.pdv-success-header {
+  position: relative;
+  background: linear-gradient(135deg, #52c41a 0%, #389e0d 100%);
+  color: #fff;
+  padding: 28px 24px 28px;
+  text-align: center;
+}
+
+.pdv-success-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  color: rgba(255, 255, 255, 0.9) !important;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  font-size: 16px;
+}
+
+.pdv-success-close:hover {
+  color: #fff !important;
+  background: rgba(255, 255, 255, 0.15) !important;
+}
+
+.pdv-success-icon {
+  font-size: 52px;
+  margin-bottom: 10px;
+  opacity: 0.98;
+  line-height: 1;
+}
+
+.pdv-success-title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 600;
+  color: #fff;
+  letter-spacing: -0.02em;
+  padding: 0 32px;
+}
+
+.pdv-success-body {
+  padding: 24px 24px 8px;
+  text-align: center;
+}
+
+.pdv-success-number {
+  font-size: 13px;
+  color: #667085;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 4px;
+}
+
+.pdv-success-total {
+  font-size: 28px;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin-bottom: 12px;
+  letter-spacing: -0.02em;
+}
+
+.pdv-success-delivery {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: #f6ffed;
+  border: 1px solid #b7eb8f;
+  border-radius: 8px;
+  color: #389e0d;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.pdv-success-alert {
+  margin-bottom: 12px;
+}
+
+.pdv-success-actions {
+  padding: 0 24px 24px;
+}
+
+.pdv-success-actions .ant-btn {
+  margin-bottom: 8px;
+}
+
+.pdv-success-actions .ant-btn:last-child {
+  margin-bottom: 0;
+}
+
+.pdv-shortcuts-card .ant-card-head {
+  min-height: 40px;
+}
+
+.pdv-shortcuts-card .ant-card-head-title {
+  font-size: 13px;
+  color: #667085;
+  font-weight: 500;
+}
+
+.pdv-shortcuts-grid {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 6px 12px;
+  align-items: center;
+  font-size: 12px;
+}
+
+.pdv-shortcut-key {
+  display: inline-block;
+  min-width: 36px;
+  padding: 4px 8px;
+  background: #f2f4f7;
+  border: 1px solid #e4e7ec;
+  border-radius: 6px;
+  font-weight: 600;
+  color: #34495e;
+  text-align: center;
+  font-family: ui-monospace, monospace;
+}
+
+.pdv-shortcut-desc {
+  color: #667085;
 }

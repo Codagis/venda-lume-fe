@@ -1,12 +1,13 @@
 import { apiFetch } from './api'
 
-export async function listRegisters(tenantId = null, activeOnly = false) {
+export async function listRegisters(tenantId = null, activeOnly = false, forCurrentOperator = false, deviceImei = null) {
   const params = new URLSearchParams()
   if (tenantId) params.append('tenantId', tenantId)
   if (activeOnly) params.append('activeOnly', 'true')
+  if (forCurrentOperator) params.append('forCurrentOperator', 'true')
   const q = params.toString()
   const url = q ? `/registers?${q}` : '/registers'
-  const res = await apiFetch(url)
+  const res = await apiFetch(url, deviceImei ? { headers: { 'X-Device-IMEI': deviceImei } } : {})
   if (!res.ok) throw new Error('Erro ao listar pontos de venda.')
   return res.json()
 }
@@ -16,6 +17,27 @@ export async function getRegisterById(id, tenantId = null) {
   const res = await apiFetch(url)
   if (!res.ok) throw new Error('Ponto de venda não encontrado.')
   return res.json()
+}
+
+export async function getRegisterByImei(imei, tenantId = null) {
+  const params = new URLSearchParams({ imei })
+  if (tenantId) params.append('tenantId', tenantId)
+  const res = await apiFetch(`/registers/by-imei?${params.toString()}`)
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err?.message || err?.error || 'Erro ao obter PDV do equipamento.')
+  }
+  return res.json()
+}
+
+export async function verifyPdvPassword(registerId, password, tenantId = null) {
+  const url = tenantId
+    ? `/registers/${registerId}/verify-password?tenantId=${encodeURIComponent(tenantId)}`
+    : `/registers/${registerId}/verify-password`
+  const res = await apiFetch(url, { method: 'POST', body: JSON.stringify({ password }) })
+  if (res.status === 401) return false
+  if (!res.ok) throw new Error('Erro ao verificar senha do PDV.')
+  return true
 }
 
 export async function createRegister(data, tenantId = null) {
@@ -66,11 +88,11 @@ export async function listCashiers(tenantId = null) {
   return res.json()
 }
 
-export async function startSession(registerId, tenantId = null) {
+export async function startSession(registerId, tenantId = null, body = {}) {
   const url = tenantId
     ? `/registers/${registerId}/session/start?tenantId=${encodeURIComponent(tenantId)}`
     : `/registers/${registerId}/session/start`
-  const res = await apiFetch(url, { method: 'POST' })
+  const res = await apiFetch(url, { method: 'POST', body: JSON.stringify(body || {}) })
   if (!res.ok) {
     const err = await res.json().catch(() => ({}))
     throw new Error(err?.message || err?.error || 'Erro ao iniciar sessão do PDV.')

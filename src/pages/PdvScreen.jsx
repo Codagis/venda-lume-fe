@@ -19,6 +19,7 @@ import {
   Typography,
   Empty,
   Alert,
+  message,
 } from 'antd'
 import {
   BarcodeOutlined,
@@ -32,9 +33,12 @@ import {
   CarOutlined,
   ShoppingCartOutlined,
   LogoutOutlined,
+  CopyOutlined,
+  CloseOutlined,
 } from '@ant-design/icons'
 import dayjs from 'dayjs'
 import { useAuth } from '../contexts/AuthContext'
+import { getDeviceImei } from '../utils/deviceId'
 import { useSalesPDV } from '../hooks/useSalesPDV'
 import { SALE_TYPE_OPTIONS, PAYMENT_METHOD_OPTIONS_PDV } from '../services/salesService'
 import './PdvScreen.css'
@@ -105,13 +109,123 @@ export default function PdvScreen() {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [handleKeyDown])
 
+  const currentRegisterName = pdv.registers.find((r) => r.id === pdv.selectedRegisterId)?.name
+
+  if (!pdv.selectedRegisterId) {
+    return (
+      <div className="pdv-page pdv-login-page">
+        <div className="pdv-login-card">
+          {pdv.tenantLogo ? (
+            <div className="pdv-login-logo-wrap">
+              <img src={pdv.tenantLogo} alt="Logo" className="pdv-login-logo" />
+            </div>
+          ) : (
+            <Title level={3} style={{ marginBottom: 24, color: '#34495e' }}>PDV</Title>
+          )}
+          <Title level={5} style={{ marginBottom: 8, color: '#667085', fontWeight: 500 }}>Acessar caixa</Title>
+          <Text type="secondary" style={{ display: 'block', marginBottom: 24 }}>
+            Selecione o caixa e digite a senha para ver vendas e operar.
+          </Text>
+          {pdv.registers.length === 0 ? (
+            <Alert
+              type="info"
+              message="Nenhum PDV disponível"
+              description="Você não está vinculado a nenhum caixa. Peça ao administrador para atribuí-lo em Pontos de Venda."
+              showIcon
+              style={{ maxWidth: 360 }}
+            />
+          ) : (
+            <Form layout="vertical" style={{ maxWidth: 320 }} onFinish={() => pdv.submitPdvLogin()}>
+              {pdv.isRoot && (
+                <Form.Item label="Empresa">
+                  <Select
+                    placeholder="Empresa"
+                    options={pdv.tenants.map((t) => ({ value: t.id, label: t.name }))}
+                    value={pdv.selectedTenantId}
+                    onChange={pdv.setSelectedTenantId}
+                    style={{ width: '100%' }}
+                  />
+                </Form.Item>
+              )}
+              <Form.Item label="Caixa" required>
+                <Select
+                  placeholder="Selecione o caixa"
+                  options={pdv.registers.map((r) => ({ value: r.id, label: r.name }))}
+                  value={pdv.loginRegisterId || undefined}
+                  onChange={(id) => { pdv.setLoginRegisterId(id); pdv.setPdvPasswordValue('') }}
+                  style={{ width: '100%' }}
+                  allowClear={false}
+                />
+              </Form.Item>
+              <Form.Item
+                label="Senha do PDV"
+                required={pdv.registers.find((r) => r.id === (pdv.loginRegisterId || pdv.pendingRegisterId))?.hasAccessPassword}
+                extra={pdv.registers.find((r) => r.id === (pdv.loginRegisterId || pdv.pendingRegisterId))?.hasAccessPassword ? 'Obrigatória para este caixa.' : 'Deixe em branco se o caixa não tiver senha.'}
+              >
+                <Input.Password
+                  placeholder="Senha do caixa"
+                  value={pdv.pdvPasswordValue}
+                  onChange={(e) => pdv.setPdvPasswordValue(e.target.value)}
+                  onPressEnter={() => pdv.submitPdvLogin()}
+                  size="large"
+                  autoComplete="current-password"
+                />
+              </Form.Item>
+              <Form.Item>
+                <Button
+                  type="primary"
+                  size="large"
+                  block
+                  htmlType="submit"
+                  loading={pdv.loadingStartSession}
+                  disabled={!pdv.loginRegisterId && !pdv.pendingRegisterId}
+                >
+                  Entrar
+                </Button>
+              </Form.Item>
+            </Form>
+          )}
+          <div className="pdv-login-imei-wrap">
+            <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 6 }}>
+              IMEI deste equipamento (tablet/celular)
+            </Text>
+            <Space.Compact style={{ width: '100%', maxWidth: 320 }} className="pdv-login-imei-compact">
+              <Input
+                readOnly
+                value={getDeviceImei()}
+                className="pdv-login-imei-input"
+                size="large"
+                style={{ fontFamily: 'monospace', fontSize: 13 }}
+              />
+              <Button
+                type="default"
+                size="large"
+                icon={<CopyOutlined />}
+                onClick={() => {
+                  navigator.clipboard.writeText(getDeviceImei()).then(() => message.success('IMEI copiado.'))
+                }}
+              >
+                Copiar
+              </Button>
+            </Space.Compact>
+            <Text type="secondary" style={{ fontSize: 11, display: 'block', marginTop: 6 }}>
+              Use este código em Pontos de Venda → editar caixa → IMEI do equipamento, para vincular este dispositivo ao caixa.
+            </Text>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="pdv-page">
       <div className="pdv-main">
         <div className="pdv-header">
           <div className="pdv-header-left">
             {pdv.tenantLogo ? (
-              <img src={pdv.tenantLogo} alt="Logo" className="pdv-logo" />
+              <div className="pdv-logo-wrap">
+                <img src={pdv.tenantLogo} alt="Logo" className="pdv-logo" />
+              </div>
             ) : (
               <Title level={4} style={{ margin: 0, color: '#34495e' }}>PDV</Title>
             )}
@@ -124,28 +238,18 @@ export default function PdvScreen() {
                 style={{ minWidth: 180 }}
               />
             )}
-            <Select
-              placeholder="Iniciar PDV (selecionar caixa)"
-              allowClear
-              options={pdv.registers.map((r) => ({ value: r.id, label: r.name }))}
-              value={pdv.selectedRegisterId || undefined}
-              onChange={pdv.handleRegisterChange}
-              loading={pdv.loadingStartSession}
-              style={{ minWidth: 200, marginLeft: pdv.isRoot ? 12 : 0 }}
-            />
+            <Text strong style={{ marginLeft: pdv.isRoot ? 12 : 0 }}>{currentRegisterName || 'Caixa'}</Text>
           </div>
           <div className="pdv-header-right">
-            {pdv.selectedRegisterId && (
-              <Button
-                size="small"
-                icon={<LogoutOutlined />}
-                onClick={pdv.endSessionAndClear}
-                loading={pdv.loadingEndSession}
-                style={{ marginRight: 12 }}
-              >
-                Encerrar sessão
-              </Button>
-            )}
+            <Button
+              size="small"
+              icon={<LogoutOutlined />}
+              onClick={pdv.endSessionAndClear}
+              loading={pdv.loadingEndSession}
+              style={{ marginRight: 12 }}
+            >
+              Encerrar sessão
+            </Button>
             <Text type="secondary">{user?.fullName || user?.name || 'Atendente'}</Text>
             <Text type="secondary" style={{ marginLeft: 16 }}>{now.format('DD/MM/YYYY HH:mm:ss')}</Text>
           </div>
@@ -517,6 +621,24 @@ export default function PdvScreen() {
                 </div>
               )}
             </Card>
+            <Card size="small" className="pdv-card pdv-shortcuts-card" style={{ marginTop: 16 }} title="Atalhos de teclado">
+              <div className="pdv-shortcuts-grid">
+                <span className="pdv-shortcut-key">F5</span>
+                <span className="pdv-shortcut-desc">PIX</span>
+                <span className="pdv-shortcut-key">F6</span>
+                <span className="pdv-shortcut-desc">Dinheiro</span>
+                <span className="pdv-shortcut-key">F7</span>
+                <span className="pdv-shortcut-desc">Débito</span>
+                <span className="pdv-shortcut-key">F8</span>
+                <span className="pdv-shortcut-desc">Crédito</span>
+                <span className="pdv-shortcut-key">F9</span>
+                <span className="pdv-shortcut-desc">Finalizar venda</span>
+                <span className="pdv-shortcut-key">F10</span>
+                <span className="pdv-shortcut-desc">Cancelar último item</span>
+                <span className="pdv-shortcut-key">F11</span>
+                <span className="pdv-shortcut-desc">Cliente</span>
+              </div>
+            </Card>
           </Col>
         </Row>
       </div>
@@ -552,23 +674,51 @@ export default function PdvScreen() {
         )}
       </Modal>
 
-      <Modal title={<><CheckCircleOutlined style={{ color: '#52c41a', marginRight: 8 }} />Venda registrada!</>} open={pdv.successModalOpen} onCancel={pdv.closeSuccessModal} footer={null} width={400} centered>
+      <Modal
+        open={pdv.successModalOpen}
+        onCancel={pdv.closeSuccessModal}
+        footer={null}
+        width={420}
+        centered
+        closable={false}
+        className="pdv-success-modal"
+        styles={{ body: { padding: 0 } }}
+      >
         {pdv.lastSale && (
-          <div>
-            <p><strong>Venda {pdv.lastSale.saleNumber}</strong></p>
-            <p>{formatPrice(pdv.lastSale.total)}</p>
-            {pdv.lastDelivery && <p style={{ color: '#52c41a' }}>Entrega {pdv.lastDelivery.deliveryNumber} criada.</p>}
-            {pdv.lastSale?.status === 'OPEN' && (
-              <Alert type="info" message="Venda pendente" description="Adicione o pagamento em Consultar vendas para concluir e gerar cupom, NF-e ou comprovante." style={{ marginBottom: 12 }} showIcon />
-            )}
-            <Divider />
-            <Space direction="vertical" style={{ width: '100%' }} size={8}>
+          <div className="pdv-success-content">
+            <div className="pdv-success-header">
+              <Button
+                type="text"
+                icon={<CloseOutlined />}
+                onClick={pdv.closeSuccessModal}
+                className="pdv-success-close"
+                aria-label="Fechar"
+              />
+              <div className="pdv-success-icon">
+                <CheckCircleOutlined />
+              </div>
+              <h3 className="pdv-success-title">Venda registrada!</h3>
+            </div>
+            <div className="pdv-success-body">
+              <div className="pdv-success-number">{pdv.lastSale.saleNumber}</div>
+              <div className="pdv-success-total">{formatPrice(pdv.lastSale.total)}</div>
+              {pdv.lastDelivery && (
+                <div className="pdv-success-delivery">
+                  <CarOutlined /> Entrega {pdv.lastDelivery.deliveryNumber} criada.
+                </div>
+              )}
+              {pdv.lastSale?.status === 'OPEN' && (
+                <Alert type="info" message="Venda pendente" description="Adicione o pagamento em Consultar vendas para concluir e gerar cupom, NF-e ou comprovante." className="pdv-success-alert" showIcon />
+              )}
+            </div>
+            <Divider style={{ margin: '16px 0' }} />
+            <div className="pdv-success-actions">
               {pdv.lastSale.status !== 'OPEN' && pdv.lastSale.canEmitFiscalReceipt && <Button block icon={<FilePdfOutlined />} onClick={pdv.handleDownloadFiscal} loading={pdv.loadingFiscalReceipt}>Cupom fiscal (NFC-e)</Button>}
               {pdv.lastSale.status !== 'OPEN' && pdv.lastSale.canEmitNfe && <Button block icon={<FilePdfOutlined />} onClick={pdv.handleDownloadNfe} loading={pdv.loadingNfe}>NF-e (imprimir e salvar)</Button>}
               {pdv.lastSale.status !== 'OPEN' && pdv.lastSale.canEmitSimpleReceipt && <Button block icon={<FilePdfOutlined />} onClick={pdv.handleDownloadSimple} loading={pdv.loadingSimpleReceipt}>Comprovante</Button>}
               {pdv.lastDelivery && <Button block icon={<CarOutlined />} onClick={pdv.goToDeliveries}>Ir para Entregas</Button>}
-              <Button block onClick={pdv.closeSuccessModal}>Nova venda</Button>
-            </Space>
+              <Button type="primary" block size="large" onClick={pdv.closeSuccessModal} style={{ marginTop: 8 }}>Nova venda</Button>
+            </div>
           </div>
         )}
       </Modal>

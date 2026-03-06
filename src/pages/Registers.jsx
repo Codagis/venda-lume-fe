@@ -115,6 +115,8 @@ export default function Registers() {
       equipmentType: record.equipmentType,
       description: record.description || undefined,
       active: record.active !== false,
+      imei: record.imei || undefined,
+      accessPassword: undefined,
     })
     setDrawerOpen(true)
   }
@@ -130,6 +132,8 @@ export default function Registers() {
         equipmentType: values.equipmentType,
         description: values.description?.trim() || undefined,
         active: values.active,
+        imei: values.imei?.trim() || undefined,
+        accessPassword: values.accessPassword || undefined,
       }
       if (editingRegister) {
         await registerService.updateRegister(editingRegister.id, payload, isRoot ? effectiveTenantId : null)
@@ -231,6 +235,14 @@ export default function Registers() {
     { title: 'Nome', dataIndex: 'name', key: 'name', width: 140, render: (v) => v || '-' },
     { title: 'Código', dataIndex: 'code', key: 'code', width: 100, render: (v) => v || '-' },
     {
+      title: 'IMEI (equipamento)',
+      dataIndex: 'imei',
+      key: 'imei',
+      width: 180,
+      ellipsis: true,
+      render: (v) => (v ? (v.length > 20 ? `${v.slice(0, 10)}…${v.slice(-8)}` : v) : '-'),
+    },
+    {
       title: 'Equipamento',
       dataIndex: 'equipmentType',
       key: 'equipmentType',
@@ -238,6 +250,12 @@ export default function Registers() {
       render: (v) => EQUIPMENT_OPTIONS.find((o) => o.value === v)?.label ?? v,
     },
     { title: 'Descrição', dataIndex: 'description', key: 'description', ellipsis: true, render: (v) => v || '-' },
+    {
+      title: 'Senha PDV',
+      key: 'hasAccessPassword',
+      width: 90,
+      render: (_, r) => (r.hasAccessPassword ? <Tag color="blue">Sim</Tag> : '-'),
+    },
     {
       title: 'Ativo',
       dataIndex: 'active',
@@ -350,6 +368,12 @@ export default function Registers() {
           </Form.Item>
           <Form.Item name="equipmentType" label="Equipamento" rules={[{ required: true, message: 'Selecione o equipamento' }]}>
             <Select placeholder="Selecione" options={EQUIPMENT_OPTIONS} showSearch optionFilterProp="label" />
+          </Form.Item>
+          <Form.Item name="imei" label="IMEI do equipamento" extra="Código único do tablet/celular. No PDV, o app exibe esse código para você vincular aqui.">
+            <Input placeholder="Cole o IMEI exibido no equipamento (opcional)" />
+          </Form.Item>
+          <Form.Item name="accessPassword" label="Senha de acesso do PDV" extra="O operador precisará digitar esta senha para iniciar sessão neste caixa.">
+            <Input.Password placeholder="Deixe em branco para não exigir senha" autoComplete="new-password" />
           </Form.Item>
           <Form.Item name="description" label="Descrição ou observações">
             <Input.TextArea rows={2} placeholder="Ex: Balcão principal, loja 2" />
