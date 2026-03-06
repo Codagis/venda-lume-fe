@@ -12,8 +12,9 @@ import {
   Modal,
   Tag,
   Switch,
+  Dropdown,
 } from 'antd'
-import { DesktopOutlined, PlusOutlined, EditOutlined, UserOutlined, DeleteOutlined } from '@ant-design/icons'
+import { DesktopOutlined, PlusOutlined, EditOutlined, UserOutlined, DeleteOutlined, HistoryOutlined, MoreOutlined } from '@ant-design/icons'
 import { useAuth } from '../contexts/AuthContext'
 import * as tenantService from '../services/tenantService'
 import * as registerService from '../services/registerService'
@@ -44,6 +45,12 @@ export default function Registers() {
   const [operatorsForm] = Form.useForm()
   const [saving, setSaving] = useState(false)
   const [savingOperators, setSavingOperators] = useState(false)
+  const [sessionHistoryOpen, setSessionHistoryOpen] = useState(false)
+  const [registerForHistory, setRegisterForHistory] = useState(null)
+  const [sessions, setSessions] = useState([])
+  const [loadingSessions, setLoadingSessions] = useState(false)
+  const [sessionDetail, setSessionDetail] = useState(null)
+  const [loadingSessionDetail, setLoadingSessionDetail] = useState(false)
 
   const effectiveTenantId = isRoot ? selectedTenantId : user?.tenantId
 
@@ -187,6 +194,39 @@ export default function Registers() {
     }
   }
 
+  const openSessionHistory = async (record) => {
+    setRegisterForHistory(record)
+    setSessionHistoryOpen(true)
+    setSessions([])
+    setSessionDetail(null)
+    setLoadingSessions(true)
+    try {
+      const data = await registerService.listSessionsByRegister(record.id, isRoot ? effectiveTenantId : null)
+      setSessions(Array.isArray(data) ? data : [])
+    } catch (e) {
+      message.error(e?.message || 'Erro ao carregar histórico.')
+      setSessions([])
+    } finally {
+      setLoadingSessions(false)
+    }
+  }
+
+  const loadSessionDetail = async (sessionId) => {
+    setLoadingSessionDetail(true)
+    setSessionDetail(null)
+    try {
+      const data = await registerService.getSessionDetail(sessionId, isRoot ? effectiveTenantId : null)
+      setSessionDetail(data)
+    } catch (e) {
+      message.error(e?.message || 'Erro ao carregar detalhe.')
+    } finally {
+      setLoadingSessionDetail(false)
+    }
+  }
+
+  const formatDateTime = (v) => (v ? new Date(v).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : '-')
+  const formatCurrency = (v) => (v != null ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v) : '-')
+
   const columns = [
     { title: 'Nome', dataIndex: 'name', key: 'name', width: 140, render: (v) => v || '-' },
     { title: 'Código', dataIndex: 'code', key: 'code', width: 100, render: (v) => v || '-' },
@@ -206,27 +246,35 @@ export default function Registers() {
       render: (v) => (v !== false ? <Tag color="green">Sim</Tag> : <Tag color="default">Não</Tag>),
     },
     {
-      title: 'Operadores',
+      title: <span style={{ whiteSpace: 'nowrap' }}>Operadores</span>,
       key: 'operators',
-      width: 100,
-      render: (_, r) => (r.operators?.length ? `${r.operators.length} operador(es)` : '-'),
+      width: 110,
+      render: (_, r) => (
+        <span style={{ whiteSpace: 'nowrap' }}>
+          {r.operators?.length ? `${r.operators.length} operador(es)` : '-'}
+        </span>
+      ),
     },
     {
       title: '',
       key: 'actions',
-      width: 180,
+      width: 72,
+      align: 'center',
       render: (_, record) => (
-        <Space>
-          <Button type="link" size="small" icon={<EditOutlined />} onClick={() => openEdit(record)}>
-            Editar
-          </Button>
-          <Button type="link" size="small" icon={<UserOutlined />} onClick={() => openOperatorsDrawer(record)}>
-            Operadores
-          </Button>
-          <Button type="link" size="small" danger icon={<DeleteOutlined />} onClick={() => handleDelete(record)}>
-            Excluir
-          </Button>
-        </Space>
+        <Dropdown
+          menu={{
+            items: [
+              { key: 'edit', label: 'Editar', icon: <EditOutlined />, onClick: () => openEdit(record) },
+              { key: 'operators', label: 'Operadores', icon: <UserOutlined />, onClick: () => openOperatorsDrawer(record) },
+              { key: 'history', label: 'Histórico', icon: <HistoryOutlined />, onClick: () => openSessionHistory(record) },
+              { type: 'divider' },
+              { key: 'delete', label: 'Excluir', icon: <DeleteOutlined />, danger: true, onClick: () => handleDelete(record) },
+            ],
+          }}
+          trigger={['click']}
+        >
+          <Button type="text" size="small" icon={<MoreOutlined />} title="Ações" />
+        </Dropdown>
       ),
     },
   ]
@@ -342,6 +390,87 @@ export default function Registers() {
             />
           </Form.Item>
         </Form>
+      </Drawer>
+
+      <Drawer
+        title={`Histórico de sessões — ${registerForHistory?.name || ''}`}
+        open={sessionHistoryOpen}
+        onClose={() => { setSessionHistoryOpen(false); setSessionDetail(null) }}
+        width={Math.min(720, window.innerWidth * 0.9)}
+        destroyOnClose
+      >
+        <Table
+          rowKey="id"
+          size="small"
+          loading={loadingSessions}
+          dataSource={sessions}
+          pagination={{ pageSize: 10, showTotal: (t) => `${t} sessão(ões)` }}
+          columns={[
+            {
+              title: 'Abertura',
+              dataIndex: 'openedAt',
+              key: 'openedAt',
+              width: 140,
+              render: (v) => formatDateTime(v),
+            },
+            {
+              title: 'Fechamento',
+              dataIndex: 'closedAt',
+              key: 'closedAt',
+              width: 140,
+              render: (v) => (v ? formatDateTime(v) : 'Em aberto'),
+            },
+            { title: 'Operador', dataIndex: 'userFullName', key: 'userFullName', ellipsis: true, render: (v) => v || '-' },
+            { title: 'Vendas', dataIndex: 'salesCount', key: 'salesCount', width: 80, align: 'right' },
+            {
+              title: 'Total',
+              dataIndex: 'totalSales',
+              key: 'totalSales',
+              width: 110,
+              align: 'right',
+              render: (v) => formatCurrency(v),
+            },
+            {
+              title: '',
+              key: 'detail',
+              width: 90,
+              render: (_, row) => (
+                <Button type="link" size="small" onClick={() => loadSessionDetail(row.id)}>
+                  Ver vendas
+                </Button>
+              ),
+            },
+          ]}
+        />
+        {sessionDetail && (
+          <div style={{ marginTop: 24, paddingTop: 16, borderTop: '1px solid #f0f0f0' }}>
+            <h4 style={{ marginBottom: 12 }}>
+              Sessão: {formatDateTime(sessionDetail.openedAt)} — {sessionDetail.userFullName || sessionDetail.username || '-'}
+            </h4>
+            {loadingSessionDetail ? (
+              <p>Carregando vendas...</p>
+            ) : (
+              <Table
+                rowKey="id"
+                size="small"
+                dataSource={sessionDetail.sales || []}
+                pagination={false}
+                columns={[
+                  { title: 'Nº', dataIndex: 'saleNumber', key: 'saleNumber', width: 100 },
+                  {
+                    title: 'Data',
+                    dataIndex: 'saleDate',
+                    key: 'saleDate',
+                    width: 130,
+                    render: (v) => (v ? new Date(v).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : '-'),
+                  },
+                  { title: 'Status', dataIndex: 'status', key: 'status', width: 90 },
+                  { title: 'Total', dataIndex: 'total', key: 'total', width: 100, align: 'right', render: (v) => formatCurrency(v) },
+                ]}
+              />
+            )}
+          </div>
+        )}
       </Drawer>
     </div>
   )

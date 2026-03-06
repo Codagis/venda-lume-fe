@@ -4,7 +4,7 @@ import { useAuth } from './AuthContext'
 
 const ModulesContext = createContext(null)
 
-// Fallback para root quando API retorna vazio
+
 const DEFAULT_MODULES = [
   { code: 'DASHBOARD', name: 'Dashboard', icon: 'DashboardOutlined', route: '/', component: 'Dashboard', displayOrder: 0 },
   { code: 'PRODUCTS', name: 'Produtos', icon: 'ShoppingOutlined', route: '/products', component: 'Products', displayOrder: 10 },
@@ -38,7 +38,7 @@ export function ModulesProvider({ children }) {
     try {
       const data = await listModules()
       const list = data && data.length > 0 ? data : []
-      // Root vê tudo: se API retornar vazio mas user é root, usar fallback
+
       if (list.length === 0 && user?.isRoot === true) {
         setModules(DEFAULT_MODULES)
       } else {

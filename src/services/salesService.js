@@ -9,7 +9,6 @@ export const SALE_TYPE_OPTIONS = [
   { value: 'CATERING', label: 'Eventos' },
 ]
 
-/** Retorna o label em português do tipo de venda */
 export function getSaleTypeLabel(value) {
   if (!value) return '—'
   const opt = SALE_TYPE_OPTIONS.find((o) => o.value === value)
@@ -29,7 +28,6 @@ export const PAYMENT_METHOD_OPTIONS = [
   { value: 'OTHER', label: 'Outro' },
 ]
 
-/** Opções de forma de pagamento no PDV (sem Crédito/Fiado e sem Outro) */
 export const PAYMENT_METHOD_OPTIONS_PDV = PAYMENT_METHOD_OPTIONS.filter((o) => o.value !== 'CREDIT' && o.value !== 'OTHER')
 
 export async function createSale(data) {
@@ -51,10 +49,6 @@ export async function getSaleById(id) {
   return res.json()
 }
 
-/**
- * Atualiza apenas o código de autorização do cartão (venda com pagamento crédito/débito).
- * Alteração é auditada.
- */
 export async function updateSaleCardAuthorization(saleId, cardAuthorization) {
   const res = await apiFetch(`/sales/${saleId}/card-authorization`, {
     method: 'PATCH',
@@ -68,9 +62,6 @@ export async function updateSaleCardAuthorization(saleId, cardAuthorization) {
   return res.json()
 }
 
-/**
- * Adiciona o pagamento a uma venda pendente (status OPEN) e conclui a venda.
- */
 export async function addSalePayment(saleId, data) {
   const res = await apiFetch(`/sales/${saleId}/payment`, {
     method: 'PATCH',
@@ -95,9 +86,6 @@ export async function addSalePayment(saleId, data) {
   return res.json()
 }
 
-/**
- * Atualiza o cliente da venda (nome e CPF/CNPJ). Alteração é auditada.
- */
 export async function updateSaleCustomer(saleId, data) {
   const res = await apiFetch(`/sales/${saleId}/customer`, {
     method: 'PATCH',
@@ -115,9 +103,6 @@ export async function updateSaleCustomer(saleId, data) {
   return res.json()
 }
 
-/**
- * Lista registros de auditoria da venda (criação, cancelamento, emissão de nota etc.).
- */
 export async function getSaleAudit(saleId) {
   const res = await apiFetch(`/sales/${saleId}/audit`)
   if (!res.ok) throw new Error('Erro ao carregar auditoria da venda.')
@@ -162,9 +147,6 @@ export const SALE_STATUS_OPTIONS = [
   { value: 'CANCELLED', label: 'Cancelada' },
 ]
 
-/**
- * Emite NFC-e via Fiscal Simplify e faz download do PDF oficial da SEFAZ (cupom fiscal completo).
- */
 export async function downloadFiscalReceiptPdf(saleId, saleNumber = '') {
   const res = await apiFetch(`/sales/${saleId}/fiscal-receipt.pdf`)
   if (!res.ok) {
@@ -216,9 +198,6 @@ export async function downloadSimpleReceiptPdf(saleId, saleNumber = '') {
   URL.revokeObjectURL(url)
 }
 
-/**
- * Emite NF-e via Fiscal Simplify, grava na venda e faz download do PDF (DANFE).
- */
 export async function downloadNfePdf(saleId, saleNumber = '') {
   const res = await apiFetch(`/sales/${saleId}/nfe.pdf`)
   if (!res.ok) {
@@ -236,9 +215,6 @@ export async function downloadNfePdf(saleId, saleNumber = '') {
   URL.revokeObjectURL(url)
 }
 
-/**
- * Exporta relatório de vendas em Excel (XLS) conforme filtros aplicados.
- */
 export async function downloadSalesReportExcel(filter = {}) {
   let url = '/sales/report/excel'
   if (filter.tenantId != null && filter.tenantId !== '') {
@@ -265,9 +241,6 @@ export async function downloadSalesReportExcel(filter = {}) {
   URL.revokeObjectURL(urlObj)
 }
 
-/**
- * Exporta relatório de vendas em PDF conforme filtros aplicados.
- */
 export async function downloadSalesReportPdf(filter = {}) {
   let url = '/sales/report/pdf'
   if (filter.tenantId != null && filter.tenantId !== '') {

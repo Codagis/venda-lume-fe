@@ -1,11 +1,5 @@
 import { apiFetch } from './api'
 
-/**
- * Obtém análise de vendas e estratégias.
- * @param {string|null} tenantId - ID do tenant (root)
- * @param {string} [startDate] - Data inicial YYYY-MM-DD
- * @param {string} [endDate] - Data final YYYY-MM-DD
- */
 export async function getSalesAnalytics(tenantId = null, startDate = null, endDate = null) {
   const params = new URLSearchParams()
   if (tenantId) params.append('tenantId', tenantId)

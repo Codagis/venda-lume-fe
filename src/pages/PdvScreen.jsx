@@ -31,6 +31,7 @@ import {
   CheckCircleOutlined,
   CarOutlined,
   ShoppingCartOutlined,
+  LogoutOutlined,
 } from '@ant-design/icons'
 import dayjs from 'dayjs'
 import { useAuth } from '../contexts/AuthContext'
@@ -107,7 +108,6 @@ export default function PdvScreen() {
   return (
     <div className="pdv-page">
       <div className="pdv-main">
-        {/* Header */}
         <div className="pdv-header">
           <div className="pdv-header-left">
             {pdv.tenantLogo ? (
@@ -124,15 +124,34 @@ export default function PdvScreen() {
                 style={{ minWidth: 180 }}
               />
             )}
+            <Select
+              placeholder="Iniciar PDV (selecionar caixa)"
+              allowClear
+              options={pdv.registers.map((r) => ({ value: r.id, label: r.name }))}
+              value={pdv.selectedRegisterId || undefined}
+              onChange={pdv.handleRegisterChange}
+              loading={pdv.loadingStartSession}
+              style={{ minWidth: 200, marginLeft: pdv.isRoot ? 12 : 0 }}
+            />
           </div>
           <div className="pdv-header-right">
+            {pdv.selectedRegisterId && (
+              <Button
+                size="small"
+                icon={<LogoutOutlined />}
+                onClick={pdv.endSessionAndClear}
+                loading={pdv.loadingEndSession}
+                style={{ marginRight: 12 }}
+              >
+                Encerrar sessão
+              </Button>
+            )}
             <Text type="secondary">{user?.fullName || user?.name || 'Atendente'}</Text>
             <Text type="secondary" style={{ marginLeft: 16 }}>{now.format('DD/MM/YYYY HH:mm:ss')}</Text>
           </div>
         </div>
 
         <Row gutter={16} align="top">
-          {/* Coluna esquerda: Busca + Pagamento + Cliente + Observações */}
           <Col xs={24} lg={10} xl={8}>
             <div className="pdv-search-wrap">
               <Input
@@ -460,7 +479,6 @@ export default function PdvScreen() {
             </Card>
           </Col>
 
-          {/* Coluna direita: Produtos do carrinho */}
           <Col xs={24} lg={14} xl={16} className="pdv-produtos-col">
             <Card title="Produtos" size="small" className="pdv-card pdv-cart-card">
               {pdv.cart.length === 0 ? (

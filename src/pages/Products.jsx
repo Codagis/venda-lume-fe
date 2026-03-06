@@ -183,7 +183,7 @@ export default function Products() {
     if (isRoot) loadTenants()
   }, [isRoot, loadTenants])
 
-  // Consulta só é aplicada ao clicar em Filtrar (não auto-load)
+
 
   const openDrawer = (product = null) => {
     setEditingId(product?.id ?? null)

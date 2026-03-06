@@ -1,25 +1,34 @@
-import { createContext, useContext, useState, useCallback } from 'react'
-import { login as apiLogin } from '../services/api'
+import { createContext, useContext, useState, useCallback, useEffect } from 'react'
+import { login as apiLogin, fetchMe, logoutApi } from '../services/api'
 
 const AuthContext = createContext(null)
 
-const ACCESS_TOKEN_KEY = 'vendalume_access_token'
-const REFRESH_TOKEN_KEY = 'vendalume_refresh_token'
-const USER_KEY = 'vendalume_user'
-
 export function AuthProvider({ children }) {
-  const [isAuthenticated, setIsAuthenticated] = useState(() => {
-    return Boolean(sessionStorage.getItem(ACCESS_TOKEN_KEY))
-  })
+  const [loading, setLoading] = useState(true)
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [user, setUser] = useState(null)
 
-  const [user, setUser] = useState(() => {
+  const loadSession = useCallback(async () => {
     try {
-      const stored = sessionStorage.getItem(USER_KEY)
-      return stored ? JSON.parse(stored) : null
+      const me = await fetchMe()
+      if (me) {
+        setUser(me)
+        setIsAuthenticated(true)
+      } else {
+        setUser(null)
+        setIsAuthenticated(false)
+      }
     } catch {
-      return null
+      setUser(null)
+      setIsAuthenticated(false)
+    } finally {
+      setLoading(false)
     }
-  })
+  }, [])
+
+  useEffect(() => {
+    loadSession()
+  }, [loadSession])
 
   const login = useCallback(async (credentials) => {
     const { username, password } = credentials
@@ -28,26 +37,31 @@ export function AuthProvider({ children }) {
     }
 
     const response = await apiLogin(username.trim(), password)
-
-    sessionStorage.setItem(ACCESS_TOKEN_KEY, response.access_token)
-    sessionStorage.setItem(REFRESH_TOKEN_KEY, response.refresh_token)
     if (response.user) {
-      sessionStorage.setItem(USER_KEY, JSON.stringify(response.user))
       setUser(response.user)
     }
     setIsAuthenticated(true)
   }, [])
 
-  const logout = useCallback(() => {
-    sessionStorage.removeItem(ACCESS_TOKEN_KEY)
-    sessionStorage.removeItem(REFRESH_TOKEN_KEY)
-    sessionStorage.removeItem(USER_KEY)
+  const logout = useCallback(async () => {
+    try {
+      await logoutApi()
+    } catch (_) {}
     setUser(null)
     setIsAuthenticated(false)
   }, [])
 
+  const value = {
+    isAuthenticated,
+    user,
+    login,
+    logout,
+    loading,
+    refreshUser: loadSession,
+  }
+
   return (
-    <AuthContext.Provider value={{ isAuthenticated, user, login, logout }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   )

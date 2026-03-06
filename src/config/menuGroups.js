@@ -1,11 +1,3 @@
-/**
- * Grupos do menu lateral. Cada grupo pode ser:
- * - item único (route direto) ex: Dashboard
- * - submenu com children (módulos agrupados)
- *
- * A ordem dos grupos define a ordem no menu.
- * Cada moduleCode deve existir nos módulos retornados pela API (permissão do usuário).
- */
 export const MENU_GROUPS = [
   {
     type: 'item',

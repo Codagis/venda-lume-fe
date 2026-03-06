@@ -171,7 +171,6 @@
   background: #f9fafb !important;
 }
 
-/* Minhas Entregas: coluna de ações com mais padding para afastar da borda da tabela */
 .my-deliveries-actions-col.ant-table-cell {
   padding: 16px 40px 16px 32px !important;
 }

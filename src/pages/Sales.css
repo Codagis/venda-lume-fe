@@ -1,4 +1,3 @@
-/* ===== Sales Page - Layout Profissional ===== */
 .sales-page {
   height: 100%;
   min-height: 0;
@@ -21,7 +20,6 @@
   margin: 0 auto;
 }
 
-/* ===== Header ===== */
 .sales-header {
   background: #fff;
   border-radius: 12px;
@@ -63,7 +61,6 @@
   border-radius: 8px !important;
 }
 
-/* ===== Search Bar ===== */
 .sales-search-bar {
   display: flex;
   gap: 12px;
@@ -99,7 +96,6 @@
   border-radius: 10px !important;
 }
 
-/* ===== Product Results ===== */
 .sales-results-card {
   margin-bottom: 24px;
   border-radius: 12px;
@@ -172,7 +168,6 @@
   width: 100%;
 }
 
-/* ===== Empty State ===== */
 .sales-empty-state {
   text-align: center;
   padding: 64px 32px !important;
@@ -201,7 +196,6 @@
   line-height: 1.6;
 }
 
-/* ===== Cart ===== */
 .sales-content {
   margin-bottom: 24px;
 }
@@ -300,7 +294,6 @@
   text-align: right;
 }
 
-/* ===== Payment Form (Collapse) ===== */
 .sales-collapse-label {
   font-weight: 500;
 }
@@ -337,7 +330,6 @@
   font-size: 14px !important;
 }
 
-/* ===== Totals ===== */
 .sales-totals-box {
   background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
   border: 1px solid #bbf7d0;
@@ -372,7 +364,6 @@
   font-weight: 600;
 }
 
-/* ===== Finish Button ===== */
 .sales-finish-btn {
   width: 100%;
   height: 48px;
@@ -381,7 +372,6 @@
   border-radius: 10px;
 }
 
-/* ===== Customer Modal ===== */
 .sales-customer-results {
   max-height: 280px;
   overflow-y: auto;
@@ -415,7 +405,6 @@
   margin-top: 4px;
 }
 
-/* ===== Success Modal ===== */
 .sales-success-modal {
   padding: 8px 0;
 }
@@ -432,7 +421,6 @@
   margin: 0;
 }
 
-/* Responsive */
 @media (max-width: 576px) {
   .sales-main {
     padding: 16px;
@@ -468,7 +456,6 @@
   }
 }
 
-/* ===== Área CTA - Abrir tela PDV ===== */
 .sales-pdv-cta-card {
   max-width: 520px;
   margin: 0 auto;
@@ -541,7 +528,6 @@
   color: #3b82f6;
 }
 
-/* ===== Fullscreen PDV overlay ===== */
 .sales-pdv-fullscreen {
   position: fixed;
   inset: 0;

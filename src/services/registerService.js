@@ -65,3 +65,45 @@ export async function listCashiers(tenantId = null) {
   if (!res.ok) throw new Error('Erro ao listar operadores de caixa.')
   return res.json()
 }
+
+export async function startSession(registerId, tenantId = null) {
+  const url = tenantId
+    ? `/registers/${registerId}/session/start?tenantId=${encodeURIComponent(tenantId)}`
+    : `/registers/${registerId}/session/start`
+  const res = await apiFetch(url, { method: 'POST' })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err?.message || err?.error || 'Erro ao iniciar sessão do PDV.')
+  }
+  return res.json()
+}
+
+export async function endSession(registerId, tenantId = null) {
+  const url = tenantId
+    ? `/registers/${registerId}/session/end?tenantId=${encodeURIComponent(tenantId)}`
+    : `/registers/${registerId}/session/end`
+  const res = await apiFetch(url, { method: 'POST' })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err?.message || err?.error || 'Erro ao encerrar sessão do PDV.')
+  }
+  return res.json()
+}
+
+export async function listSessionsByRegister(registerId, tenantId = null) {
+  const url = tenantId
+    ? `/registers/${registerId}/sessions?tenantId=${encodeURIComponent(tenantId)}`
+    : `/registers/${registerId}/sessions`
+  const res = await apiFetch(url)
+  if (!res.ok) throw new Error('Erro ao listar histórico de sessões.')
+  return res.json()
+}
+
+export async function getSessionDetail(sessionId, tenantId = null) {
+  const url = tenantId
+    ? `/registers/sessions/${sessionId}?tenantId=${encodeURIComponent(tenantId)}`
+    : `/registers/sessions/${sessionId}`
+  const res = await apiFetch(url)
+  if (!res.ok) throw new Error('Sessão não encontrada.')
+  return res.json()
+}

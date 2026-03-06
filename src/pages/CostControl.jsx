@@ -203,7 +203,7 @@ export default function CostControl() {
     loadCustomers()
   }, [loadSuppliers, loadCustomers])
 
-  // Consulta só é aplicada ao clicar em Filtrar (não auto-load)
+
 
   const payablesStats = {
     total: payables.reduce((s, p) => s + Number(p.amount ?? 0), 0),

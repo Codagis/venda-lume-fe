@@ -1,6 +1,5 @@
 import { apiFetch } from './api'
 
-// --- Contas a Pagar ---
 export async function createPayable(data) {
   const res = await apiFetch('/cost-control/payables', {
     method: 'POST',
@@ -68,7 +67,6 @@ export async function deletePayable(id) {
   }
 }
 
-// --- Contas a Receber ---
 export async function createReceivable(data) {
   const res = await apiFetch('/cost-control/receivables', {
     method: 'POST',
@@ -135,8 +133,6 @@ export async function deleteReceivable(id) {
     throw new Error(typeof msg === 'string' ? msg : msg)
   }
 }
-
-// --- Relatórios (Excel/PDF) ---
 
 function buildReportUrl(path, tenantId) {
   let url = `/cost-control${path}`

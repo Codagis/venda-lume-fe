@@ -13,6 +13,7 @@ import * as tenantService from '../services/tenantService'
 import * as cardMachineService from '../services/cardMachineService'
 import * as customerService from '../services/customerService'
 import * as deliveryService from '../services/deliveryService'
+import * as registerService from '../services/registerService'
 import dayjs from 'dayjs'
 
 export function useSalesPDV() {
@@ -73,6 +74,10 @@ export function useSalesPDV() {
   const [loadingSimpleReceipt, setLoadingSimpleReceipt] = useState(false)
   const [loadingNfe, setLoadingNfe] = useState(false)
   const [tenantLogo, setTenantLogo] = useState(null)
+  const [registers, setRegisters] = useState([])
+  const [selectedRegisterId, setSelectedRegisterId] = useState(null)
+  const [loadingStartSession, setLoadingStartSession] = useState(false)
+  const [loadingEndSession, setLoadingEndSession] = useState(false)
 
   const searchInputRef = useRef(null)
   const effectiveTenantId = isRoot ? selectedTenantId : user?.tenantId
@@ -116,6 +121,63 @@ export function useSalesPDV() {
   }, [productSearch, searchProduct])
 
   useEffect(() => { if (isRoot) loadTenants() }, [isRoot, loadTenants])
+
+  const loadRegisters = useCallback(async () => {
+    if (!effectiveTenantId) { setRegisters([]); return }
+    try {
+      const data = await registerService.listRegisters(isRoot ? effectiveTenantId : null, true)
+      setRegisters(Array.isArray(data) ? data : [])
+    } catch {
+      setRegisters([])
+    }
+  }, [effectiveTenantId, isRoot])
+
+  useEffect(() => { loadRegisters() }, [loadRegisters])
+
+  const handleRegisterChange = useCallback(async (registerId) => {
+    if (selectedRegisterId && selectedRegisterId !== registerId) {
+      setLoadingEndSession(true)
+      try {
+        await registerService.endSession(selectedRegisterId, isRoot ? effectiveTenantId : null)
+        message.success('Sessão encerrada.')
+      } catch (e) {
+        message.error(e?.message || 'Erro ao encerrar sessão.')
+        setLoadingEndSession(false)
+        return
+      } finally {
+        setLoadingEndSession(false)
+      }
+    }
+    if (!registerId) {
+      setSelectedRegisterId(null)
+      return
+    }
+    setLoadingStartSession(true)
+    try {
+      await registerService.startSession(registerId, isRoot ? effectiveTenantId : null)
+      message.success('Sessão do PDV iniciada.')
+      setSelectedRegisterId(registerId)
+    } catch (e) {
+      message.error(e?.message || 'Erro ao iniciar sessão.')
+      setSelectedRegisterId(null)
+    } finally {
+      setLoadingStartSession(false)
+    }
+  }, [selectedRegisterId, effectiveTenantId, isRoot])
+
+  const endSessionAndClear = useCallback(async () => {
+    if (!selectedRegisterId) return
+    setLoadingEndSession(true)
+    try {
+      await registerService.endSession(selectedRegisterId, isRoot ? effectiveTenantId : null)
+      message.success('Sessão encerrada.')
+      setSelectedRegisterId(null)
+    } catch (e) {
+      message.error(e?.message || 'Erro ao encerrar sessão.')
+    } finally {
+      setLoadingEndSession(false)
+    }
+  }, [selectedRegisterId, effectiveTenantId, isRoot])
 
   useEffect(() => {
     if (!effectiveTenantId) {
@@ -403,6 +465,7 @@ export function useSalesPDV() {
         }
       }
       if (isRoot && effectiveTenantId) payload.tenantId = effectiveTenantId
+      if (selectedRegisterId) payload.registerId = selectedRegisterId
       const sale = await createSale(payload)
       setLastSale(sale)
       setLastDelivery(null)
@@ -427,7 +490,7 @@ export function useSalesPDV() {
     } finally {
       setSubmitting(false)
     }
-  }, [cart, saleType, saleStatus, saleDiscount, discountPercent, discountAmount, deliveryFee, paymentMethod, amountReceived, totalAPagar, total, customerName, customerDocument, notes, includeCpfOnNote, selectedCustomer, deliveryAddress, deliveryComplement, deliveryZipCode, deliveryNeighborhood, deliveryCity, deliveryState, installmentsCount, selectedCardMachineId, cardBrand, cardAuthorization, cardIntegrationType, deliveryPriority, deliveryInstructions, deliveryScheduledAt, createDeliveryWithSale, effectiveTenantId, isRoot, resetForm])
+  }, [cart, saleType, saleStatus, saleDiscount, discountPercent, discountAmount, deliveryFee, paymentMethod, amountReceived, totalAPagar, total, customerName, customerDocument, notes, includeCpfOnNote, selectedCustomer, deliveryAddress, deliveryComplement, deliveryZipCode, deliveryNeighborhood, deliveryCity, deliveryState, installmentsCount, selectedCardMachineId, cardBrand, cardAuthorization, cardIntegrationType, deliveryPriority, deliveryInstructions, deliveryScheduledAt, createDeliveryWithSale, effectiveTenantId, isRoot, resetForm, selectedRegisterId])
 
   const handleDownloadFiscal = useCallback(async () => {
     if (!lastSale?.id) return
@@ -508,6 +571,12 @@ export function useSalesPDV() {
     tenantLogo,
     selectedTenantId,
     setSelectedTenantId,
+    registers,
+    selectedRegisterId,
+    handleRegisterChange,
+    endSessionAndClear,
+    loadingStartSession,
+    loadingEndSession,
     productSearch,
     setProductSearch,
     productResults,

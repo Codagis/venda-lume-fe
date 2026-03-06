@@ -47,10 +47,6 @@ export async function getDeliveryById(id) {
   return res.json()
 }
 
-/**
- * Obtém dados do mapa OSM (Leaflet + OpenStreetMap). 100% gratuito.
- * @returns {Promise<{originLat, originLon, destLat, destLon, originAddress, destAddress, distanceText, byFoot, byBike, byCar}>}
- */
 export async function getDeliveryMapOsm(id) {
   const res = await apiFetch(`/deliveries/${id}/map-osm`)
   if (!res.ok) throw new Error('Erro ao obter mapa.')

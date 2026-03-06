@@ -411,14 +411,14 @@ export default function RestaurantTables() {
 
   useEffect(() => {
     if (activeTab === 'sections') {
-      // Seções: consulta só ao clicar em Filtrar (não auto-load)
+
     } else if (activeTab === 'map') {
-      loadSections(false) // carrega todas para o dropdown da seção no mapa
+      loadSections(false)
       loadTables()
       loadOpenOrders()
       loadReservationsForMap()
     }
-    // Mesas e Reservas: consulta só ao clicar em Filtrar (não auto-load)
+
   }, [activeTab, loadSections, loadTables, loadOpenOrders, loadReservationsForMap])
 
   const openSectionDrawer = (section = null) => {

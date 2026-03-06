@@ -177,7 +177,7 @@ export default function Deliveries() {
     if (isRoot) loadTenants()
   }, [isRoot])
 
-  // Consulta só é aplicada ao clicar em Filtrar (não auto-load)
+
 
   useEffect(() => {
     if (effectiveTenantId !== undefined) loadDeliveryPersons()

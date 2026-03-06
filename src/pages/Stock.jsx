@@ -116,7 +116,7 @@ export default function Stock() {
     if (isRoot) loadTenants()
   }, [isRoot, loadTenants])
 
-  // Consulta só é aplicada ao clicar em Filtrar (não auto-load)
+
 
   const openMovementDrawer = (product, type = 'MANUAL_ENTRY') => {
     setMovementProduct(product)

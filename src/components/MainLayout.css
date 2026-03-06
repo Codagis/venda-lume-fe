@@ -66,7 +66,6 @@
   color: #34495e;
 }
 
-/* Botão fechar menu (dentro do sider) */
 .main-layout-toggle {
   flex-shrink: 0;
   display: inline-flex !important;
@@ -126,7 +125,6 @@
   min-width: 100px;
 }
 
-/* Botão abrir menu (no header quando menu está fechado) */
 .main-layout-open-btn {
   display: inline-flex !important;
   align-items: center;
@@ -155,7 +153,6 @@
   box-shadow: 0 2px 4px rgba(22, 119, 255, 0.15);
 }
 
-/* Menu no estilo Ant Design: limpo, barra de seleção à esquerda, hover suave */
 .main-layout-menu.ant-menu {
   height: 100%;
   padding: 8px 0;
@@ -183,7 +180,6 @@
   border-radius: 6px;
 }
 
-/* Hover: mesmo azul do item selecionado */
 .main-layout-menu .ant-menu-item:not(.ant-menu-item-selected):hover,
 .main-layout-menu .ant-menu-submenu-title:hover {
   background: rgba(22, 119, 255, 0.1) !important;
@@ -243,7 +239,6 @@
   border-radius: 0 2px 2px 0;
 }
 
-/* Selecionado: barra à esquerda + fundo primary suave (estilo Ant Design) */
 .main-layout-menu .ant-menu-item-selected {
   background: rgba(22, 119, 255, 0.1) !important;
   color: #1677ff !important;
@@ -291,12 +286,10 @@
   border-radius: 0 2px 2px 0;
 }
 
-/* Submenu expandido */
 .main-layout-menu .ant-menu-submenu-open > .ant-menu-submenu-title {
   color: rgba(0, 0, 0, 0.88);
 }
 
-/* Ícones com espaçamento e cor alinhada ao texto */
 .main-layout-menu .ant-menu-item .anticon,
 .main-layout-menu .ant-menu-submenu-title .anticon {
   font-size: 16px;
@@ -312,9 +305,7 @@
   color: #667085;
 }
 
-/* Botão Sair: mesmo estilo do botão Abrir menu */
 .main-layout-logout {
-  /* herda .main-layout-open-btn: borda, fundo, altura, padding, etc. */
 }
 
 .main-layout-content {

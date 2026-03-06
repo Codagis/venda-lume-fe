@@ -106,7 +106,6 @@
   margin-top: 24px;
 }
 
-/* Override Ant Design theme for login page */
 .login-page .ant-form-item-explain-error {
   font-size: 12px;
 }

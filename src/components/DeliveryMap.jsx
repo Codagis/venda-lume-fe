@@ -3,7 +3,6 @@ import { getDeliveryMapOsm } from '../services/deliveryService'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 
-// Corrige ícone padrão do Leaflet (quebra com Vite/React)
 delete L.Icon.Default.prototype._getIconUrl
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
@@ -11,10 +10,6 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
 })
 
-/**
- * Exibe o endereço da entrega no mapa usando Leaflet + OpenStreetMap.
- * Usa o endpoint /map-osm da API (Nominatim + OSRM) - 100% gratuito.
- */
 export default function DeliveryMap({ delivery }) {
   const [osmData, setOsmData] = useState(null)
   const [loading, setLoading] = useState(false)

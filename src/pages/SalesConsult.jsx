@@ -195,7 +195,7 @@ export default function SalesConsult() {
     if (isRoot) loadTenants()
   }, [isRoot, loadTenants])
 
-  // Consulta só é aplicada ao clicar em Filtrar (não auto-load)
+
 
   useEffect(() => {
     if (selectedSale?.status === 'OPEN') {
@@ -568,7 +568,6 @@ export default function SalesConsult() {
       >
         {selectedSale && (
           <div className="sale-detail-sections">
-            {/* Seção: Dados da venda */}
             <Card size="small" className="sale-detail-section" title="Dados da venda">
               <Descriptions column={1} bordered size="small">
                 <Descriptions.Item label="Data">
@@ -586,7 +585,6 @@ export default function SalesConsult() {
               </Descriptions>
             </Card>
 
-            {/* Seção: Cliente */}
             <Card size="small" className="sale-detail-section" title="Cliente">
               <Descriptions column={1} bordered size="small">
                 <Descriptions.Item label="Nome">{selectedSale.customerName || '—'}</Descriptions.Item>
@@ -602,7 +600,6 @@ export default function SalesConsult() {
               </Descriptions>
             </Card>
 
-            {/* Alterar cliente da venda (auditado) */}
             {selectedSale.status !== 'CANCELLED' && (
               <Card size="small" className="sale-detail-section" title="Alterar cliente da venda">
                 <Space direction="vertical" style={{ width: '100%' }} size={8}>
@@ -651,7 +648,6 @@ export default function SalesConsult() {
               </Card>
             )}
 
-            {/* Seção: Valores */}
             <Card size="small" className="sale-detail-section" title="Valores e pagamento">
               <Descriptions column={1} bordered size="small">
                 <Descriptions.Item label="Subtotal">{formatPrice(selectedSale.subtotal)}</Descriptions.Item>
@@ -682,7 +678,6 @@ export default function SalesConsult() {
               </Descriptions>
             </Card>
 
-            {/* Botão para abrir modal de adicionar pagamento (vendas pendentes) */}
             {selectedSale.status === 'OPEN' && (
               <Card size="small" className="sale-detail-section">
                 <Button type="primary" block size="large" onClick={() => setAddPaymentModalOpen(true)}>
@@ -691,7 +686,6 @@ export default function SalesConsult() {
               </Card>
             )}
 
-            {/* Modal Adicionar pagamento */}
             <Modal
               title="Adicionar pagamento"
               open={addPaymentModalOpen}
@@ -914,7 +908,6 @@ export default function SalesConsult() {
               })()}
             </Modal>
 
-            {/* Editar código de autorização (somente cartão) */}
             {(selectedSale.paymentMethod === 'CREDIT_CARD' || selectedSale.paymentMethod === 'DEBIT_CARD') && selectedSale.status !== 'CANCELLED' && (
               <Card size="small" className="sale-detail-section" title="Código de autorização do cartão">
                 <Space.Compact style={{ width: '100%' }}>
@@ -953,7 +946,6 @@ export default function SalesConsult() {
               </Card>
             )}
 
-            {/* Seção: Itens */}
             {selectedSale.items?.length > 0 && (
               <Card size="small" className="sale-detail-section" title="Itens da venda">
                 <Table
@@ -971,7 +963,6 @@ export default function SalesConsult() {
               </Card>
             )}
 
-            {/* Seção: Entrega (quando houver) */}
             {(selectedSale.deliveryAddress || selectedSale.deliveryFee > 0) && (
               <Card size="small" className="sale-detail-section" title="Entrega">
                 {selectedSale.deliveryAddress && (
@@ -983,7 +974,6 @@ export default function SalesConsult() {
               </Card>
             )}
 
-            {/* Observações */}
             {selectedSale.notes && (
               <Card size="small" className="sale-detail-section" title="Observações">
                 <p style={{ margin: 0, fontSize: 13, whiteSpace: 'pre-wrap' }}>{selectedSale.notes}</p>
@@ -1000,7 +990,6 @@ export default function SalesConsult() {
               />
             )}
 
-            {/* Seção: Auditoria */}
             <Card
               size="small"
               className="sale-detail-section"
@@ -1045,7 +1034,6 @@ export default function SalesConsult() {
 
             <Divider style={{ margin: '16px 0' }} />
 
-            {/* Ações */}
             <Card size="small" className="sale-detail-section sale-detail-actions" title="Ações">
               <div className="sale-detail-actions-grid">
                 {selectedSale.canEmitFiscalReceipt && (

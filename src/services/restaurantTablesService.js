@@ -1,6 +1,6 @@
 import { apiFetch } from './api'
 
-// ---------- Seções ----------
+
 export async function createSection(data) {
   const res = await apiFetch('/tables/sections', {
     method: 'POST',
@@ -60,7 +60,6 @@ export async function deleteSection(id) {
   }
 }
 
-// ---------- Mesas ----------
 export async function createTable(data) {
   const res = await apiFetch('/tables', {
     method: 'POST',
@@ -120,7 +119,7 @@ export async function deleteTable(id) {
   }
 }
 
-// ---------- Reservas ----------
+
 export async function createReservation(data) {
   const res = await apiFetch('/reservations', {
     method: 'POST',
