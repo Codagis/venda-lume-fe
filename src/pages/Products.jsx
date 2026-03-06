@@ -19,7 +19,6 @@ import {
   Popconfirm,
   Tooltip,
   Alert,
-  Descriptions,
   Tag,
 } from 'antd'
 import {
@@ -39,6 +38,9 @@ import {
   WarningOutlined,
   EditOutlined,
   EyeOutlined,
+  FileTextOutlined,
+  ClockCircleOutlined,
+  IdcardOutlined,
 } from '@ant-design/icons'
 import { useAuth } from '../contexts/AuthContext'
 import {
@@ -356,63 +358,94 @@ export default function Products() {
     {
       title: 'Foto',
       key: 'image',
-      width: 100,
+      width: 88,
+      align: 'center',
+      fixed: 'left',
       render: (_, record) =>
         record.imageUrl ? (
-          <img
-            src={record.imageUrl}
-            alt=""
-            style={{ width: 72, height: 72, objectFit: 'cover', borderRadius: 8 }}
-          />
+          <img src={record.imageUrl} alt="" className="products-table-img" />
         ) : (
-          <div style={{ width: 72, height: 72, background: '#f0f0f0', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#999', fontSize: 10 }}>—</div>
+          <div className="products-table-img-placeholder">—</div>
         ),
     },
     {
-      title: 'Código de barras',
-      key: 'barcode',
-      width: 140,
+      title: 'Códigos',
+      key: 'codes',
+      width: 200,
       render: (_, record) => (
-        <div className="products-table-barcode">
-          <div className="products-table-barcode-icon">
-            <BarcodeOutlined />
-          </div>
-          <div className="products-table-barcode-value">
-            {record.barcode || '—'}
-          </div>
+        <div className="products-table-codes">
+          <div className="products-table-sku">{record.sku || '—'}</div>
+          {record.barcode && (
+            <div className="products-table-barcode-value">
+              <BarcodeOutlined style={{ marginRight: 4, fontSize: 12 }} />
+              {record.barcode}
+            </div>
+          )}
+          {record.internalCode && (
+            <div className="products-table-internal">Cód. {record.internalCode}</div>
+          )}
         </div>
       ),
     },
     {
-      title: 'SKU',
-      dataIndex: 'sku',
-      key: 'sku',
-      width: 110,
-      ellipsis: true,
-    },
-    {
-      title: 'Nome',
+      title: 'Produto',
       dataIndex: 'name',
       key: 'name',
       ellipsis: true,
+      minWidth: 180,
+      render: (name, record) => (
+        <div className="products-table-name-cell">
+          <span className="products-table-name">{name || '—'}</span>
+          {record.shortDescription && (
+            <span className="products-table-short-desc">{record.shortDescription}</span>
+          )}
+        </div>
+      ),
+    },
+    {
+      title: 'Marca',
+      dataIndex: 'brand',
+      key: 'brand',
+      width: 110,
+      ellipsis: true,
+      render: (v) => v || '—',
     },
     {
       title: 'Preço',
       key: 'unitPrice',
       width: 100,
-      render: (_, r) => formatPrice(r.unitPrice),
+      align: 'right',
+      render: (_, r) => (
+        <div className="products-table-price">
+          <span className="products-table-price-main">{formatPrice(r.unitPrice)}</span>
+          {r.discountPrice != null && Number(r.discountPrice) > 0 && Number(r.discountPrice) !== Number(r.unitPrice) && (
+            <span className="products-table-price-promo">{formatPrice(r.discountPrice)} promocional</span>
+          )}
+        </div>
+      ),
     },
     {
-      title: 'Un.',
+      title: 'Custo',
+      key: 'costPrice',
+      width: 95,
+      align: 'right',
+      render: (_, r) => (
+        <span className="products-table-cost">{r.costPrice != null ? formatPrice(r.costPrice) : '—'}</span>
+      ),
+    },
+    {
+      title: 'Unidade',
       dataIndex: 'unitOfMeasure',
       key: 'unitOfMeasure',
-      width: 70,
-      render: (u) => formatUnit(u),
+      width: 95,
+      align: 'center',
+      render: (u) => <span className="products-table-uom">{formatUnit(u)}</span>,
     },
     {
       title: 'Estoque',
       key: 'stock',
-      width: 120,
+      width: 115,
+      align: 'right',
       render: (_, r) => {
         if (!r.trackStock) return <span className="products-stock-none">—</span>
         const qty = Number(r.stockQuantity ?? 0)
@@ -421,9 +454,7 @@ export default function Products() {
         const out = isOutOfStock(r)
         const content = (
           <div className="products-stock-cell">
-            <span className={low || out ? 'products-stock-low' : ''}>
-              {qty.toLocaleString('pt-BR')}
-            </span>
+            <span className={low || out ? 'products-stock-low' : ''}>{qty.toLocaleString('pt-BR')}</span>
             {min != null && <span className="products-stock-min"> / mín. {min.toLocaleString('pt-BR')}</span>}
             {low && <WarningOutlined className="products-stock-warning-icon" />}
           </div>
@@ -440,52 +471,40 @@ export default function Products() {
     {
       title: 'Status',
       key: 'status',
-      width: 90,
+      width: 140,
       render: (_, r) => (
-        <Space size={4}>
-          {r.active ? (
-            <span className="products-badge products-badge-active">Ativo</span>
-          ) : (
-            <span className="products-badge products-badge-inactive">Inativo</span>
-          )}
-        </Space>
+        <div className="products-table-status">
+          <Tag color={r.active ? 'green' : 'default'} className="products-tag">{r.active ? 'Ativo' : 'Inativo'}</Tag>
+          {r.availableForSale && <Tag color="blue" className="products-tag">Venda</Tag>}
+          {r.availableForDelivery && <Tag color="cyan" className="products-tag">Delivery</Tag>}
+          {r.featured && <Tag color="gold" className="products-tag">Destaque</Tag>}
+        </div>
       ),
     },
     {
       title: '',
       key: 'actions',
-      width: 120,
+      width: 112,
+      align: 'center',
+      fixed: 'right',
       render: (_, record) => (
-        <Space size={4} onClick={(e) => e.stopPropagation()}>
-          <Tooltip title="Detalhar">
-            <Button
-              type="text"
-              size="small"
-              icon={<EyeOutlined />}
-              onClick={() => openDetailDrawer(record)}
-            />
+        <Space size={0} className="products-table-actions" onClick={(e) => e.stopPropagation()}>
+          <Tooltip title="Ver detalhes">
+            <Button type="text" size="small" icon={<EyeOutlined />} onClick={() => openDetailDrawer(record)} className="products-table-btn" />
           </Tooltip>
           <Tooltip title="Editar">
-            <Button
-              type="text"
-              size="small"
-              icon={<EditOutlined />}
-              onClick={() => openDrawer(record)}
-            />
+            <Button type="text" size="small" icon={<EditOutlined />} onClick={() => openDrawer(record)} className="products-table-btn" />
           </Tooltip>
           <Popconfirm
-          title="Excluir este produto?"
-          description="Esta ação não pode ser desfeita."
-          onConfirm={(e) => {
-            e?.stopPropagation?.()
-            handleDelete(record.id)
-          }}
-          okText="Excluir"
-          cancelText="Cancelar"
-          okButtonProps={{ danger: true }}
-        >
-          <Button type="text" size="small" danger icon={<DeleteOutlined />} />
-        </Popconfirm>
+            title="Excluir este produto?"
+            description="Esta ação não pode ser desfeita."
+            onConfirm={(e) => { e?.stopPropagation?.(); handleDelete(record.id) }}
+            okText="Excluir"
+            cancelText="Cancelar"
+            okButtonProps={{ danger: true }}
+          >
+            <Button type="text" size="small" danger icon={<DeleteOutlined />} className="products-table-btn" />
+          </Popconfirm>
         </Space>
       ),
     },
@@ -637,13 +656,34 @@ export default function Products() {
             return null
           })()}
 
+          <div className="products-summary-row">
+            <div className="products-summary-card">
+              <span className="products-summary-value">{products.length}</span>
+              <span className="products-summary-label">Total de produtos</span>
+            </div>
+            <div className="products-summary-card">
+              <span className="products-summary-value">{products.filter((p) => p.active).length}</span>
+              <span className="products-summary-label">Ativos</span>
+            </div>
+            <div className="products-summary-card">
+              <span className="products-summary-value">{products.filter(isLowStock).length}</span>
+              <span className="products-summary-label">Estoque baixo</span>
+            </div>
+          </div>
+
           <Table
             rowKey="id"
             columns={columns}
             dataSource={products}
             loading={loadingList}
-            pagination={{ pageSize: 15, showSizeChanger: true, showTotal: (t) => `${t} produto(s)` }}
-            className="products-table"
+            scroll={{ x: 1280 }}
+            pagination={{
+              pageSize: 20,
+              showSizeChanger: true,
+              showTotal: (t) => `${t} produto(s)`,
+              pageSizeOptions: ['10', '20', '50', '100'],
+            }}
+            className="products-table products-table-pro"
             rowClassName={(record) => (isLowStock(record) ? 'products-row-low-stock' : '')}
             onRow={(record) => ({
               onClick: () => openDetailDrawer(record),
@@ -658,8 +698,9 @@ export default function Products() {
         open={detailDrawerOpen}
         onClose={closeDetailDrawer}
         placement="right"
-        width={480}
+        width={520}
         destroyOnClose
+        className="products-detail-drawer-wrapper"
         extra={
           <Space>
             <Button onClick={closeDetailDrawer}>Fechar</Button>
@@ -671,62 +712,144 @@ export default function Products() {
       >
         {selectedProduct && (
           <div className="products-detail-drawer">
-            {selectedProduct.imageUrl && (
-              <div style={{ textAlign: 'center', marginBottom: 20 }}>
-                <img
-                  src={selectedProduct.imageUrl}
-                  alt=""
-                  style={{ maxWidth: 200, maxHeight: 200, objectFit: 'contain', borderRadius: 8, border: '1px solid #f0f0f0' }}
-                />
+            <div className="products-detail-hero">
+              {selectedProduct.imageUrl ? (
+                <div className="products-detail-image-wrap">
+                  <img src={selectedProduct.imageUrl} alt="" className="products-detail-image" />
+                </div>
+              ) : (
+                <div className="products-detail-image-placeholder">
+                  <AppstoreOutlined />
+                </div>
+              )}
+              <h3 className="products-detail-name">{selectedProduct.name || 'Sem nome'}</h3>
+              <div className="products-detail-badges">
+                <Tag color={selectedProduct.active ? 'green' : 'default'} className="products-detail-tag">{selectedProduct.active ? 'Ativo' : 'Inativo'}</Tag>
+                {selectedProduct.availableForSale && <Tag color="blue" className="products-detail-tag">À venda</Tag>}
+                {selectedProduct.availableForDelivery && <Tag color="cyan" className="products-detail-tag">Delivery</Tag>}
+                {selectedProduct.featured && <Tag color="gold" className="products-detail-tag">Destaque</Tag>}
+              </div>
+            </div>
+
+            <div className="products-detail-section">
+              <div className="products-detail-section-title">
+                <BarcodeOutlined /> Identificação
+              </div>
+              <div className="products-detail-grid">
+                <div className="products-detail-row products-detail-row-full"><span className="products-detail-label">Nome</span><span className="products-detail-value">{selectedProduct.name || '—'}</span></div>
+                <div className="products-detail-row"><span className="products-detail-label">SKU</span><span className="products-detail-value">{selectedProduct.sku || '—'}</span></div>
+                <div className="products-detail-row"><span className="products-detail-label">Código de barras</span><span className="products-detail-value">{selectedProduct.barcode || '—'}</span></div>
+                <div className="products-detail-row"><span className="products-detail-label">Código interno</span><span className="products-detail-value">{selectedProduct.internalCode || '—'}</span></div>
+                <div className="products-detail-row products-detail-row-full"><span className="products-detail-label">Descrição curta</span><span className="products-detail-value">{selectedProduct.shortDescription || '—'}</span></div>
+                <div className="products-detail-row products-detail-row-full"><span className="products-detail-label">Descrição</span><span className="products-detail-value products-detail-value-block">{selectedProduct.description || '—'}</span></div>
+                <div className="products-detail-row products-detail-row-full"><span className="products-detail-label">URL da imagem</span><span className="products-detail-value products-detail-value-url">{selectedProduct.imageUrl || '—'}</span></div>
+              </div>
+            </div>
+
+            <div className="products-detail-section">
+              <div className="products-detail-section-title">
+                <DollarOutlined /> Preços e unidade
+              </div>
+              <div className="products-detail-grid">
+                <div className="products-detail-row"><span className="products-detail-label">Preço de venda</span><span className="products-detail-value products-detail-value-price">{formatPrice(selectedProduct.unitPrice)}</span></div>
+                <div className="products-detail-row"><span className="products-detail-label">Custo</span><span className="products-detail-value">{formatPrice(selectedProduct.costPrice)}</span></div>
+                <div className="products-detail-row"><span className="products-detail-label">Preço promocional</span><span className="products-detail-value">{formatPrice(selectedProduct.discountPrice)}</span></div>
+                <div className="products-detail-row"><span className="products-detail-label">Unidade</span><span className="products-detail-value">{formatUnit(selectedProduct.unitOfMeasure)}</span></div>
+                <div className="products-detail-row"><span className="products-detail-label">Imposto (%)</span><span className="products-detail-value">{selectedProduct.taxRate != null ? `${selectedProduct.taxRate}%` : '—'}</span></div>
+                <div className="products-detail-row"><span className="products-detail-label">Vendido por peso</span><span className="products-detail-value">{selectedProduct.sellByWeight ? 'Sim' : 'Não'}</span></div>
+                <div className="products-detail-row"><span className="products-detail-label">Ordem de exibição</span><span className="products-detail-value">{selectedProduct.displayOrder != null ? selectedProduct.displayOrder : '—'}</span></div>
+              </div>
+            </div>
+
+            <div className="products-detail-section">
+              <div className="products-detail-section-title">
+                <InboxOutlined /> Estoque
+              </div>
+              <div className="products-detail-grid">
+                <div className="products-detail-row"><span className="products-detail-label">Controlar estoque</span><span className="products-detail-value">{selectedProduct.trackStock ? 'Sim' : 'Não'}</span></div>
+                <div className="products-detail-row"><span className="products-detail-label">Baixa automática nas vendas</span><span className="products-detail-value">{selectedProduct.trackStock ? (selectedProduct.deductStockOnSale !== false ? 'Sim' : 'Não') : '—'}</span></div>
+                <div className="products-detail-row"><span className="products-detail-label">Quantidade em estoque</span><span className="products-detail-value products-detail-value-highlight">{selectedProduct.trackStock ? Number(selectedProduct.stockQuantity ?? 0).toLocaleString('pt-BR') : '—'}</span></div>
+                <div className="products-detail-row"><span className="products-detail-label">Estoque mínimo</span><span className="products-detail-value">{selectedProduct.minStock != null ? Number(selectedProduct.minStock).toLocaleString('pt-BR') : '—'}</span></div>
+                <div className="products-detail-row"><span className="products-detail-label">Permitir estoque negativo</span><span className="products-detail-value">{selectedProduct.allowNegativeStock ? 'Sim' : 'Não'}</span></div>
+              </div>
+            </div>
+
+            <div className="products-detail-section">
+              <div className="products-detail-section-title">
+                <FileTextOutlined /> Documentos fiscais
+              </div>
+              <div className="products-detail-grid">
+                <div className="products-detail-row"><span className="products-detail-label">Emite NFC-e</span><span className="products-detail-value">{selectedProduct.emitsNfce !== false ? 'Sim' : 'Não'}</span></div>
+                <div className="products-detail-row"><span className="products-detail-label">Emite NF-e</span><span className="products-detail-value">{selectedProduct.emitsNfe ? 'Sim' : 'Não'}</span></div>
+                <div className="products-detail-row"><span className="products-detail-label">Emite comprovante simples</span><span className="products-detail-value">{selectedProduct.emitsComprovanteSimples !== false ? 'Sim' : 'Não'}</span></div>
+              </div>
+            </div>
+
+            <div className="products-detail-section">
+              <div className="products-detail-section-title">
+                <BorderOuterOutlined /> Fiscal e dimensões
+              </div>
+              <div className="products-detail-grid">
+                <div className="products-detail-row"><span className="products-detail-label">Marca</span><span className="products-detail-value">{selectedProduct.brand || '—'}</span></div>
+                <div className="products-detail-row"><span className="products-detail-label">NCM</span><span className="products-detail-value">{selectedProduct.ncm || '—'}</span></div>
+                <div className="products-detail-row"><span className="products-detail-label">CEST</span><span className="products-detail-value">{selectedProduct.cest || '—'}</span></div>
+                <div className="products-detail-row"><span className="products-detail-label">Peso (kg)</span><span className="products-detail-value">{selectedProduct.weight != null ? selectedProduct.weight : '—'}</span></div>
+                <div className="products-detail-row"><span className="products-detail-label">Largura (cm)</span><span className="products-detail-value">{selectedProduct.width != null ? selectedProduct.width : '—'}</span></div>
+                <div className="products-detail-row"><span className="products-detail-label">Altura (cm)</span><span className="products-detail-value">{selectedProduct.height != null ? selectedProduct.height : '—'}</span></div>
+                <div className="products-detail-row"><span className="products-detail-label">Profundidade (cm)</span><span className="products-detail-value">{selectedProduct.depth != null ? selectedProduct.depth : '—'}</span></div>
+              </div>
+            </div>
+
+            <div className="products-detail-section">
+              <div className="products-detail-section-title">
+                <ClockCircleOutlined /> Pedido e preparo
+              </div>
+              <div className="products-detail-grid">
+                <div className="products-detail-row"><span className="products-detail-label">Quantidade mínima por pedido</span><span className="products-detail-value">{selectedProduct.minOrderQuantity != null ? selectedProduct.minOrderQuantity : '—'}</span></div>
+                <div className="products-detail-row"><span className="products-detail-label">Quantidade máxima por pedido</span><span className="products-detail-value">{selectedProduct.maxOrderQuantity != null ? selectedProduct.maxOrderQuantity : '—'}</span></div>
+                <div className="products-detail-row"><span className="products-detail-label">Múltiplo de venda</span><span className="products-detail-value">{selectedProduct.sellMultiple != null ? selectedProduct.sellMultiple : '—'}</span></div>
+                <div className="products-detail-row"><span className="products-detail-label">Tempo de preparo (min)</span><span className="products-detail-value">{selectedProduct.preparationTimeMinutes != null ? selectedProduct.preparationTimeMinutes : '—'}</span></div>
+              </div>
+            </div>
+
+            <div className="products-detail-section">
+              <div className="products-detail-section-title">
+                <ExperimentOutlined /> Nutricional
+              </div>
+              <div className="products-detail-grid">
+                <div className="products-detail-row"><span className="products-detail-label">Tamanho da porção</span><span className="products-detail-value">{selectedProduct.serveSize || '—'}</span></div>
+                <div className="products-detail-row"><span className="products-detail-label">Calorias (kcal)</span><span className="products-detail-value">{selectedProduct.calories != null ? selectedProduct.calories : '—'}</span></div>
+                <div className="products-detail-row products-detail-row-full"><span className="products-detail-label">Ingredientes</span><span className="products-detail-value products-detail-value-block" style={{ whiteSpace: 'pre-wrap' }}>{selectedProduct.ingredients || '—'}</span></div>
+                <div className="products-detail-row products-detail-row-full"><span className="products-detail-label">Alérgenos</span><span className="products-detail-value">{selectedProduct.allergens || '—'}</span></div>
+                <div className="products-detail-row products-detail-row-full"><span className="products-detail-label">Info nutricional</span><span className="products-detail-value products-detail-value-block" style={{ whiteSpace: 'pre-wrap' }}>{selectedProduct.nutritionalInfo || '—'}</span></div>
+              </div>
+            </div>
+
+            <div className="products-detail-section">
+              <div className="products-detail-section-title">
+                <OrderedListOutlined /> Status
+              </div>
+              <div className="products-detail-grid">
+                <div className="products-detail-row"><span className="products-detail-label">Ativo</span><span className="products-detail-value">{selectedProduct.active ? 'Sim' : 'Não'}</span></div>
+                <div className="products-detail-row"><span className="products-detail-label">À venda</span><span className="products-detail-value">{selectedProduct.availableForSale ? 'Sim' : 'Não'}</span></div>
+                <div className="products-detail-row"><span className="products-detail-label">Delivery</span><span className="products-detail-value">{selectedProduct.availableForDelivery ? 'Sim' : 'Não'}</span></div>
+                <div className="products-detail-row"><span className="products-detail-label">Destaque</span><span className="products-detail-value">{selectedProduct.featured ? 'Sim' : 'Não'}</span></div>
+              </div>
+            </div>
+
+            {(selectedProduct.id != null || selectedProduct.createdAt || selectedProduct.updatedAt) && (
+              <div className="products-detail-section">
+                <div className="products-detail-section-title">
+                  <IdcardOutlined /> Registro
+                </div>
+                <div className="products-detail-grid">
+                  {selectedProduct.id != null && <div className="products-detail-row"><span className="products-detail-label">ID</span><span className="products-detail-value products-detail-value-mono">{selectedProduct.id}</span></div>}
+                  {selectedProduct.tenantId != null && <div className="products-detail-row"><span className="products-detail-label">Tenant ID</span><span className="products-detail-value products-detail-value-mono">{selectedProduct.tenantId}</span></div>}
+                  {selectedProduct.createdAt && <div className="products-detail-row"><span className="products-detail-label">Criado em</span><span className="products-detail-value">{new Date(selectedProduct.createdAt).toLocaleString('pt-BR')}</span></div>}
+                  {selectedProduct.updatedAt && <div className="products-detail-row"><span className="products-detail-label">Atualizado em</span><span className="products-detail-value">{new Date(selectedProduct.updatedAt).toLocaleString('pt-BR')}</span></div>}
+                </div>
               </div>
             )}
-            <Descriptions column={1} bordered size="small" className="products-detail-descriptions">
-              <Descriptions.Item label="Nome">{selectedProduct.name || '—'}</Descriptions.Item>
-              <Descriptions.Item label="SKU">{selectedProduct.sku || '—'}</Descriptions.Item>
-              <Descriptions.Item label="Código de barras">{selectedProduct.barcode || '—'}</Descriptions.Item>
-              <Descriptions.Item label="Código interno">{selectedProduct.internalCode || '—'}</Descriptions.Item>
-              <Descriptions.Item label="Descrição curta">{selectedProduct.shortDescription || '—'}</Descriptions.Item>
-              <Descriptions.Item label="Descrição">{selectedProduct.description || '—'}</Descriptions.Item>
-              <Descriptions.Item label="Preço de venda">{formatPrice(selectedProduct.unitPrice)}</Descriptions.Item>
-              <Descriptions.Item label="Custo">{formatPrice(selectedProduct.costPrice)}</Descriptions.Item>
-              <Descriptions.Item label="Preço promocional">{formatPrice(selectedProduct.discountPrice)}</Descriptions.Item>
-              <Descriptions.Item label="Unidade">{formatUnit(selectedProduct.unitOfMeasure)}</Descriptions.Item>
-              <Descriptions.Item label="Imposto (%)">{selectedProduct.taxRate != null ? `${selectedProduct.taxRate}%` : '—'}</Descriptions.Item>
-              <Descriptions.Item label="Vendido por peso">{selectedProduct.sellByWeight ? 'Sim' : 'Não'}</Descriptions.Item>
-              <Descriptions.Item label="Controlar estoque">{selectedProduct.trackStock ? 'Sim' : 'Não'}</Descriptions.Item>
-              {selectedProduct.trackStock && (
-                <Descriptions.Item label="Baixa automática nas vendas">{selectedProduct.deductStockOnSale !== false ? 'Sim' : 'Não'}</Descriptions.Item>
-              )}
-              {selectedProduct.trackStock && (
-                <>
-                  <Descriptions.Item label="Quantidade em estoque">
-                    {Number(selectedProduct.stockQuantity ?? 0).toLocaleString('pt-BR')}
-                  </Descriptions.Item>
-                  <Descriptions.Item label="Estoque mínimo">{selectedProduct.minStock != null ? Number(selectedProduct.minStock).toLocaleString('pt-BR') : '—'}</Descriptions.Item>
-                </>
-              )}
-              <Descriptions.Item label="Permitir estoque negativo">{selectedProduct.allowNegativeStock ? 'Sim' : 'Não'}</Descriptions.Item>
-              <Descriptions.Item label="Marca">{selectedProduct.brand || '—'}</Descriptions.Item>
-              <Descriptions.Item label="NCM">{selectedProduct.ncm || '—'}</Descriptions.Item>
-              <Descriptions.Item label="CEST">{selectedProduct.cest || '—'}</Descriptions.Item>
-              <Descriptions.Item label="Peso (kg)">{selectedProduct.weight != null ? selectedProduct.weight : '—'}</Descriptions.Item>
-              <Descriptions.Item label="Largura (cm)">{selectedProduct.width != null ? selectedProduct.width : '—'}</Descriptions.Item>
-              <Descriptions.Item label="Altura (cm)">{selectedProduct.height != null ? selectedProduct.height : '—'}</Descriptions.Item>
-              <Descriptions.Item label="Profundidade (cm)">{selectedProduct.depth != null ? selectedProduct.depth : '—'}</Descriptions.Item>
-              <Descriptions.Item label="Status">
-                <Space wrap>
-                  <Tag color={selectedProduct.active ? 'green' : 'default'}>{selectedProduct.active ? 'Ativo' : 'Inativo'}</Tag>
-                  <Tag color={selectedProduct.availableForSale ? 'blue' : 'default'}>À venda</Tag>
-                  <Tag color={selectedProduct.availableForDelivery ? 'cyan' : 'default'}>Delivery</Tag>
-                  <Tag color={selectedProduct.featured ? 'gold' : 'default'}>Destaque</Tag>
-                </Space>
-              </Descriptions.Item>
-              {selectedProduct.serveSize && <Descriptions.Item label="Tamanho da porção">{selectedProduct.serveSize}</Descriptions.Item>}
-              {selectedProduct.calories != null && <Descriptions.Item label="Calorias (kcal)">{selectedProduct.calories}</Descriptions.Item>}
-              {selectedProduct.ingredients && <Descriptions.Item label="Ingredientes"><span style={{ whiteSpace: 'pre-wrap' }}>{selectedProduct.ingredients}</span></Descriptions.Item>}
-              {selectedProduct.allergens && <Descriptions.Item label="Alérgenos">{selectedProduct.allergens}</Descriptions.Item>}
-              {selectedProduct.nutritionalInfo && <Descriptions.Item label="Info nutricional"><span style={{ whiteSpace: 'pre-wrap' }}>{selectedProduct.nutritionalInfo}</span></Descriptions.Item>}
-            </Descriptions>
           </div>
         )}
       </Drawer>
