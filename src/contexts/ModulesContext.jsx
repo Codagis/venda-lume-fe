@@ -11,6 +11,8 @@ const DEFAULT_MODULES = [
   { code: 'STOCK', name: 'Estoque', icon: 'InboxOutlined', route: '/stock', component: 'Stock', displayOrder: 11 },
   { code: 'SUPPLIERS', name: 'Fornecedores', icon: 'ShopOutlined', route: '/suppliers', component: 'Suppliers', displayOrder: 12 },
   { code: 'COST_CONTROL', name: 'Controle de Custos', icon: 'DollarOutlined', route: '/cost-control', component: 'CostControl', displayOrder: 13 },
+  { code: 'EMPLOYEES', name: 'Funcionários', icon: 'TeamOutlined', route: '/employees', component: 'Employees', displayOrder: 15 },
+  { code: 'CONTRACTORS', name: 'Prestadores PJ', icon: 'FileTextOutlined', route: '/contractors', component: 'Contractors', displayOrder: 16 },
   { code: 'DELIVERY', name: 'Entregas', icon: 'CarOutlined', route: '/delivery', component: 'Deliveries', displayOrder: 17 },
   { code: 'DELIVERY_PERSONS', name: 'Entregadores', icon: 'UserOutlined', route: '/delivery-persons', component: 'DeliveryPersons', displayOrder: 18 },
   { code: 'MY_DELIVERIES', name: 'Minhas Entregas', icon: 'CarOutlined', route: '/my-deliveries', component: 'MyDeliveries', displayOrder: 18 },
@@ -37,13 +39,20 @@ export function ModulesProvider({ children }) {
     setError(null)
     try {
       const data = await listModules()
-      const list = data && data.length > 0 ? data : []
+      let list = data && data.length > 0 ? data : []
 
-      if (list.length === 0 && user?.isRoot === true) {
-        setModules(DEFAULT_MODULES)
-      } else {
-        setModules(list)
+      if (user?.isRoot === true) {
+        if (list.length === 0) {
+          list = DEFAULT_MODULES
+        } else {
+          const codesFromApi = new Set(list.map((m) => m.code))
+          const missing = DEFAULT_MODULES.filter((d) => !codesFromApi.has(d.code))
+          if (missing.length > 0) {
+            list = [...list, ...missing].sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0))
+          }
+        }
       }
+      setModules(list)
     } catch (err) {
       setError(err.message)
       if (user?.isRoot === true) {

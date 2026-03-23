@@ -39,7 +39,11 @@ export const MENU_GROUPS = [
     key: 'financeiro',
     label: 'Financeiro',
     icon: 'DollarOutlined',
-    children: [{ moduleCode: 'COST_CONTROL', route: '/cost-control' }],
+    children: [
+      { moduleCode: 'COST_CONTROL', route: '/cost-control' },
+      { moduleCode: 'EMPLOYEES', route: '/employees' },
+      { moduleCode: 'CONTRACTORS', route: '/contractors' },
+    ],
   },
   {
     type: 'submenu',

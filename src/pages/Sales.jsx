@@ -29,7 +29,6 @@ import {
   CheckCircleOutlined,
   CarOutlined,
   AppstoreOutlined,
-  CloseOutlined,
 } from '@ant-design/icons'
 import { useAuth } from '../contexts/AuthContext'
 import { searchProducts } from '../services/productService'
@@ -96,7 +95,7 @@ export default function Sales() {
   const [selectedCustomer, setSelectedCustomer] = useState(null)
 
   const [successModalOpen, setSuccessModalOpen] = useState(false)
-  const [pdvFullscreenOpen, setPdvFullscreenOpen] = useState(false)
+  const pdvUrl = import.meta.env.VITE_PDV_URL || ''
   const [salesFormExpanded, setSalesFormExpanded] = useState(false)
   const [lastSale, setLastSale] = useState(null)
   const [lastDelivery, setLastDelivery] = useState(null)
@@ -504,16 +503,16 @@ export default function Sales() {
                 </div>
                 <h2 className="sales-pdv-cta-title">Nova venda</h2>
                 <p className="sales-pdv-cta-message">
-                  Para registrar vendas com agilidade, use a tela do PDV. Clique no botão abaixo para abrir a tela do PDV e fazer buscas, adicionar itens ao carrinho e finalizar o pagamento.
+                  Para registrar vendas com agilidade, use o sistema PDV. Clique no botão abaixo para abrir o PDV em nova guia.
                 </p>
                 <Button
                   type="primary"
                   size="large"
                   icon={<AppstoreOutlined />}
-                  onClick={() => setPdvFullscreenOpen(true)}
+                  onClick={() => pdvUrl ? window.open(pdvUrl, '_blank') : message.warning('Configure VITE_PDV_URL para abrir o PDV em nova guia.')}
                   className="sales-pdv-cta-btn"
                 >
-                  Abrir tela PDV
+                  Abrir PDV (nova guia)
                 </Button>
               </div>
             </Card>
@@ -530,10 +529,10 @@ export default function Sales() {
                   type="primary"
                   ghost
                   icon={<AppstoreOutlined />}
-                  onClick={() => setPdvFullscreenOpen(true)}
+                  onClick={() => pdvUrl ? window.open(pdvUrl, '_blank') : message.warning('Configure VITE_PDV_URL para abrir o PDV em nova guia.')}
                   size="large"
                 >
-                  Abrir tela PDV
+                  Abrir PDV (nova guia)
                 </Button>
                 {isRoot && (
                 <Select
@@ -1023,26 +1022,6 @@ export default function Sales() {
         )}
       </Modal>
 
-      {pdvFullscreenOpen && (
-        <div className="sales-pdv-fullscreen" role="dialog" aria-modal="true" aria-label="Tela PDV">
-          <div className="sales-pdv-fullscreen-header">
-            <span>Tela PDV</span>
-            <Button
-              type="text"
-              icon={<CloseOutlined />}
-              onClick={() => setPdvFullscreenOpen(false)}
-              className="sales-pdv-close-btn"
-            >
-              Fechar
-            </Button>
-          </div>
-          <iframe
-            src="/pdv"
-            title="PDV"
-            className="sales-pdv-iframe"
-          />
-        </div>
-      )}
     </div>
   )
 }

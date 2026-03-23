@@ -69,6 +69,18 @@ export async function deleteRegister(id, tenantId = null) {
   }
 }
 
+export async function generateRegisterImei(registerId, tenantId = null) {
+  const url = tenantId
+    ? `/registers/${registerId}/generate-imei?tenantId=${encodeURIComponent(tenantId)}`
+    : `/registers/${registerId}/generate-imei`
+  const res = await apiFetch(url, { method: 'POST' })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err?.message || err?.error || 'Erro ao gerar IMEI.')
+  }
+  return res.json()
+}
+
 export async function assignOperators(registerId, userIds, tenantId = null) {
   const url = tenantId
     ? `/registers/${registerId}/operators?tenantId=${encodeURIComponent(tenantId)}`

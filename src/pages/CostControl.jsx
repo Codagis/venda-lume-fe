@@ -18,6 +18,7 @@ import {
   Tag,
   Dropdown,
   Modal,
+  Alert,
 } from 'antd'
 import {
   DollarOutlined,
@@ -33,6 +34,7 @@ import {
   EditOutlined,
   FileExcelOutlined,
   FilePdfOutlined,
+  WarningOutlined,
 } from '@ant-design/icons'
 import dayjs from 'dayjs'
 import {
@@ -47,7 +49,9 @@ import { useAuth } from '../contexts/AuthContext'
 import * as costControlService from '../services/costControlService'
 import * as supplierService from '../services/supplierService'
 import * as customerService from '../services/customerService'
+import * as employeeService from '../services/employeeService'
 import * as tenantService from '../services/tenantService'
+import * as contractorService from '../services/contractorService'
 import './CostControl.css'
 
 const { TextArea } = Input
@@ -102,6 +106,7 @@ export default function CostControl() {
   const [receivables, setReceivables] = useState([])
   const [suppliers, setSuppliers] = useState([])
   const [customers, setCustomers] = useState([])
+  const [employees, setEmployees] = useState([])
   const [tenants, setTenants] = useState([])
   const [selectedTenantId, setSelectedTenantId] = useState(null)
   const [loadingPayables, setLoadingPayables] = useState(false)
@@ -113,11 +118,18 @@ export default function CostControl() {
   const [editingReceivableId, setEditingReceivableId] = useState(null)
   const [paymentDrawerOpen, setPaymentDrawerOpen] = useState(false)
   const [paymentTarget, setPaymentTarget] = useState(null)
-  const [filtersPayable, setFiltersPayable] = useState({ search: '', status: undefined, supplierId: undefined, dueDateRange: null })
+  const [filtersPayable, setFiltersPayable] = useState({ search: '', status: undefined, supplierId: undefined, employeeId: undefined, contractorId: undefined, dueDateRange: null })
   const [filtersReceivable, setFiltersReceivable] = useState({ search: '', status: undefined, customerId: undefined, dueDateRange: null })
   const [filtersPayableExpanded, setFiltersPayableExpanded] = useState(false)
   const [filtersReceivableExpanded, setFiltersReceivableExpanded] = useState(false)
   const [reportLoading, setReportLoading] = useState(null)
+  const [generatedPayrolls, setGeneratedPayrolls] = useState([])
+  const [loadingGeneratedPayrolls, setLoadingGeneratedPayrolls] = useState(false)
+  const [receiptPayableLoadingId, setReceiptPayableLoadingId] = useState(null)
+  const [payrollPdfLoadingKey, setPayrollPdfLoadingKey] = useState(null)
+  const [contractors, setContractors] = useState([])
+  const [contractorInvoices, setContractorInvoices] = useState([])
+  const [payableContractorId, setPayableContractorId] = useState(null)
 
   const loadTenants = useCallback(async () => {
     if (!isRoot) return
@@ -152,6 +164,58 @@ export default function CostControl() {
     }
   }, [isRoot, selectedTenantId])
 
+  const loadEmployees = useCallback(async () => {
+    try {
+      const f = { page: 0, size: 500, active: true }
+      if (isRoot && selectedTenantId) f.tenantId = selectedTenantId
+      const res = await employeeService.searchEmployees(f)
+      setEmployees(res?.content ?? [])
+    } catch (e) {
+      setEmployees([])
+    }
+  }, [isRoot, selectedTenantId])
+
+  const loadContractors = useCallback(async () => {
+    try {
+      const tenantId = isRoot ? selectedTenantId : undefined
+      const data = await contractorService.listContractorsOptions(tenantId)
+      setContractors(Array.isArray(data) ? data : [])
+    } catch (e) {
+      setContractors([])
+    }
+  }, [isRoot, selectedTenantId])
+
+  const loadContractorInvoices = useCallback(async (contractorId) => {
+    if (!contractorId) {
+      setContractorInvoices([])
+      return
+    }
+    try {
+      const data = await contractorService.listContractorInvoices(contractorId)
+      setContractorInvoices(Array.isArray(data) ? data : [])
+    } catch (e) {
+      setContractorInvoices([])
+    }
+  }, [])
+
+  const loadGeneratedPayrolls = useCallback(async () => {
+    if (isRoot && !selectedTenantId) {
+      setGeneratedPayrolls([])
+      return
+    }
+    setLoadingGeneratedPayrolls(true)
+    try {
+      const tenantId = isRoot ? selectedTenantId : undefined
+      const data = await employeeService.getGeneratedPayrolls(tenantId)
+      setGeneratedPayrolls(Array.isArray(data) ? data : [])
+    } catch (e) {
+      message.error(e?.message || 'Erro ao listar folhas geradas.')
+      setGeneratedPayrolls([])
+    } finally {
+      setLoadingGeneratedPayrolls(false)
+    }
+  }, [isRoot, selectedTenantId])
+
   const loadPayables = useCallback(async () => {
     if (isRoot && !selectedTenantId) return
     setLoadingPayables(true)
@@ -159,19 +223,22 @@ export default function CostControl() {
       const filter = { page: 0, size: 200, sortBy: 'dueDate', sortDirection: 'asc' }
       if (filtersPayable.search?.trim()) filter.search = filtersPayable.search.trim()
       if (filtersPayable.status) filter.status = filtersPayable.status
-      if (filtersPayable.supplierId) filter.supplierId = filtersPayable.supplierId
+    if (filtersPayable.supplierId) filter.supplierId = filtersPayable.supplierId
+    if (filtersPayable.employeeId) filter.employeeId = filtersPayable.employeeId
+    if (filtersPayable.contractorId != null && filtersPayable.contractorId !== '') filter.contractorId = filtersPayable.contractorId
       if (filtersPayable.dueDateRange?.[0]) filter.dueDateFrom = filtersPayable.dueDateRange[0].format('YYYY-MM-DD')
       if (filtersPayable.dueDateRange?.[1]) filter.dueDateTo = filtersPayable.dueDateRange[1].format('YYYY-MM-DD')
       const tenantId = isRoot ? selectedTenantId : undefined
       const res = await costControlService.searchPayables(filter, tenantId)
       setPayables(res?.content ?? [])
+      loadGeneratedPayrolls()
     } catch (e) {
       message.error(e?.message || 'Erro ao carregar contas a pagar.')
       setPayables([])
     } finally {
       setLoadingPayables(false)
     }
-  }, [isRoot, selectedTenantId, filtersPayable])
+  }, [isRoot, selectedTenantId, filtersPayable, loadGeneratedPayrolls])
 
   const loadReceivables = useCallback(async () => {
     if (isRoot && !selectedTenantId) return
@@ -201,7 +268,13 @@ export default function CostControl() {
   useEffect(() => {
     loadSuppliers()
     loadCustomers()
-  }, [loadSuppliers, loadCustomers])
+    loadEmployees()
+    loadContractors()
+  }, [loadSuppliers, loadCustomers, loadEmployees, loadContractors])
+
+  useEffect(() => {
+    if (activeTab === 'payables') loadGeneratedPayrolls()
+  }, [activeTab, loadGeneratedPayrolls])
 
 
 
@@ -239,6 +312,7 @@ export default function CostControl() {
 
   const openPayableDrawer = (item = null) => {
     setEditingPayableId(item?.id ?? null)
+    setPayableContractorId(item?.contractorId ?? null)
     formPayable.resetFields()
     if (item) {
       formPayable.setFieldsValue({
@@ -248,8 +322,13 @@ export default function CostControl() {
         dueDate: item.dueDate ? dayjs(item.dueDate) : null,
         amount: item.amount,
         supplierId: item.supplierId,
+        employeeId: item.employeeId,
+        payrollReference: item.payrollReference,
+        contractorId: item.contractorId,
+        contractorInvoiceId: item.contractorInvoiceId,
         notes: item.notes,
       })
+      if (item.contractorId) loadContractorInvoices(item.contractorId)
     } else {
       formPayable.setFieldsValue({ dueDate: dayjs(), tenantId: isRoot ? selectedTenantId : undefined })
     }
@@ -300,6 +379,10 @@ export default function CostControl() {
         dueDate: values.dueDate?.format('YYYY-MM-DD'),
         amount: values.amount,
         supplierId: values.supplierId || undefined,
+        employeeId: values.employeeId || undefined,
+        payrollReference: values.payrollReference?.trim() || undefined,
+        contractorId: values.contractorId || undefined,
+        contractorInvoiceId: values.contractorInvoiceId || undefined,
         notes: values.notes?.trim() || undefined,
       }
       if (isRoot && !editingPayableId) payload.tenantId = values.tenantId
@@ -386,6 +469,42 @@ export default function CostControl() {
     }
   }
 
+  const handleDownloadSalaryReceiptFromPayable = async (payable) => {
+    if (!payable?.employeeId || !payable?.payrollReference) return
+    const ref = String(payable.payrollReference).trim()
+    const match = ref.match(/^(\d{4})-(\d{2})$/)
+    if (!match) {
+      message.error('Referência da folha inválida para gerar recibo.')
+      return
+    }
+    const year = parseInt(match[1], 10)
+    const month = parseInt(match[2], 10)
+    const tenantId = isRoot ? selectedTenantId : undefined
+    setReceiptPayableLoadingId(payable.id)
+    try {
+      await employeeService.downloadSalaryReceiptPdf(tenantId, payable.employeeId, year, month)
+      message.success('Recibo gerado.')
+    } catch (e) {
+      message.error(e?.message || 'Erro ao gerar recibo.')
+    } finally {
+      setReceiptPayableLoadingId(null)
+    }
+  }
+
+  const handleDownloadPayrollPdf = async (row) => {
+    const tenantId = isRoot ? selectedTenantId : undefined
+    const key = `${row.year}-${row.month}`
+    setPayrollPdfLoadingKey(key)
+    try {
+      await employeeService.downloadPayrollReportPdf(tenantId, row.year, row.month)
+      message.success('PDF da folha gerado.')
+    } catch (e) {
+      message.error(e?.message || 'Erro ao gerar PDF.')
+    } finally {
+      setPayrollPdfLoadingKey(null)
+    }
+  }
+
   const handleDeleteReceivable = async (id) => {
     try {
       await costControlService.deleteReceivable(id)
@@ -401,6 +520,8 @@ export default function CostControl() {
     if (filtersPayable.search?.trim()) f.search = filtersPayable.search.trim()
     if (filtersPayable.status) f.status = filtersPayable.status
     if (filtersPayable.supplierId) f.supplierId = filtersPayable.supplierId
+    if (filtersPayable.employeeId) f.employeeId = filtersPayable.employeeId
+    if (filtersPayable.contractorId) f.contractorId = filtersPayable.contractorId
     if (filtersPayable.dueDateRange?.[0]) f.dueDateFrom = filtersPayable.dueDateRange[0].format('YYYY-MM-DD')
     if (filtersPayable.dueDateRange?.[1]) f.dueDateTo = filtersPayable.dueDateRange[1].format('YYYY-MM-DD')
     return f
@@ -482,7 +603,9 @@ export default function CostControl() {
 
   const payableColumns = [
     { title: 'Descrição', dataIndex: 'description', key: 'description', ellipsis: true },
-    { title: 'Fornecedor', dataIndex: 'supplierName', key: 'supplierName', width: 160, ellipsis: true },
+    { title: 'Fornecedor', dataIndex: 'supplierName', key: 'supplierName', width: 140, ellipsis: true },
+    { title: 'Funcionário', dataIndex: 'employeeName', key: 'employeeName', width: 140, ellipsis: true },
+    { title: 'Prestador PJ', dataIndex: 'contractorName', key: 'contractorName', width: 140, ellipsis: true },
     { title: 'Categoria', dataIndex: 'category', key: 'category', width: 100 },
     { title: 'Vencimento', dataIndex: 'dueDate', key: 'dueDate', width: 110, render: (d) => formatDate(d) },
     { title: 'Valor', dataIndex: 'amount', key: 'amount', width: 110, render: (v) => formatMoney(v) },
@@ -504,7 +627,19 @@ export default function CostControl() {
           menu={{
             items: [
               ...(r.status !== 'PAID' && r.status !== 'CANCELLED'
-                ? [{ key: 'pay', icon: <CreditCardOutlined />, label: 'Pagar', onClick: () => openPaymentDrawer('payable', r) }]
+                ? [{
+                  key: 'pay',
+                  icon: <CreditCardOutlined />,
+                  label: r.contractorId && r.contractorInvoiceHasFile === false ? 'Pagar (NF obrigatória)' : 'Pagar',
+                  disabled: r.contractorId && r.contractorInvoiceHasFile === false,
+                  onClick: () => openPaymentDrawer('payable', r),
+                }]
+                : []),
+              ...(r.status === 'PAID' || r.status === 'PARTIAL'
+                ? [{ key: 'receipt', icon: <FilePdfOutlined />, label: 'Comprovante de pagamento', onClick: () => costControlService.downloadPaymentReceiptPdf(r.id) }]
+                : []),
+              ...(r.employeeId && r.payrollReference
+                ? [{ key: 'salary-receipt', icon: <FilePdfOutlined />, label: 'Recibo de pagamento (funcionário)', onClick: () => handleDownloadSalaryReceiptFromPayable(r) }]
                 : []),
               { key: 'edit', icon: <EditOutlined />, label: 'Editar', onClick: () => openPayableDrawer(r) },
               {
@@ -658,6 +793,42 @@ export default function CostControl() {
                         </Card>
                       </Col>
                     </Row>
+                    <Card title="Folhas de pagamento geradas" className="cost-control-filters-card" style={{ marginBottom: 24 }}>
+                      <p style={{ marginBottom: 12, color: '#666', fontSize: 13 }}>
+                        Competências que possuem contas a pagar de folha. Gere o PDF da folha completa quando quiser.
+                      </p>
+                      <Table
+                        rowKey="payrollReference"
+                        size="small"
+                        loading={loadingGeneratedPayrolls}
+                        dataSource={generatedPayrolls}
+                        pagination={false}
+                        columns={[
+                          { title: 'Competência', dataIndex: 'label', key: 'label' },
+                          {
+                            title: 'Ações',
+                            key: 'actions',
+                            width: 140,
+                            render: (_, row) => (
+                              <Button
+                                type="primary"
+                                size="small"
+                                icon={<FilePdfOutlined />}
+                                loading={payrollPdfLoadingKey === `${row.year}-${row.month}`}
+                                onClick={() => handleDownloadPayrollPdf(row)}
+                                disabled={isRoot && !selectedTenantId}
+                                style={{ minWidth: 100 }}
+                              >
+                                Gerar PDF
+                              </Button>
+                            ),
+                          },
+                        ]}
+                      />
+                      {generatedPayrolls.length === 0 && !loadingGeneratedPayrolls && (
+                        <div style={{ padding: '12px 0', color: '#999' }}>Nenhuma folha gerada ainda. Gere as contas do mês em Funcionários.</div>
+                      )}
+                    </Card>
                     {payablesByStatus.length > 0 && (
                       <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
                         <Col xs={24} md={12}>
@@ -744,6 +915,32 @@ export default function CostControl() {
                               options={suppliers.map((s) => ({ value: s.id, label: s.name }))}
                               value={filtersPayable.supplierId}
                               onChange={(v) => setFiltersPayable((f) => ({ ...f, supplierId: v }))}
+                              style={{ width: '100%' }}
+                              showSearch
+                              optionFilterProp="label"
+                              allowClear
+                            />
+                          </Col>
+                          <Col xs={24} sm={12} md={4}>
+                            <label className="cost-control-filter-label">Funcionário</label>
+                            <Select
+                              placeholder="Todos"
+                              options={employees.map((e) => ({ value: e.id, label: e.name }))}
+                              value={filtersPayable.employeeId}
+                              onChange={(v) => setFiltersPayable((f) => ({ ...f, employeeId: v }))}
+                              style={{ width: '100%' }}
+                              showSearch
+                              optionFilterProp="label"
+                              allowClear
+                            />
+                          </Col>
+                          <Col xs={24} sm={12} md={4}>
+                            <label className="cost-control-filter-label">Prestador PJ</label>
+                            <Select
+                              placeholder="Todos"
+                              options={contractors.map((c) => ({ value: c.id, label: c.name || c.tradeName || c.cnpj }))}
+                              value={filtersPayable.contractorId}
+                              onChange={(v) => setFiltersPayable((f) => ({ ...f, contractorId: v }))}
                               style={{ width: '100%' }}
                               showSearch
                               optionFilterProp="label"
@@ -1003,6 +1200,51 @@ export default function CostControl() {
               allowClear
             />
           </Form.Item>
+          <Form.Item name="contractorId" label="Prestador PJ">
+            <Select
+              placeholder="Selecione o prestador (pagamento PJ)"
+              options={contractors.map((c) => ({ value: c.id, label: c.name || c.tradeName || c.cnpj }))}
+              showSearch
+              optionFilterProp="label"
+              allowClear
+              onChange={(v) => {
+                setPayableContractorId(v || null)
+                formPayable.setFieldValue('contractorInvoiceId', undefined)
+                if (v) loadContractorInvoices(v)
+                else setContractorInvoices([])
+              }}
+            />
+          </Form.Item>
+          <Form.Item noStyle shouldUpdate={(prev, curr) => prev.contractorId !== curr.contractorId}>
+            {({ getFieldValue }) =>
+              getFieldValue('contractorId') ? (
+                <Form.Item
+                  name="contractorInvoiceId"
+                  label="Nota fiscal da competência"
+                  rules={[{ required: true, message: 'Selecione a NF do prestador. Cadastre a NF em Prestadores PJ e envie o arquivo (PDF/XML) antes de registrar o pagamento.' }]}
+                >
+                  <Select
+                    placeholder="Selecione a NF (com arquivo anexado para poder pagar)"
+                    options={contractorInvoices.map((inv) => ({
+                      value: inv.id,
+                      label: `${inv.referenceMonth || '-'} - ${formatMoney(inv.amount)} ${inv.fileGcsPath ? '✓ NF anexada' : '(sem arquivo)'}`,
+                    }))}
+                    showSearch
+                    optionFilterProp="label"
+                    onChange={(invoiceId) => {
+                      const inv = contractorInvoices.find((i) => i.id === invoiceId)
+                      if (inv) {
+                        formPayable.setFieldsValue({
+                          amount: inv.amount,
+                          description: formPayable.getFieldValue('description') || `Pagamento prestador ${inv.contractorName || ''} - ${inv.referenceMonth}`,
+                        })
+                      }
+                    }}
+                  />
+                </Form.Item>
+              ) : null
+            }
+          </Form.Item>
           <Form.Item name="notes" label="Observações">
             <TextArea rows={2} />
           </Form.Item>
@@ -1076,10 +1318,27 @@ export default function CostControl() {
         extra={
           <Space>
             <Button onClick={() => { setPaymentDrawerOpen(false); setPaymentTarget(null) }}>Cancelar</Button>
-            <Button type="primary" loading={loadingSubmit} onClick={() => formPayment.submit()}>Confirmar</Button>
+            <Button
+              type="primary"
+              loading={loadingSubmit}
+              onClick={() => formPayment.submit()}
+              disabled={paymentTarget?.type === 'payable' && paymentTarget?.item?.contractorId && paymentTarget?.item?.contractorInvoiceHasFile === false}
+            >
+              Confirmar
+            </Button>
           </Space>
         }
       >
+        {paymentTarget?.type === 'payable' && paymentTarget?.item?.contractorId && paymentTarget?.item?.contractorInvoiceHasFile === false && (
+          <Alert
+            type="warning"
+            showIcon
+            icon={<WarningOutlined />}
+            message="Nota Fiscal obrigatória"
+            description="Para registrar o pagamento de um prestador PJ é obrigatório anexar a Nota Fiscal da competência. Acesse o menu Prestadores PJ, localize o prestador e envie o arquivo da NF (PDF ou XML). Depois volte aqui para registrar o pagamento."
+            style={{ marginBottom: 16 }}
+          />
+        )}
         <Form form={formPayment} layout="vertical" onFinish={handlePaymentSubmit} className="cost-control-drawer-form">
           <Form.Item name="amount" label="Valor (R$)" rules={[{ required: true }]}>
             <InputNumber min={0.01} step={0.01} style={{ width: '100%' }} prefix="R$" />

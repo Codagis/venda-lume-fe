@@ -527,39 +527,3 @@
 .sales-pdv-cta-expand-link:hover {
   color: #3b82f6;
 }
-
-.sales-pdv-fullscreen {
-  position: fixed;
-  inset: 0;
-  z-index: 1050;
-  display: flex;
-  flex-direction: column;
-  background: #0f172a;
-}
-
-.sales-pdv-fullscreen-header {
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px 20px;
-  background: #1e293b;
-  border-bottom: 1px solid #334155;
-  color: #f1f5f9;
-  font-weight: 600;
-}
-
-.sales-pdv-close-btn {
-  color: #f1f5f9 !important;
-}
-
-.sales-pdv-close-btn:hover {
-  color: #fff !important;
-}
-
-.sales-pdv-iframe {
-  flex: 1;
-  width: 100%;
-  border: none;
-  min-height: 0;
-}

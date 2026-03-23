@@ -28,6 +28,19 @@ function getFingerprintComponents() {
   return parts.join('|')
 }
 
+/**
+ * Define o IMEI/código do dispositivo manualmente (código gerado pelo PDV).
+ * O operador informa o código do PDV para vincular o equipamento ao caixa.
+ */
+export function setDeviceImei(imei) {
+  if (!imei || typeof imei !== 'string') return
+  const trimmed = imei.trim()
+  if (!trimmed) return
+  try {
+    localStorage.setItem(STORAGE_KEY, trimmed)
+  } catch {}
+}
+
 export function getDeviceImei() {
   try {
     const stored = localStorage.getItem(STORAGE_KEY)

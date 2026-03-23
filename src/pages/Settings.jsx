@@ -255,6 +255,9 @@ export default function Settings() {
             acquirerCnpj: acq?.length === 14 ? acq : undefined,
             isDefault: m.isDefault,
             active: m.active,
+            maxInstallments: m.maxInstallments,
+            maxInstallmentsNoInterest: m.maxInstallmentsNoInterest,
+            interestRatePercent: m.interestRatePercent,
           }).catch((err) => message.warning(`Maquininha "${m.name}" não foi criada: ${err?.message || err}`))
         }
         setPendingCardMachines([])
@@ -358,6 +361,9 @@ export default function Settings() {
         acquirerCnpj: m.acquirerCnpj ?? '',
         isDefault: m.isDefault,
         active: m.active,
+        maxInstallments: m.maxInstallments ?? undefined,
+        maxInstallmentsNoInterest: m.maxInstallmentsNoInterest ?? undefined,
+        interestRatePercent: m.interestRatePercent ?? undefined,
       })
     } else {
       cardMachineForm.setFieldsValue({ isDefault: false, active: true })
@@ -378,6 +384,9 @@ export default function Settings() {
       acquirerCnpj: acquirerCnpj?.length === 14 ? acquirerCnpj : undefined,
       isDefault: !!values.isDefault,
       active: values.active !== false,
+      maxInstallments: values.maxInstallments != null && values.maxInstallments !== '' ? Number(values.maxInstallments) : undefined,
+      maxInstallmentsNoInterest: values.maxInstallmentsNoInterest != null && values.maxInstallmentsNoInterest !== '' ? Number(values.maxInstallmentsNoInterest) : undefined,
+      interestRatePercent: values.interestRatePercent != null && values.interestRatePercent !== '' ? Number(values.interestRatePercent) : undefined,
     }
     if (modal.id) {
       setSaving(true)
@@ -823,6 +832,16 @@ export default function Settings() {
                             ? `${r.feeValue}%`
                             : `R$ ${Number(r.feeValue).toFixed(2)}`,
                       },
+                      {
+                        title: 'Parcelas',
+                        key: 'installments',
+                        render: (_, r) => {
+                          if (r.maxInstallments == null && r.maxInstallmentsNoInterest == null) return '-'
+                          const max = r.maxInstallments ?? '-'
+                          const noInt = r.maxInstallmentsNoInterest != null ? `${r.maxInstallmentsNoInterest} s/juros` : ''
+                          return [max, noInt].filter(Boolean).join(', ')
+                        },
+                      },
                       { title: 'Padrão', dataIndex: 'isDefault', key: 'default', render: (v) => (v ? 'Sim' : '-') },
                       { title: 'Ativa', dataIndex: 'active', key: 'active', render: (v) => (v ? 'Sim' : 'Não') },
                       {
@@ -926,6 +945,15 @@ export default function Settings() {
               </Form.Item>
               <Form.Item name="acquirerCnpj" label="CNPJ da adquirente" help="Para NFC-e com cartão: CNPJ da instituição de pagamento (somente números)">
                 <Input placeholder="14 dígitos (ex: Cielo, Rede)" maxLength={18} />
+              </Form.Item>
+              <Form.Item name="maxInstallments" label="Máximo de parcelas" help="Máximo de parcelas no cartão de crédito (deixe em branco para usar o da empresa)">
+                <Input type="number" min={1} max={24} placeholder="Ex: 12" />
+              </Form.Item>
+              <Form.Item name="maxInstallmentsNoInterest" label="Parcelas sem juros" help="Quantas parcelas não têm juros (até o máximo)">
+                <Input type="number" min={0} max={24} placeholder="Ex: 6" />
+              </Form.Item>
+              <Form.Item name="interestRatePercent" label="Taxa de juros ao mês (%)" help="Juros para parcelas acima do sem juros (deixe em branco para usar o da empresa)">
+                <Input type="number" min={0} step={0.01} placeholder="Ex: 2.99" addonAfter="%" />
               </Form.Item>
               <Form.Item name="isDefault" label="Maquininha padrão" valuePropName="checked">
                 <Switch />

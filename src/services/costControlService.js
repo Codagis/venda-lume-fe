@@ -67,6 +67,23 @@ export async function deletePayable(id) {
   }
 }
 
+export async function downloadPaymentReceiptPdf(id) {
+  const res = await apiFetch(`/cost-control/payables/${id}/payment-receipt`)
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err?.message || err?.error || 'Erro ao gerar comprovante.')
+  }
+  const blob = await res.blob()
+  const urlObj = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = urlObj
+  a.download = 'comprovante-pagamento.pdf'
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(urlObj)
+}
+
 export async function createReceivable(data) {
   const res = await apiFetch('/cost-control/receivables', {
     method: 'POST',
