@@ -3,7 +3,7 @@
 }
 
 .restaurant-tables-main {
-  padding: 24px;
+  padding: 0;
 }
 
 .restaurant-tables-container {
@@ -91,7 +91,7 @@
 }
 
 .restaurant-tables-filters-card .ant-card-body {
-  padding: 16px;
+  padding: 20px 22px;
 }
 
 .restaurant-tables-filters-card label {
@@ -101,11 +101,11 @@
   color: #34495e;
 }
 
-.restaurant-tables-filters-toggle .ant-btn {
+.restaurant-tables-filters-toggle .ant-btn:not(.vl-filters-toggle-btn) {
   color: #667085;
 }
 
-.restaurant-tables-filters-toggle .ant-btn:hover {
+.restaurant-tables-filters-toggle .ant-btn:not(.vl-filters-toggle-btn):hover {
   color: #34495e;
 }
 
@@ -115,19 +115,12 @@
 
 .restaurant-tables-table {
   background: #ffffff;
-  border: 1px solid #e4e7ec;
-  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
   overflow: hidden;
-}
-
-.restaurant-tables-table .ant-table-thead > tr > th {
-  background: #f9fafb;
-  color: #34495e;
-  font-weight: 600;
-}
-
-.restaurant-tables-table .ant-table-tbody > tr:hover > td {
-  background: #f9fafb !important;
+  padding: 0 0 12px;
+  box-sizing: border-box;
 }
 
 .restaurant-tables-map-container {

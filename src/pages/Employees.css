@@ -3,7 +3,7 @@
 }
 
 .employees-main {
-  padding: 24px;
+  padding: 0;
 }
 
 .employees-container {
@@ -89,6 +89,29 @@
   font-weight: 500;
 }
 
+/* Uma linha com os selects: evita Space wrap + align=bottom empilhar e “subir” o botão primário */
+.employees-payroll-generate-actions,
+.employees-payroll-export-actions {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 12px;
+}
+
+@media (max-width: 480px) {
+  .employees-payroll-generate-actions,
+  .employees-payroll-export-actions {
+    flex-wrap: wrap;
+    align-items: stretch;
+  }
+
+  .employees-payroll-generate-actions .ant-btn,
+  .employees-payroll-export-actions .ant-btn {
+    flex: 1 1 auto;
+    min-width: min(100%, 200px);
+  }
+}
+
 .employees-payroll-row .employees-payroll-label {
   display: block;
   margin-bottom: 6px;
@@ -159,7 +182,7 @@
 }
 
 .employees-filters-card .ant-card-body {
-  padding: 16px;
+  padding: 20px 22px;
 }
 
 .employees-toolbar-actions {
@@ -181,20 +204,13 @@
 }
 
 .employees-table {
-  background: #FFFFFF;
-  border: 1px solid #E4E7EC;
-  border-radius: 8px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
   overflow: hidden;
-}
-
-.employees-table .ant-table-thead > tr > th {
-  background: #F9FAFB;
-  color: #34495E;
-  font-weight: 600;
-}
-
-.employees-table .ant-table-tbody > tr:hover > td {
-  background: #F9FAFB !important;
+  padding: 0 0 12px;
+  box-sizing: border-box;
 }
 
 .employees-drawer-form .employees-drawer-section {

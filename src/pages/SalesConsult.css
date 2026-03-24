@@ -54,25 +54,29 @@
   margin: 0;
 }
 
-.sales-consult-filters-card {
+.sales-consult-filters-card.ant-card {
   margin-bottom: 24px;
   border: 1px solid #E4E7EC;
   border-radius: 8px;
-  padding: 16px;
+  padding: 0;
+}
+
+.sales-consult-filters-card.ant-card .ant-card-body {
+  padding: 20px 22px;
 }
 
 .sales-consult-filters-toggle {
   margin-bottom: 0;
 }
 
-.sales-consult-filters-toggle .ant-btn {
-  color: #1D2939 !important;
-  border-color: #E4E7EC;
+.sales-consult-filters-toggle .ant-btn:not(.vl-filters-toggle-btn) {
+  color: #1d2939 !important;
+  border-color: #e4e7ec;
 }
 
-.sales-consult-filters-toggle .ant-btn:hover {
-  color: #34495E !important;
-  border-color: #34495E;
+.sales-consult-filters-toggle .ant-btn:not(.vl-filters-toggle-btn):hover {
+  color: #34495e !important;
+  border-color: #34495e;
 }
 
 .sales-consult-filters-card .ant-btn-primary {
@@ -95,9 +99,34 @@
   color: #667085;
 }
 
-.sales-consult-table-card {
-  border: 1px solid #E4E7EC;
-  border-radius: 8px;
+.sales-consult-table-card.ant-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
+  overflow: hidden;
+}
+
+.sales-consult-table-card.ant-card .ant-card-head {
+  padding: 0 22px;
+  min-height: 52px;
+  background: linear-gradient(180deg, #fafbfc 0%, #ffffff 100%);
+  border-bottom-color: #e2e8f0;
+}
+
+.sales-consult-table-card.ant-card .ant-card-head-title {
+  font-weight: 600;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+}
+
+.sales-consult-table-card.ant-card .ant-card-body {
+  padding: 12px 0 16px;
+}
+
+.sales-consult-table-card .ant-table-wrapper .ant-pagination {
+  border-top: none;
+  margin-bottom: 0 !important;
+  padding: 12px 20px 4px;
 }
 
 .sales-consult-status {

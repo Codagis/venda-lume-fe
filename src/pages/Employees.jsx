@@ -13,7 +13,6 @@ import {
   Table,
   message,
   Space,
-  Popconfirm,
   Tag,
   Checkbox,
   DatePicker,
@@ -23,6 +22,7 @@ import {
   PlusOutlined,
   SearchOutlined,
   FilterOutlined,
+  DownOutlined,
   DeleteOutlined,
   FilePdfOutlined,
   FileExcelOutlined,
@@ -32,6 +32,7 @@ import {
 import dayjs from 'dayjs'
 import { useAuth } from '../contexts/AuthContext'
 import * as employeeService from '../services/employeeService'
+import { confirmDeleteModal } from '../utils/confirmModal'
 import * as tenantService from '../services/tenantService'
 import * as contractorService from '../services/contractorService'
 import './Employees.css'
@@ -428,16 +429,19 @@ export default function Employees() {
       key: 'actions',
       width: 50,
       render: (_, record) => (
-        <Popconfirm
-          title="Excluir este funcionário?"
-          description="Esta ação não pode ser desfeita."
-          onConfirm={(e) => { e?.stopPropagation?.(); handleDelete(record.id) }}
-          okText="Excluir"
-          cancelText="Cancelar"
-          okButtonProps={{ danger: true }}
-        >
-          <Button type="text" size="small" danger icon={<DeleteOutlined />} onClick={(e) => e.stopPropagation()} />
-        </Popconfirm>
+        <Button
+          type="text"
+          size="small"
+          danger
+          icon={<DeleteOutlined />}
+          onClick={(e) => {
+            e.stopPropagation()
+            confirmDeleteModal({
+              title: 'Excluir este funcionário?',
+              onOk: () => handleDelete(record.id),
+            })
+          }}
+        />
       ),
     },
   ]
@@ -493,9 +497,9 @@ export default function Employees() {
                   style={{ width: '100%' }}
                 />
               </Col>
-              <Col xs={24} sm={8} md={6}>
+              <Col xs={24} sm={24} md={10}>
                 <label className="employees-payroll-label employees-payroll-label-invisible">Ação</label>
-                <Space wrap>
+                <div className="employees-payroll-generate-actions">
                   <Button
                     type="primary"
                     size="large"
@@ -517,7 +521,7 @@ export default function Employees() {
                   >
                     Gerar contas (selecionar)
                   </Button>
-                </Space>
+                </div>
               </Col>
             </Row>
           </Card>
@@ -557,12 +561,12 @@ export default function Employees() {
                   style={{ width: '100%' }}
                 />
               </Col>
-              <Col xs={24} sm={8} md={6}>
+              <Col xs={24} sm={24} md={10}>
                 <label className="employees-payroll-label employees-payroll-label-invisible">Exportar</label>
-                <Space wrap>
+                <div className="employees-payroll-export-actions">
                   <Button icon={<FilePdfOutlined />} loading={payrollLoading === 'pdf'} onClick={handleDownloadPayrollPdf}>Folha PDF</Button>
                   <Button icon={<FileExcelOutlined />} loading={payrollLoading === 'excel'} onClick={handleDownloadPayrollExcel}>Folha Excel</Button>
-                </Space>
+                </div>
               </Col>
             </Row>
             <div className="employees-receipt-list">
@@ -594,13 +598,26 @@ export default function Employees() {
 
           <div className="employees-toolbar">
             <Card className="employees-filters-card sales-consult-filters-card" style={{ width: '100%' }}>
-              <div className="sales-consult-filters-toggle">
-                <Button icon={<FilterOutlined />} onClick={() => setFiltersExpanded((v) => !v)}>
-                  {filtersExpanded ? 'Ocultar filtros' : 'Mostrar filtros'}
+              <div className="vl-filters-toggle sales-consult-filters-toggle">
+                <Button
+                  type="button"
+                  className={`vl-filters-toggle-btn${filtersExpanded ? ' vl-filters-toggle-btn--open' : ''}`}
+                  icon={<FilterOutlined />}
+                  onClick={() => setFiltersExpanded((v) => !v)}
+                  aria-expanded={filtersExpanded}
+                >
+                  <span className="vl-filters-toggle-label">
+                    {filtersExpanded ? 'Ocultar filtros' : 'Mostrar filtros'}
+                  </span>
+                  <DownOutlined className="vl-filters-chevron" aria-hidden />
                 </Button>
               </div>
-              {filtersExpanded && (
-                <Row gutter={16} align="middle" style={{ marginTop: 16 }}>
+              <div
+                className={`vl-filters-expand${filtersExpanded ? ' vl-filters-expand--open' : ''}`}
+                aria-hidden={!filtersExpanded}
+              >
+                <div className="vl-filters-expand-inner">
+                <Row gutter={16} align="middle" className="vl-filters-row">
                   <Col xs={24} sm={12} md={6}>
                     <label>Buscar</label>
                     <Input
@@ -643,7 +660,8 @@ export default function Employees() {
                     </Button>
                   </Col>
                 </Row>
-              )}
+                </div>
+              </div>
             </Card>
             <div className="employees-toolbar-actions">
               <Button type="primary" icon={<PlusOutlined />} onClick={() => openDrawer()} className="employees-add-btn">

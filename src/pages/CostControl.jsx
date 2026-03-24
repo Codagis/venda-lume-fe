@@ -25,6 +25,7 @@ import {
   PlusOutlined,
   SearchOutlined,
   FilterOutlined,
+  DownOutlined,
   DeleteOutlined,
   CreditCardOutlined,
   BankOutlined,
@@ -857,12 +858,18 @@ export default function CostControl() {
                       </Row>
                     )}
                     <Card className="cost-control-filters-card">
-                      <div className="cost-control-filters-toggle" style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                      <div className="vl-filters-toggle cost-control-filters-toggle">
                         <Button
+                          type="button"
+                          className={`vl-filters-toggle-btn${filtersPayableExpanded ? ' vl-filters-toggle-btn--open' : ''}`}
                           icon={<FilterOutlined />}
                           onClick={() => setFiltersPayableExpanded((v) => !v)}
+                          aria-expanded={filtersPayableExpanded}
                         >
-                          {filtersPayableExpanded ? 'Ocultar filtros' : 'Mostrar filtros'}
+                          <span className="vl-filters-toggle-label">
+                            {filtersPayableExpanded ? 'Ocultar filtros' : 'Mostrar filtros'}
+                          </span>
+                          <DownOutlined className="vl-filters-chevron" aria-hidden />
                         </Button>
                         <Space>
                           <Button
@@ -883,8 +890,12 @@ export default function CostControl() {
                           </Button>
                         </Space>
                       </div>
-                      {filtersPayableExpanded && (
-                        <Row gutter={16} align="middle" style={{ marginTop: 16 }}>
+                      <div
+                        className={`vl-filters-expand${filtersPayableExpanded ? ' vl-filters-expand--open' : ''}`}
+                        aria-hidden={!filtersPayableExpanded}
+                      >
+                        <div className="vl-filters-expand-inner">
+                        <Row gutter={16} align="middle" className="vl-filters-row">
                           <Col xs={24} sm={12} md={6}>
                             <label className="cost-control-filter-label">Buscar</label>
                             <Input
@@ -962,7 +973,8 @@ export default function CostControl() {
                             </Button>
                           </Col>
                         </Row>
-                      )}
+                        </div>
+                      </div>
                     </Card>
                     <div style={{ marginTop: 16 }}>
                       <Button type="primary" icon={<PlusOutlined />} onClick={() => openPayableDrawer()} className="cost-control-add-btn">
@@ -1046,12 +1058,18 @@ export default function CostControl() {
                       </Row>
                     )}
                     <Card className="cost-control-filters-card">
-                      <div className="cost-control-filters-toggle" style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                      <div className="vl-filters-toggle cost-control-filters-toggle">
                         <Button
+                          type="button"
+                          className={`vl-filters-toggle-btn${filtersReceivableExpanded ? ' vl-filters-toggle-btn--open' : ''}`}
                           icon={<FilterOutlined />}
                           onClick={() => setFiltersReceivableExpanded((v) => !v)}
+                          aria-expanded={filtersReceivableExpanded}
                         >
-                          {filtersReceivableExpanded ? 'Ocultar filtros' : 'Mostrar filtros'}
+                          <span className="vl-filters-toggle-label">
+                            {filtersReceivableExpanded ? 'Ocultar filtros' : 'Mostrar filtros'}
+                          </span>
+                          <DownOutlined className="vl-filters-chevron" aria-hidden />
                         </Button>
                         <Space>
                           <Button
@@ -1072,8 +1090,12 @@ export default function CostControl() {
                           </Button>
                         </Space>
                       </div>
-                      {filtersReceivableExpanded && (
-                        <Row gutter={16} align="middle" style={{ marginTop: 16 }}>
+                      <div
+                        className={`vl-filters-expand${filtersReceivableExpanded ? ' vl-filters-expand--open' : ''}`}
+                        aria-hidden={!filtersReceivableExpanded}
+                      >
+                        <div className="vl-filters-expand-inner">
+                        <Row gutter={16} align="middle" className="vl-filters-row">
                           <Col xs={24} sm={12} md={6}>
                             <label className="cost-control-filter-label">Buscar</label>
                             <Input
@@ -1125,7 +1147,8 @@ export default function CostControl() {
                             </Button>
                           </Col>
                         </Row>
-                      )}
+                        </div>
+                      </div>
                     </Card>
                     <div style={{ marginTop: 16 }}>
                       <Button type="primary" icon={<PlusOutlined />} onClick={() => openReceivableDrawer()} className="cost-control-add-btn">

@@ -3,7 +3,7 @@
 }
 
 .stock-main {
-  padding: 24px;
+  padding: 0;
 }
 
 .stock-container {
@@ -54,8 +54,76 @@
   margin: 0;
 }
 
-.stock-tenant-row {
+.stock-tenant-shell {
   margin-bottom: 20px;
+  min-height: 52px;
+}
+
+.stock-tenant-skeleton {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 16px;
+  background: #f8fafc;
+  border: 1px solid #e8ecf2;
+  border-radius: 10px;
+}
+
+.stock-tenant-skeleton .stock-tenant-skeleton-input {
+  min-width: 240px !important;
+  width: 260px !important;
+  max-width: 100%;
+  height: 40px !important;
+  border-radius: 8px !important;
+}
+
+.stock-tenant-skeleton-hint {
+  font-size: 13px;
+  color: #64748b;
+}
+
+.stock-tenant-alert {
+  margin: 0;
+}
+
+.stock-tenant-row {
+  margin-bottom: 0;
+}
+
+.stock-tenant-row--ready {
+  animation: stock-tenant-fade-in 0.38s cubic-bezier(0.33, 1, 0.68, 1) both;
+}
+
+.stock-tenant-label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #344054;
+}
+
+@keyframes stock-tenant-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Dropdown preso ao bloco reduz “pulo” com portal + layout */
+.stock-tenant-select-dropdown.ant-select-dropdown {
+  padding: 4px;
+  border-radius: 10px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stock-tenant-row--ready {
+    animation: none;
+  }
 }
 
 .stock-kpis {
@@ -76,9 +144,27 @@
   margin-bottom: 20px;
 }
 
-.stock-table-card {
-  border-radius: 10px;
-  border: 1px solid #E4E7EC;
+.stock-table-card.ant-card {
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
+  overflow: hidden;
+  padding: 0;
+}
+
+.stock-table-card.ant-card .ant-card-head-title {
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.stock-table-card.ant-card .ant-card-body {
+  padding: 12px 0 16px;
+}
+
+.stock-table-card .ant-table-wrapper .ant-pagination {
+  border-top: none;
+  margin-bottom: 0 !important;
+  padding: 12px 20px 4px;
 }
 
 .stock-table-product-name {

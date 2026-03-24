@@ -16,7 +16,6 @@ import {
   message,
   Space,
   Upload,
-  Popconfirm,
   Tooltip,
   Alert,
   Tag,
@@ -33,6 +32,7 @@ import {
   AppstoreAddOutlined,
   SearchOutlined,
   FilterOutlined,
+  DownOutlined,
   UploadOutlined,
   DeleteOutlined,
   WarningOutlined,
@@ -52,6 +52,7 @@ import {
 } from '../services/productService'
 import * as tenantService from '../services/tenantService'
 import { uploadProductImage } from '../services/uploadService'
+import { confirmDeleteModal } from '../utils/confirmModal'
 import './Products.css'
 
 const { TextArea } = Input
@@ -495,16 +496,19 @@ export default function Products() {
           <Tooltip title="Editar">
             <Button type="text" size="small" icon={<EditOutlined />} onClick={() => openDrawer(record)} className="products-table-btn" />
           </Tooltip>
-          <Popconfirm
-            title="Excluir este produto?"
-            description="Esta ação não pode ser desfeita."
-            onConfirm={(e) => { e?.stopPropagation?.(); handleDelete(record.id) }}
-            okText="Excluir"
-            cancelText="Cancelar"
-            okButtonProps={{ danger: true }}
-          >
-            <Button type="text" size="small" danger icon={<DeleteOutlined />} className="products-table-btn" />
-          </Popconfirm>
+          <Button
+            type="text"
+            size="small"
+            danger
+            icon={<DeleteOutlined />}
+            className="products-table-btn"
+            onClick={() =>
+              confirmDeleteModal({
+                title: 'Excluir este produto?',
+                onOk: () => handleDelete(record.id),
+              })
+            }
+          />
         </Space>
       ),
     },
@@ -528,16 +532,26 @@ export default function Products() {
 
           <div className="products-toolbar">
             <Card className="products-filters-card sales-consult-filters-card" style={{ width: '100%' }}>
-              <div className="sales-consult-filters-toggle">
+              <div className="vl-filters-toggle sales-consult-filters-toggle">
                 <Button
+                  type="button"
+                  className={`vl-filters-toggle-btn${filtersExpanded ? ' vl-filters-toggle-btn--open' : ''}`}
                   icon={<FilterOutlined />}
                   onClick={() => setFiltersExpanded((v) => !v)}
+                  aria-expanded={filtersExpanded}
                 >
-                  {filtersExpanded ? 'Ocultar filtros' : 'Mostrar filtros'}
+                  <span className="vl-filters-toggle-label">
+                    {filtersExpanded ? 'Ocultar filtros' : 'Mostrar filtros'}
+                  </span>
+                  <DownOutlined className="vl-filters-chevron" aria-hidden />
                 </Button>
               </div>
-              {filtersExpanded && (
-                <Row gutter={16} align="middle" style={{ marginTop: 16 }}>
+              <div
+                className={`vl-filters-expand${filtersExpanded ? ' vl-filters-expand--open' : ''}`}
+                aria-hidden={!filtersExpanded}
+              >
+                <div className="vl-filters-expand-inner">
+                <Row gutter={16} align="middle" className="vl-filters-row">
                   <Col xs={24} sm={12} md={4}>
                     <label>Buscar</label>
                     <Input
@@ -613,7 +627,8 @@ export default function Products() {
                     </Button>
                   </Col>
                 </Row>
-              )}
+                </div>
+              </div>
             </Card>
             <div className="products-toolbar-actions">
               <Button

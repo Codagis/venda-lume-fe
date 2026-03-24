@@ -13,7 +13,6 @@ import {
   InputNumber,
   message,
   Space,
-  Popconfirm,
   Tag,
   Tabs,
   Switch,
@@ -29,6 +28,7 @@ import {
   PlusOutlined,
   SearchOutlined,
   FilterOutlined,
+  DownOutlined,
   DeleteOutlined,
   EditOutlined,
   CalendarOutlined,
@@ -49,6 +49,7 @@ import * as tableOrdersService from '../services/tableOrdersService'
 import { searchProducts } from '../services/productService'
 import { PAYMENT_METHOD_OPTIONS, PAYMENT_METHOD_OPTIONS_PDV } from '../services/salesService'
 import * as cardMachineService from '../services/cardMachineService'
+import { confirmDeleteModal } from '../utils/confirmModal'
 import './RestaurantTables.css'
 
 const { TextArea } = Input
@@ -880,9 +881,18 @@ export default function RestaurantTables() {
       render: (_, r) => (
         <Space>
           <Button type="text" size="small" icon={<EditOutlined />} onClick={() => openSectionDrawer(r)} />
-          <Popconfirm title="Excluir esta seção?" onConfirm={() => handleDeleteSection(r.id)}>
-            <Button type="text" size="small" danger icon={<DeleteOutlined />} />
-          </Popconfirm>
+          <Button
+            type="text"
+            size="small"
+            danger
+            icon={<DeleteOutlined />}
+            onClick={() =>
+              confirmDeleteModal({
+                title: 'Excluir esta seção?',
+                onOk: () => handleDeleteSection(r.id),
+              })
+            }
+          />
         </Space>
       ),
     },
@@ -910,9 +920,18 @@ export default function RestaurantTables() {
       render: (_, r) => (
         <Space>
           <Button type="text" size="small" icon={<EditOutlined />} onClick={() => openTableDrawer(r)} />
-          <Popconfirm title="Excluir esta mesa?" onConfirm={() => handleDeleteTable(r.id)}>
-            <Button type="text" size="small" danger icon={<DeleteOutlined />} />
-          </Popconfirm>
+          <Button
+            type="text"
+            size="small"
+            danger
+            icon={<DeleteOutlined />}
+            onClick={() =>
+              confirmDeleteModal({
+                title: 'Excluir esta mesa?',
+                onOk: () => handleDeleteTable(r.id),
+              })
+            }
+          />
         </Space>
       ),
     },
@@ -958,9 +977,18 @@ export default function RestaurantTables() {
             title="Gerar comprovante PDF"
           />
           <Button type="text" size="small" icon={<EditOutlined />} onClick={() => openReservationDrawer(r)} />
-          <Popconfirm title="Excluir esta reserva?" onConfirm={() => handleDeleteReservation(r.id)}>
-            <Button type="text" size="small" danger icon={<DeleteOutlined />} />
-          </Popconfirm>
+          <Button
+            type="text"
+            size="small"
+            danger
+            icon={<DeleteOutlined />}
+            onClick={() =>
+              confirmDeleteModal({
+                title: 'Excluir esta reserva?',
+                onOk: () => handleDeleteReservation(r.id),
+              })
+            }
+          />
         </Space>
       ),
     },
@@ -1013,16 +1041,26 @@ export default function RestaurantTables() {
                   <>
                     <div className="restaurant-tables-toolbar">
                       <Card className="restaurant-tables-filters-card" style={{ width: '100%' }}>
-                        <div className="restaurant-tables-filters-toggle">
+                        <div className="vl-filters-toggle restaurant-tables-filters-toggle">
                           <Button
+                            type="button"
+                            className={`vl-filters-toggle-btn${filters.sectionFiltersExpanded ? ' vl-filters-toggle-btn--open' : ''}`}
                             icon={<FilterOutlined />}
                             onClick={() => setFilters((f) => ({ ...f, sectionFiltersExpanded: !f.sectionFiltersExpanded }))}
+                            aria-expanded={filters.sectionFiltersExpanded}
                           >
-                            {filters.sectionFiltersExpanded ? 'Ocultar filtros' : 'Mostrar filtros'}
+                            <span className="vl-filters-toggle-label">
+                              {filters.sectionFiltersExpanded ? 'Ocultar filtros' : 'Mostrar filtros'}
+                            </span>
+                            <DownOutlined className="vl-filters-chevron" aria-hidden />
                           </Button>
                         </div>
-                        {filters.sectionFiltersExpanded && (
-                          <Row gutter={16} align="bottom" style={{ marginTop: 16 }}>
+                        <div
+                          className={`vl-filters-expand${filters.sectionFiltersExpanded ? ' vl-filters-expand--open' : ''}`}
+                          aria-hidden={!filters.sectionFiltersExpanded}
+                        >
+                          <div className="vl-filters-expand-inner">
+                          <Row gutter={16} align="bottom" className="vl-filters-row">
                             <Col xs={24} sm={12} md={8}>
                               <label>Buscar seção</label>
                               <Input
@@ -1047,7 +1085,8 @@ export default function RestaurantTables() {
                               </Button>
                             </Col>
                           </Row>
-                        )}
+                          </div>
+                        </div>
                       </Card>
                       <div className="restaurant-tables-toolbar-actions" style={{ marginTop: 16 }}>
                         <Button
@@ -1083,19 +1122,29 @@ export default function RestaurantTables() {
                   <>
                     <div className="restaurant-tables-toolbar" style={{ marginBottom: 16 }}>
                       <Card className="restaurant-tables-filters-card" style={{ width: '100%' }}>
-                        <div className="restaurant-tables-filters-toggle">
+                        <div className="vl-filters-toggle restaurant-tables-filters-toggle">
                           <Button
+                            type="button"
+                            className={`vl-filters-toggle-btn${mapFiltersExpanded ? ' vl-filters-toggle-btn--open' : ''}`}
                             icon={<FilterOutlined />}
                             onClick={() => {
                               if (!mapFiltersExpanded) setMapFilterSectionId(mapSectionId)
                               setMapFiltersExpanded((v) => !v)
                             }}
+                            aria-expanded={mapFiltersExpanded}
                           >
-                            {mapFiltersExpanded ? 'Ocultar filtros' : 'Mostrar filtros'}
+                            <span className="vl-filters-toggle-label">
+                              {mapFiltersExpanded ? 'Ocultar filtros' : 'Mostrar filtros'}
+                            </span>
+                            <DownOutlined className="vl-filters-chevron" aria-hidden />
                           </Button>
                         </div>
-                        {mapFiltersExpanded && (
-                          <Row gutter={16} align="bottom" style={{ marginTop: 16 }}>
+                        <div
+                          className={`vl-filters-expand${mapFiltersExpanded ? ' vl-filters-expand--open' : ''}`}
+                          aria-hidden={!mapFiltersExpanded}
+                        >
+                          <div className="vl-filters-expand-inner">
+                          <Row gutter={16} align="bottom" className="vl-filters-row">
                             <Col xs={24} sm={12} md={6}>
                               <label>Seção</label>
                               <Select
@@ -1119,7 +1168,8 @@ export default function RestaurantTables() {
                               </Button>
                             </Col>
                           </Row>
-                        )}
+                          </div>
+                        </div>
                       </Card>
                     </div>
                     <div className="restaurant-tables-map-container">
@@ -1183,13 +1233,26 @@ export default function RestaurantTables() {
                   <>
                     <div className="restaurant-tables-toolbar">
                       <Card className="restaurant-tables-filters-card">
-                        <div className="restaurant-tables-filters-toggle">
-                          <Button icon={<FilterOutlined />} onClick={() => setFiltersExpanded((v) => !v)}>
-                            {filtersExpanded ? 'Ocultar filtros' : 'Mostrar filtros'}
+                        <div className="vl-filters-toggle restaurant-tables-filters-toggle">
+                          <Button
+                            type="button"
+                            className={`vl-filters-toggle-btn${filtersExpanded ? ' vl-filters-toggle-btn--open' : ''}`}
+                            icon={<FilterOutlined />}
+                            onClick={() => setFiltersExpanded((v) => !v)}
+                            aria-expanded={filtersExpanded}
+                          >
+                            <span className="vl-filters-toggle-label">
+                              {filtersExpanded ? 'Ocultar filtros' : 'Mostrar filtros'}
+                            </span>
+                            <DownOutlined className="vl-filters-chevron" aria-hidden />
                           </Button>
                         </div>
-                        {filtersExpanded && (
-                          <Row gutter={16} align="bottom" style={{ marginTop: 16 }}>
+                        <div
+                          className={`vl-filters-expand${filtersExpanded ? ' vl-filters-expand--open' : ''}`}
+                          aria-hidden={!filtersExpanded}
+                        >
+                          <div className="vl-filters-expand-inner">
+                          <Row gutter={16} align="bottom" className="vl-filters-row">
                             <Col xs={24} sm={12} md={6}>
                               <label>Seção</label>
                               <Select
@@ -1230,7 +1293,8 @@ export default function RestaurantTables() {
                               </Button>
                             </Col>
                           </Row>
-                        )}
+                          </div>
+                        </div>
                       </Card>
                       <div className="restaurant-tables-toolbar-actions" style={{ marginTop: 16 }}>
                         <Button
@@ -1266,13 +1330,26 @@ export default function RestaurantTables() {
                   <>
                     <div className="restaurant-tables-toolbar">
                       <Card className="restaurant-tables-filters-card">
-                        <div className="restaurant-tables-filters-toggle">
-                          <Button icon={<FilterOutlined />} onClick={() => setFiltersExpanded((v) => !v)}>
-                            {filtersExpanded ? 'Ocultar filtros' : 'Mostrar filtros'}
+                        <div className="vl-filters-toggle restaurant-tables-filters-toggle">
+                          <Button
+                            type="button"
+                            className={`vl-filters-toggle-btn${filtersExpanded ? ' vl-filters-toggle-btn--open' : ''}`}
+                            icon={<FilterOutlined />}
+                            onClick={() => setFiltersExpanded((v) => !v)}
+                            aria-expanded={filtersExpanded}
+                          >
+                            <span className="vl-filters-toggle-label">
+                              {filtersExpanded ? 'Ocultar filtros' : 'Mostrar filtros'}
+                            </span>
+                            <DownOutlined className="vl-filters-chevron" aria-hidden />
                           </Button>
                         </div>
-                        {filtersExpanded && (
-                          <Row gutter={16} align="bottom" style={{ marginTop: 16 }}>
+                        <div
+                          className={`vl-filters-expand${filtersExpanded ? ' vl-filters-expand--open' : ''}`}
+                          aria-hidden={!filtersExpanded}
+                        >
+                          <div className="vl-filters-expand-inner">
+                          <Row gutter={16} align="bottom" className="vl-filters-row">
                             <Col xs={24} sm={12} md={6}>
                               <label>Mesa</label>
                               <Select
@@ -1318,7 +1395,8 @@ export default function RestaurantTables() {
                               </Button>
                             </Col>
                           </Row>
-                        )}
+                          </div>
+                        </div>
                       </Card>
                       <div className="restaurant-tables-toolbar-actions" style={{ marginTop: 16 }}>
                         <Button
@@ -1497,18 +1575,22 @@ export default function RestaurantTables() {
           currentOrder?.id && (
             <div className="restaurant-tables-comanda-footer">
               <Space size="middle" wrap>
-                <Popconfirm
-                  title="Cancelar comanda?"
-                  description="A comanda será encerrada sem gerar venda e a mesa será liberada."
-                  onConfirm={handleCancelComanda}
-                  okText="Sim, cancelar"
-                  cancelText="Não"
-                  okButtonProps={{ danger: true }}
+                <Button
+                  danger
+                  icon={<CloseCircleOutlined />}
+                  onClick={() =>
+                    confirmDeleteModal({
+                      title: 'Cancelar comanda?',
+                      description:
+                        'A comanda será encerrada sem gerar venda e a mesa será liberada.',
+                      okText: 'Sim, cancelar',
+                      cancelText: 'Não',
+                      onOk: handleCancelComanda,
+                    })
+                  }
                 >
-                  <Button danger icon={<CloseCircleOutlined />}>
-                    Cancelar comanda
-                  </Button>
-                </Popconfirm>
+                  Cancelar comanda
+                </Button>
                 <Button
                   icon={<PrinterOutlined />}
                   onClick={handlePrintComanda}
@@ -1609,9 +1691,20 @@ export default function RestaurantTables() {
                         size="small"
                         style={{ width: 70 }}
                       />,
-                      <Popconfirm key="del" title="Remover item?" onConfirm={() => handleRemoveItem(item.id)}>
-                        <Button type="text" size="small" danger icon={<DeleteOutlined />} />
-                      </Popconfirm>,
+                      <Button
+                        key="del"
+                        type="text"
+                        size="small"
+                        danger
+                        icon={<DeleteOutlined />}
+                        onClick={() =>
+                          confirmDeleteModal({
+                            title: 'Remover item?',
+                            okText: 'Remover',
+                            onOk: () => handleRemoveItem(item.id),
+                          })
+                        }
+                      />,
                     ]}
                   >
                     <List.Item.Meta

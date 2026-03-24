@@ -43,6 +43,7 @@ import {
 import * as tenantService from '../services/tenantService'
 import * as customerService from '../services/customerService'
 import * as deliveryService from '../services/deliveryService'
+import { confirmDeleteModal } from '../utils/confirmModal'
 import dayjs from 'dayjs'
 import './Sales.css'
 
@@ -493,7 +494,7 @@ export default function Sales() {
 
   return (
     <div className="sales-page">
-      <main className="sales-main">
+      <main className={`sales-main${!salesFormExpanded ? ' sales-main--pdv-landing' : ''}`}>
         <div className="sales-container">
           {!salesFormExpanded ? (
             <Card className="sales-pdv-cta-card">
@@ -625,7 +626,19 @@ export default function Sales() {
                         </div>
                         <div className="sales-cart-item-right">
                           <span className="sales-cart-item-total">{formatPrice(itemSubtotal)}</span>
-                          <Button type="text" size="small" danger icon={<DeleteOutlined />} onClick={() => removeFromCart(c.productId)} />
+                          <Button
+                            type="text"
+                            size="small"
+                            danger
+                            icon={<DeleteOutlined />}
+                            onClick={() =>
+                              confirmDeleteModal({
+                                title: 'Remover este item do carrinho?',
+                                okText: 'Remover',
+                                onOk: () => removeFromCart(c.productId),
+                              })
+                            }
+                          />
                         </div>
                       </div>
                     )

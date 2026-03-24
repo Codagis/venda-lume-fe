@@ -11,7 +11,6 @@ import {
   Select,
   Switch,
   message,
-  Popconfirm,
   Space,
   Upload,
   Avatar,
@@ -33,6 +32,7 @@ import * as cardMachineService from '../services/cardMachineService'
 import { uploadTenantLogo } from '../services/uploadService'
 import * as permissionService from '../services/permissionService'
 import * as profileService from '../services/profileService'
+import { confirmDeleteModal } from '../utils/confirmModal'
 import './Settings.css'
 
 const UF_OPTIONS = [
@@ -465,9 +465,18 @@ export default function Settings() {
       render: (_, r) => (
         <Space>
           <Button type="link" size="small" icon={<EditOutlined />} onClick={() => openModal('tenant', r.id)} />
-          <Popconfirm title="Excluir esta empresa?" onConfirm={() => onDeleteTenant(r.id)}>
-            <Button type="link" size="small" danger icon={<DeleteOutlined />} />
-          </Popconfirm>
+          <Button
+            type="link"
+            size="small"
+            danger
+            icon={<DeleteOutlined />}
+            onClick={() =>
+              confirmDeleteModal({
+                title: 'Excluir esta empresa?',
+                onOk: () => onDeleteTenant(r.id),
+              })
+            }
+          />
         </Space>
       ),
     },
@@ -484,9 +493,18 @@ export default function Settings() {
       render: (_, r) => (
         <Space>
           <Button type="link" size="small" icon={<EditOutlined />} onClick={() => openModal('permission', r.id)} />
-          <Popconfirm title="Excluir esta permissão?" onConfirm={() => onDeletePermission(r.id)}>
-            <Button type="link" size="small" danger icon={<DeleteOutlined />} />
-          </Popconfirm>
+          <Button
+            type="link"
+            size="small"
+            danger
+            icon={<DeleteOutlined />}
+            onClick={() =>
+              confirmDeleteModal({
+                title: 'Excluir esta permissão?',
+                onOk: () => onDeletePermission(r.id),
+              })
+            }
+          />
         </Space>
       ),
     },
@@ -507,9 +525,18 @@ export default function Settings() {
       render: (_, r) => (
         <Space>
           <Button type="link" size="small" icon={<EditOutlined />} onClick={() => openModal('profile', r.id)} />
-          <Popconfirm title="Excluir este perfil?" onConfirm={() => onDeleteProfile(r.id)}>
-            <Button type="link" size="small" danger icon={<DeleteOutlined />} />
-          </Popconfirm>
+          <Button
+            type="link"
+            size="small"
+            danger
+            icon={<DeleteOutlined />}
+            onClick={() =>
+              confirmDeleteModal({
+                title: 'Excluir este perfil?',
+                onOk: () => onDeleteProfile(r.id),
+              })
+            }
+          />
         </Space>
       ),
     },
@@ -851,9 +878,18 @@ export default function Settings() {
                         render: (_, r) => (
                           <Space>
                             <Button type="link" size="small" icon={<EditOutlined />} onClick={() => openCardMachineModal(r.id)} />
-                            <Popconfirm title="Excluir esta maquininha?" onConfirm={() => onDeleteCardMachine(r.id)}>
-                              <Button type="link" size="small" danger icon={<DeleteOutlined />} />
-                            </Popconfirm>
+                            <Button
+                              type="link"
+                              size="small"
+                              danger
+                              icon={<DeleteOutlined />}
+                              onClick={() =>
+                                confirmDeleteModal({
+                                  title: 'Excluir esta maquininha?',
+                                  onOk: () => onDeleteCardMachine(r.id),
+                                })
+                              }
+                            />
                           </Space>
                         ),
                       },

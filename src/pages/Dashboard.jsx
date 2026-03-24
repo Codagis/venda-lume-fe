@@ -16,7 +16,6 @@ import {
   Empty,
   DatePicker,
   Button,
-  Space,
 } from 'antd'
 import {
   DollarOutlined,
@@ -30,6 +29,7 @@ import {
   PieChartOutlined,
   BulbOutlined,
   FilterOutlined,
+  DownOutlined,
 } from '@ant-design/icons'
 import {
   AreaChart,
@@ -47,17 +47,22 @@ import {
   Bar,
 } from 'recharts'
 import dayjs from 'dayjs'
+import 'dayjs/locale/pt-br'
+
+dayjs.locale('pt-br')
 import { useAuth } from '../contexts/AuthContext'
 import { useModules } from '../contexts/ModulesContext'
 import { getIcon } from '../config/iconRegistry'
 import { getDashboardAnalytics } from '../services/dashboardService'
 import { getSalesAnalytics } from '../services/salesAnalyticsService'
 import * as tenantService from '../services/tenantService'
+import { RevealWhenReady, DelayedReveal } from '../components/VlMotion'
 import './Dashboard.css'
 
 const { Text } = Typography
-const COLORS = ['#34495E', '#5D6D7E', '#7F8C8D', '#95A5A6', '#BDC3C7', '#2C3E50']
-const COLORS2 = ['#34495E', '#27ae60', '#3498db', '#e67e22', '#9b59b6', '#1abc9c']
+const COLORS = ['#22c55e', '#38bdf8', '#fbbf24', '#64748b', '#a78bfa', '#2dd4bf']
+const COLORS2 = ['#115e59', '#22c55e', '#3b82f6', '#f59e0b', '#8b5cf6', '#14b8a6']
+const STRIP_ACCENT = ['#22c55e', '#fbbf24', '#38bdf8', '#64748b', '#a78bfa', '#34d399']
 const RECOMMENDATION_ICONS = {
   PRODUCT_FOCUS: TrophyOutlined,
   INVESTMENT: RiseOutlined,
@@ -82,6 +87,9 @@ function formatCurrency(value) {
     minimumFractionDigits: 2,
   }).format(value)
 }
+
+/** Gutter horizontal + vertical padronizado entre cards do dashboard */
+const DASH_GRID_GUTTER = [20, 20]
 
 export default function Dashboard() {
   const { user } = useAuth()
@@ -198,73 +206,84 @@ export default function Dashboard() {
   return (
     <div className="dashboard">
       <main className="dashboard-main">
-        <div className="dashboard-header">
-          <div>
-            <h1 className="dashboard-title">
-              Dashboard
-            </h1>
-            <p className="dashboard-subtitle">
-              Bem-vindo{user?.fullName ? `, ${user.fullName}` : ''}. Visão geral do seu negócio.
-            </p>
-          </div>
-        </div>
+        <header className="dashboard-hero">
+          <p className="dashboard-hero-date">{dayjs().format('dddd, D [de] MMMM [de] YYYY')}</p>
+          <h1 className="dashboard-hero-title">
+            Bem-vindo de volta
+            {user?.fullName
+              ? `, ${user.fullName.trim().split(/\s+/)[0]}!`
+              : '!'}
+          </h1>
+          <p className="dashboard-hero-sub">Visão geral do seu negócio e indicadores do período.</p>
+        </header>
 
-        <Card className="dashboard-filters-card">
-          <div className="dashboard-filters-toggle" style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+        <Card className="dashboard-filters-card dashboard-surface-card">
+          <div className="dashboard-filters-toggle">
             <Button
+              type="button"
+              className={`dashboard-filters-toggle-btn${filtersExpanded ? ' dashboard-filters-toggle-btn--open' : ''}`}
               icon={<FilterOutlined />}
               onClick={() => setFiltersExpanded((v) => !v)}
+              aria-expanded={filtersExpanded}
             >
-              {filtersExpanded ? 'Ocultar filtros' : 'Mostrar filtros'}
+              <span className="dashboard-filters-toggle-label">
+                {filtersExpanded ? 'Ocultar filtros' : 'Mostrar filtros'}
+              </span>
+              <DownOutlined className="dashboard-filters-chevron" aria-hidden />
             </Button>
           </div>
-          {filtersExpanded && (
-            <Row gutter={16} align="middle" style={{ marginTop: 16 }}>
-              <Col xs={24} sm={12} md={4}>
-                <label className="dashboard-filter-label">Data início</label>
-                <DatePicker
-                  value={startDate}
-                  onChange={(d) => setStartDate(d || dayjs().subtract(30, 'day'))}
-                  format="DD/MM/YYYY"
-                  allowClear={false}
-                  maxDate={dayjs()}
-                  style={{ width: '100%' }}
-                />
-              </Col>
-              <Col xs={24} sm={12} md={4}>
-                <label className="dashboard-filter-label">Data fim</label>
-                <DatePicker
-                  value={endDate}
-                  onChange={(d) => setEndDate(d || dayjs())}
-                  format="DD/MM/YYYY"
-                  allowClear={false}
-                  maxDate={dayjs()}
-                  disabledDate={(d) => startDate ? d.isBefore(startDate, 'day') : false}
-                  style={{ width: '100%' }}
-                />
-              </Col>
-              {isRoot && tenants.length > 0 && (
+          <div
+            className={`dashboard-filters-expand${filtersExpanded ? ' dashboard-filters-expand--open' : ''}`}
+            aria-hidden={!filtersExpanded}
+          >
+            <div className="dashboard-filters-expand-inner">
+              <Row gutter={DASH_GRID_GUTTER} align="middle" className="dashboard-filters-row">
                 <Col xs={24} sm={12} md={4}>
-                  <label className="dashboard-filter-label">Empresa</label>
-                  <Select
-                    placeholder="Selecione a empresa"
-                    options={tenants.map((t) => ({ value: t.id, label: t.name }))}
-                    value={selectedTenantId}
-                    onChange={setSelectedTenantId}
-                    className="dashboard-tenant-select"
+                  <label className="dashboard-filter-label">Data início</label>
+                  <DatePicker
+                    value={startDate}
+                    onChange={(d) => setStartDate(d || dayjs().subtract(30, 'day'))}
+                    format="DD/MM/YYYY"
+                    allowClear={false}
+                    maxDate={dayjs()}
                     style={{ width: '100%' }}
-                    showSearch
-                    optionFilterProp="label"
                   />
                 </Col>
-              )}
-              <Col xs={24} sm={12} md={4} style={{ marginTop: 24 }}>
-                <Button type="primary" icon={<FilterOutlined />} onClick={handleBuscar} loading={loading} block>
-                  Buscar
-                </Button>
-              </Col>
-            </Row>
-          )}
+                <Col xs={24} sm={12} md={4}>
+                  <label className="dashboard-filter-label">Data fim</label>
+                  <DatePicker
+                    value={endDate}
+                    onChange={(d) => setEndDate(d || dayjs())}
+                    format="DD/MM/YYYY"
+                    allowClear={false}
+                    maxDate={dayjs()}
+                    disabledDate={(d) => startDate ? d.isBefore(startDate, 'day') : false}
+                    style={{ width: '100%' }}
+                  />
+                </Col>
+                {isRoot && tenants.length > 0 && (
+                  <Col xs={24} sm={12} md={4}>
+                    <label className="dashboard-filter-label">Empresa</label>
+                    <Select
+                      placeholder="Selecione a empresa"
+                      options={tenants.map((t) => ({ value: t.id, label: t.name }))}
+                      value={selectedTenantId}
+                      onChange={setSelectedTenantId}
+                      className="dashboard-tenant-select"
+                      style={{ width: '100%' }}
+                      showSearch
+                      optionFilterProp="label"
+                    />
+                  </Col>
+                )}
+                <Col xs={24} sm={12} md={4} className="dashboard-filters-buscar-col">
+                  <Button type="primary" icon={<FilterOutlined />} onClick={handleBuscar} loading={loading} block>
+                    Buscar
+                  </Button>
+                </Col>
+              </Row>
+            </div>
+          </div>
         </Card>
 
         {loading ? (
@@ -279,30 +298,52 @@ export default function Dashboard() {
             showIcon
           />
         ) : (
-          <>
+          <RevealWhenReady ready delayMs={110}>
+            <>
             <div className="dashboard-kpis">
-              <Row gutter={[16, 16]}>
-                <Col xs={24} sm={12} lg={6}>
-                  <Card className="dashboard-kpi-card dashboard-kpi-revenue">
-                    <Statistic
-                      title="Faturamento do período"
-                      value={month?.totalAmount ?? 0}
-                      prefix={<DollarOutlined />}
-                      formatter={(v) => formatCurrency(v)}
-                    />
+              <Row gutter={DASH_GRID_GUTTER}>
+                <Col xs={24} lg={12}>
+                  <Card className="dashboard-kpi-card dashboard-kpi-spotlight">
+                    <div className="dashboard-kpi-spotlight-head">
+                      <span className="dashboard-kpi-spotlight-label">
+                        <DollarOutlined /> Faturamento do período
+                      </span>
+                    </div>
+                    <div className="dashboard-kpi-spotlight-value">{formatCurrency(month?.totalAmount ?? 0)}</div>
+                    <p className="dashboard-kpi-spotlight-hint">
+                      {month?.count != null ? (
+                        <>
+                          <ArrowUpOutlined /> {month.count} vendas no período selecionado
+                        </>
+                      ) : (
+                        'Indicador consolidado do intervalo'
+                      )}
+                    </p>
                   </Card>
                 </Col>
-                <Col xs={24} sm={12} lg={6}>
-                  <Card className="dashboard-kpi-card dashboard-kpi-sales">
-                    <Statistic
-                      title="Vendas do período"
-                      value={month?.count ?? 0}
-                      prefix={<ShoppingCartOutlined />}
-                    />
+                <Col xs={24} lg={12}>
+                  <Card className="dashboard-kpi-card dashboard-kpi-stripes">
+                    <div className="dashboard-kpi-stripes-head">
+                      <span className="dashboard-kpi-stripes-title">Vendas do período</span>
+                      <span className="dashboard-kpi-stripes-badge">{month?.count ?? 0}</span>
+                    </div>
+                    <div className="dashboard-kpi-stripes-bars" aria-hidden>
+                      {Array.from({ length: 28 }).map((_, i) => (
+                        <span
+                          key={i}
+                          className="dashboard-kpi-stripes-bar"
+                          style={{
+                            height: `${18 + ((i * 7) % 55)}%`,
+                            opacity: 0.35 + ((i % 5) * 0.12),
+                          }}
+                        />
+                      ))}
+                    </div>
+                    <p className="dashboard-kpi-stripes-foot">Volume de pedidos no período filtrado</p>
                   </Card>
                 </Col>
-                <Col xs={24} sm={12} lg={6}>
-                  <Card className="dashboard-kpi-card dashboard-kpi-ticket">
+                <Col xs={24} sm={12} lg={12}>
+                  <Card className="dashboard-kpi-card dashboard-kpi-soft">
                     <Statistic
                       title="Ticket médio"
                       value={ticketMedio}
@@ -311,8 +352,8 @@ export default function Dashboard() {
                     />
                   </Card>
                 </Col>
-                <Col xs={24} sm={12} lg={6}>
-                  <Card className="dashboard-kpi-card dashboard-kpi-products">
+                <Col xs={24} sm={12} lg={12}>
+                  <Card className="dashboard-kpi-card dashboard-kpi-soft">
                     <Statistic
                       title="Produtos cadastrados"
                       value={analytics.productCount ?? 0}
@@ -328,7 +369,46 @@ export default function Dashboard() {
               </Row>
             </div>
 
-            <Row gutter={[16, 16]} className="dashboard-charts-row">
+            {salesByTypeFiltered.length > 0 && (
+              <div className="dashboard-channel-strip dashboard-surface-card">
+                <p className="dashboard-channel-strip-title">Mix por canal (período)</p>
+                <div className="dashboard-channel-strip-track">
+                  {(() => {
+                    const total = salesByTypeFiltered.reduce(
+                      (acc, s) => acc + Number(s.total || 0),
+                      0
+                    )
+                    return salesByTypeFiltered.map((s, i) => {
+                      const v = Number(s.total || 0)
+                      const flexGrow = total > 0 ? Math.max(0.05, v / total) : 0
+                      return (
+                        <div
+                          key={s.type}
+                          className="dashboard-channel-seg"
+                          style={{
+                            flex: `${flexGrow} 1 0`,
+                            minWidth: v > 0 ? 10 : 0,
+                            background: STRIP_ACCENT[i % STRIP_ACCENT.length],
+                            boxShadow: `0 0 20px ${STRIP_ACCENT[i % STRIP_ACCENT.length]}55`,
+                          }}
+                          title={`${SALE_TYPE_LABELS[s.type] || s.type}: ${formatCurrency(v)}`}
+                        />
+                      )
+                    })
+                  })()}
+                </div>
+                <div className="dashboard-channel-legend">
+                  {salesByTypeFiltered.map((s, i) => (
+                    <span key={s.type} className="dashboard-channel-legend-item">
+                      <i style={{ background: STRIP_ACCENT[i % STRIP_ACCENT.length] }} />
+                      {SALE_TYPE_LABELS[s.type] || s.type}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <Row gutter={DASH_GRID_GUTTER} className="dashboard-charts-row">
               <Col xs={24} lg={16}>
                 <Card
                   className="dashboard-chart-card"
@@ -343,11 +423,11 @@ export default function Dashboard() {
                       >
                         <defs>
                           <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#34495E" stopOpacity={0.3} />
-                            <stop offset="95%" stopColor="#34495E" stopOpacity={0} />
+                            <stop offset="5%" stopColor="#22c55e" stopOpacity={0.35} />
+                            <stop offset="95%" stopColor="#22c55e" stopOpacity={0} />
                           </linearGradient>
                         </defs>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                        <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
                         <XAxis
                           dataKey="date"
                           tick={{ fontSize: 12 }}
@@ -369,7 +449,7 @@ export default function Dashboard() {
                         <Area
                           type="monotone"
                           dataKey="total"
-                          stroke="#34495E"
+                          stroke="#16a34a"
                           strokeWidth={2}
                           fillOpacity={1}
                           fill="url(#colorTotal)"
@@ -418,40 +498,50 @@ export default function Dashboard() {
               </Col>
             </Row>
 
-            <Row gutter={[16, 16]}>
-              {analytics?.accountsPayableSummary && (
-              <Col xs={24} md={6}>
-                <Card className="dashboard-summary-card dashboard-cost-card">
-                  <Statistic
-                    title="Contas a pagar (pendente)"
-                    value={Number(analytics.accountsPayableSummary.totalPending || 0)}
-                    formatter={(v) => formatCurrency(v)}
-                  />
-                  {Number(analytics.accountsPayableSummary.totalOverdue || 0) > 0 && (
-                    <div className="dashboard-overdue" style={{ color: '#cf1322', fontSize: 12, marginTop: 4 }}>
-                      {analytics.accountsPayableSummary.countOverdue} vencida(s): {formatCurrency(analytics.accountsPayableSummary.totalOverdue)}
-                    </div>
-                  )}
-                </Card>
-              </Col>
-              )}
-              {analytics?.accountsReceivableSummary && (
-              <Col xs={24} md={6}>
-                <Card className="dashboard-summary-card dashboard-cost-card">
-                  <Statistic
-                    title="Contas a receber (pendente)"
-                    value={Number(analytics.accountsReceivableSummary.totalPending || 0)}
-                    formatter={(v) => formatCurrency(v)}
-                  />
-                  {Number(analytics.accountsReceivableSummary.totalOverdue || 0) > 0 && (
-                    <div className="dashboard-overdue" style={{ color: '#cf1322', fontSize: 12, marginTop: 4 }}>
-                      {analytics.accountsReceivableSummary.countOverdue} vencida(s): {formatCurrency(analytics.accountsReceivableSummary.totalOverdue)}
-                    </div>
-                  )}
-                </Card>
-              </Col>
-              )}
-              <Col xs={24} md={analytics?.accountsPayableSummary ? 4 : 8}>
+            {(analytics?.accountsPayableSummary || analytics?.accountsReceivableSummary) && (
+              <Row gutter={DASH_GRID_GUTTER} className="dashboard-summary-finance-row">
+                {analytics?.accountsPayableSummary && (
+                  <Col
+                    xs={24}
+                    md={analytics?.accountsReceivableSummary ? 12 : 24}
+                  >
+                    <Card className="dashboard-summary-card dashboard-cost-card">
+                      <Statistic
+                        title="Contas a pagar (pendente)"
+                        value={Number(analytics.accountsPayableSummary.totalPending || 0)}
+                        formatter={(v) => formatCurrency(v)}
+                      />
+                      {Number(analytics.accountsPayableSummary.totalOverdue || 0) > 0 && (
+                        <div className="dashboard-overdue" style={{ color: '#cf1322', fontSize: 12, marginTop: 4 }}>
+                          {analytics.accountsPayableSummary.countOverdue} vencida(s): {formatCurrency(analytics.accountsPayableSummary.totalOverdue)}
+                        </div>
+                      )}
+                    </Card>
+                  </Col>
+                )}
+                {analytics?.accountsReceivableSummary && (
+                  <Col
+                    xs={24}
+                    md={analytics?.accountsPayableSummary ? 12 : 24}
+                  >
+                    <Card className="dashboard-summary-card dashboard-cost-card">
+                      <Statistic
+                        title="Contas a receber (pendente)"
+                        value={Number(analytics.accountsReceivableSummary.totalPending || 0)}
+                        formatter={(v) => formatCurrency(v)}
+                      />
+                      {Number(analytics.accountsReceivableSummary.totalOverdue || 0) > 0 && (
+                        <div className="dashboard-overdue" style={{ color: '#cf1322', fontSize: 12, marginTop: 4 }}>
+                          {analytics.accountsReceivableSummary.countOverdue} vencida(s): {formatCurrency(analytics.accountsReceivableSummary.totalOverdue)}
+                        </div>
+                      )}
+                    </Card>
+                  </Col>
+                )}
+              </Row>
+            )}
+            <Row gutter={DASH_GRID_GUTTER} className="dashboard-summary-period-row">
+              <Col xs={24} md={8}>
                 <Card className="dashboard-summary-card">
                   <Statistic
                     title="Hoje"
@@ -463,7 +553,7 @@ export default function Dashboard() {
                   </div>
                 </Card>
               </Col>
-              <Col xs={24} md={analytics?.accountsPayableSummary ? 4 : 8}>
+              <Col xs={24} md={8}>
                 <Card className="dashboard-summary-card">
                   <Statistic
                     title="Esta semana"
@@ -475,7 +565,7 @@ export default function Dashboard() {
                   </div>
                 </Card>
               </Col>
-              <Col xs={24} md={analytics?.accountsPayableSummary ? 4 : 8}>
+              <Col xs={24} md={8}>
                 <Card className="dashboard-summary-card">
                   <Statistic
                     title="Período selecionado"
@@ -490,7 +580,7 @@ export default function Dashboard() {
             </Row>
 
             {((analytics?.payableByMonth?.length > 0) || (analytics?.receivableByMonth?.length > 0)) && (
-            <Row gutter={[16, 16]} className="dashboard-charts-row">
+            <Row gutter={DASH_GRID_GUTTER} className="dashboard-charts-row">
               {analytics?.payableByMonth?.length > 0 && (
               <Col xs={24} lg={12}>
                 <Card className="dashboard-chart-card" title="Contas a pagar (últimos 6 meses)">
@@ -560,7 +650,7 @@ export default function Dashboard() {
 
             {salesAnalytics && (
             <>
-            <Row gutter={[16, 16]} className="dashboard-charts-row">
+            <Row gutter={DASH_GRID_GUTTER} className="dashboard-charts-row">
               <Col xs={24} lg={12}>
                 <Card className="dashboard-chart-card" title="Top 8 produtos (quantidade)">
                   {(() => {
@@ -611,7 +701,7 @@ export default function Dashboard() {
               </Col>
             </Row>
 
-            <Row gutter={[16, 16]}>
+            <Row gutter={DASH_GRID_GUTTER} className="dashboard-charts-row">
               <Col xs={24} lg={12}>
                 <Card className="dashboard-chart-card" title="Produtos mais vendidos">
                   {(salesAnalytics.topProductsByQuantity || []).length > 0 ? (
@@ -657,10 +747,10 @@ export default function Dashboard() {
             </Row>
 
             {(salesAnalytics.recommendations || []).length > 0 && (
-            <Row gutter={[16, 16]}>
+            <Row gutter={DASH_GRID_GUTTER} className="dashboard-charts-row">
               <Col xs={24}>
                 <Card className="dashboard-chart-card" title={<span><BulbOutlined style={{ marginRight: 8, color: '#faad14' }} />Recomendações estratégicas</span>} extra={<Text type="secondary">Últimos 30 dias</Text>}>
-                  <Row gutter={[16, 16]}>
+                  <Row gutter={DASH_GRID_GUTTER}>
                     {salesAnalytics.recommendations.map((rec, i) => {
                       const Icon = RECOMMENDATION_ICONS[rec.type] || BulbOutlined
                       return (
@@ -682,7 +772,7 @@ export default function Dashboard() {
             </Row>
             )}
 
-            <Row gutter={[16, 16]}>
+            <Row gutter={DASH_GRID_GUTTER} className="dashboard-charts-row">
               <Col xs={24}>
                 <Card className="dashboard-chart-card" title="Resumo por canal (últimos 30 dias)">
                   {(() => {
@@ -710,29 +800,32 @@ export default function Dashboard() {
             )}
 
             {quickActionModules.length > 0 && (
-            <div className="dashboard-quick-actions">
-              <h3 className="dashboard-section-title">Acesso rápido</h3>
-              <Row gutter={[16, 16]}>
-                {quickActionModules.map((m) => {
-                  const Icon = getIcon(m.icon, m.code)
-                  const path = m.route === '/' ? '/' : m.route
-                  return (
-                    <Col key={m.code} xs={24} sm={12} md={6}>
-                      <Card
-                        className="dashboard-action-card"
-                        hoverable
-                        onClick={() => navigate(path)}
-                      >
-                        <Icon className="dashboard-action-icon" />
-                        <span>{m.name}</span>
-                      </Card>
-                    </Col>
-                  )
-                })}
-              </Row>
-            </div>
+              <DelayedReveal delayMs={200}>
+                <div className="dashboard-quick-actions">
+                  <h3 className="dashboard-section-title">Acesso rápido</h3>
+                  <Row gutter={DASH_GRID_GUTTER}>
+                    {quickActionModules.map((m) => {
+                      const Icon = getIcon(m.icon, m.code)
+                      const path = m.route === '/' ? '/' : m.route
+                      return (
+                        <Col key={m.code} xs={24} sm={12} md={6}>
+                          <Card
+                            className="dashboard-action-card"
+                            hoverable
+                            onClick={() => navigate(path)}
+                          >
+                            <Icon className="dashboard-action-icon" />
+                            <span>{m.name}</span>
+                          </Card>
+                        </Col>
+                      )
+                    })}
+                  </Row>
+                </div>
+              </DelayedReveal>
             )}
-          </>
+            </>
+          </RevealWhenReady>
         )}
       </main>
     </div>

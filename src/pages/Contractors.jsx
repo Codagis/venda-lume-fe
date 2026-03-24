@@ -13,7 +13,6 @@ import {
   Table,
   message,
   Space,
-  Popconfirm,
   Modal,
   Upload,
 } from 'antd'
@@ -22,6 +21,7 @@ import {
   PlusOutlined,
   SearchOutlined,
   FilterOutlined,
+  DownOutlined,
   DeleteOutlined,
   UploadOutlined,
   InboxOutlined,
@@ -29,6 +29,7 @@ import {
 import { useAuth } from '../contexts/AuthContext'
 import * as contractorService from '../services/contractorService'
 import * as tenantService from '../services/tenantService'
+import { confirmDeleteModal } from '../utils/confirmModal'
 import './Contractors.css'
 
 const { TextArea } = Input
@@ -310,16 +311,19 @@ export default function Contractors() {
       key: 'actions',
       width: 50,
       render: (_, record) => (
-        <Popconfirm
-          title="Excluir este prestador?"
-          description="Esta ação não pode ser desfeita."
-          onConfirm={(e) => { e?.stopPropagation?.(); handleDelete(record.id) }}
-          okText="Excluir"
-          cancelText="Cancelar"
-          okButtonProps={{ danger: true }}
-        >
-          <Button type="text" size="small" danger icon={<DeleteOutlined />} onClick={(e) => e.stopPropagation()} />
-        </Popconfirm>
+        <Button
+          type="text"
+          size="small"
+          danger
+          icon={<DeleteOutlined />}
+          onClick={(e) => {
+            e.stopPropagation()
+            confirmDeleteModal({
+              title: 'Excluir este prestador?',
+              onOk: () => handleDelete(record.id),
+            })
+          }}
+        />
       ),
     },
   ]
@@ -342,13 +346,26 @@ export default function Contractors() {
 
           <div className="contractors-toolbar">
             <Card className="contractors-filters-card sales-consult-filters-card" style={{ width: '100%' }}>
-              <div className="sales-consult-filters-toggle">
-                <Button icon={<FilterOutlined />} onClick={() => setFiltersExpanded((v) => !v)}>
-                  {filtersExpanded ? 'Ocultar filtros' : 'Mostrar filtros'}
+              <div className="vl-filters-toggle sales-consult-filters-toggle">
+                <Button
+                  type="button"
+                  className={`vl-filters-toggle-btn${filtersExpanded ? ' vl-filters-toggle-btn--open' : ''}`}
+                  icon={<FilterOutlined />}
+                  onClick={() => setFiltersExpanded((v) => !v)}
+                  aria-expanded={filtersExpanded}
+                >
+                  <span className="vl-filters-toggle-label">
+                    {filtersExpanded ? 'Ocultar filtros' : 'Mostrar filtros'}
+                  </span>
+                  <DownOutlined className="vl-filters-chevron" aria-hidden />
                 </Button>
               </div>
-              {filtersExpanded && (
-                <Row gutter={16} align="middle" style={{ marginTop: 16 }}>
+              <div
+                className={`vl-filters-expand${filtersExpanded ? ' vl-filters-expand--open' : ''}`}
+                aria-hidden={!filtersExpanded}
+              >
+                <div className="vl-filters-expand-inner">
+                <Row gutter={16} align="middle" className="vl-filters-row">
                   <Col xs={24} sm={12} md={6}>
                     <label>Buscar</label>
                     <Input
@@ -391,7 +408,8 @@ export default function Contractors() {
                     </Button>
                   </Col>
                 </Row>
-              )}
+                </div>
+              </div>
             </Card>
             <div className="contractors-toolbar-actions">
               <Button type="primary" icon={<PlusOutlined />} onClick={() => openDrawer()} className="contractors-add-btn">

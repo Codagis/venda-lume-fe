@@ -5,8 +5,8 @@
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
-    Ubuntu, Cantarell, sans-serif;
+  font-family: 'Urbanist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+    Oxygen, Ubuntu, Cantarell, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -40,4 +40,262 @@ body {
 
 .ant-tree-treenode:hover .ant-tree-node-content-wrapper {
   background-color: #e8ecf2 !important;
+}
+
+/* Filtros colapsáveis (grid 0fr / 1fr) — alinhado ao dashboard */
+:root {
+  --vl-filters-motion-ease: cubic-bezier(0.33, 1, 0.68, 1);
+  --vl-filters-motion-duration: 0.4s;
+}
+
+.vl-filters-toggle {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 0;
+}
+
+.vl-filters-toggle-btn.ant-btn {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 8px;
+  color: #0f172a !important;
+  border-color: #e2e8f0 !important;
+  border-radius: 12px !important;
+  font-weight: 600;
+  transition:
+    color 0.24s var(--vl-filters-motion-ease),
+    border-color 0.24s var(--vl-filters-motion-ease),
+    background 0.24s var(--vl-filters-motion-ease),
+    transform 0.2s var(--vl-filters-motion-ease),
+    box-shadow 0.24s var(--vl-filters-motion-ease) !important;
+}
+
+.vl-filters-toggle-btn.ant-btn:hover {
+  color: #0f172a !important;
+  border-color: #cbd5e1 !important;
+  background: #f8fafc !important;
+}
+
+.vl-filters-toggle-btn.ant-btn:active {
+  transform: scale(0.98);
+}
+
+.vl-filters-toggle-label {
+  flex: 0 1 auto;
+}
+
+.vl-filters-chevron {
+  font-size: 11px;
+  opacity: 0.55;
+  transition:
+    transform var(--vl-filters-motion-duration) var(--vl-filters-motion-ease),
+    opacity 0.22s ease;
+}
+
+.vl-filters-toggle-btn--open .vl-filters-chevron {
+  transform: rotate(180deg);
+  opacity: 0.9;
+}
+
+.vl-filters-expand {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows var(--vl-filters-motion-duration) var(--vl-filters-motion-ease);
+}
+
+.vl-filters-expand--open {
+  grid-template-rows: 1fr;
+}
+
+.vl-filters-expand-inner {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.vl-filters-row {
+  margin-top: 16px;
+  padding-top: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --vl-filters-motion-duration: 0.01ms;
+  }
+
+  .vl-filters-expand,
+  .vl-filters-toggle-btn.ant-btn,
+  .vl-filters-chevron {
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ——— Tabelas de dados (Ant Design), alinhadas à UI VendaLume ——— */
+.ant-table-wrapper {
+  font-variant-numeric: tabular-nums;
+}
+
+.ant-table-wrapper .ant-table {
+  scrollbar-color: #cbd5e1 #f1f5f9;
+}
+
+.ant-table-wrapper .ant-table-thead > tr > th {
+  background: #f8fafc !important;
+  color: #64748b !important;
+  font-weight: 600 !important;
+  font-size: 12px !important;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  border-bottom: 1px solid #e2e8f0 !important;
+  padding-top: 13px !important;
+  padding-bottom: 13px !important;
+  /* Evita “DESCONT / O” em colunas estreitas */
+  white-space: nowrap;
+}
+
+.ant-table-wrapper .ant-table-thead > tr > th::before {
+  background-color: #e2e8f0 !important;
+}
+
+.ant-table-wrapper .ant-table-tbody > tr > td {
+  color: #0f172a;
+  border-bottom: 1px solid #f1f5f9 !important;
+  transition: background-color 0.2s cubic-bezier(0.33, 1, 0.68, 1);
+  word-break: normal;
+  overflow-wrap: normal;
+  hyphens: manual;
+}
+
+.ant-table-wrapper .ant-table-tbody > tr:last-child > td {
+  border-bottom: none !important;
+}
+
+.ant-table-wrapper .ant-table-tbody > tr:hover > td {
+  background: #f0fdfa !important;
+}
+
+.ant-table-wrapper .ant-table-tbody > tr.ant-table-row-selected > td {
+  background: #ecfeff !important;
+}
+
+.ant-table-wrapper .ant-table-tbody > tr.ant-table-row-selected:hover > td {
+  background: #cffafe !important;
+}
+
+.ant-table-wrapper .ant-table-cell-fix-left,
+.ant-table-wrapper .ant-table-cell-fix-right {
+  background: inherit;
+}
+
+.ant-table-wrapper .ant-pagination {
+  margin: 20px 0 4px !important;
+  padding: 12px 16px 4px;
+  border-top: 1px solid #f1f5f9;
+  box-sizing: border-box;
+}
+
+.ant-table-wrapper .ant-pagination .ant-pagination-item {
+  border-radius: 8px;
+  border-color: #e2e8f0;
+  font-weight: 500;
+}
+
+.ant-table-wrapper .ant-pagination .ant-pagination-item:hover {
+  border-color: #99f6e4;
+}
+
+.ant-table-wrapper .ant-pagination .ant-pagination-item-active {
+  border-color: #0d9488;
+  background: linear-gradient(180deg, #f0fdfa 0%, #ecfdf5 100%);
+  box-shadow: 0 1px 2px rgba(13, 148, 136, 0.12);
+}
+
+.ant-table-wrapper .ant-pagination .ant-pagination-item-active a {
+  color: #0f766e;
+  font-weight: 600;
+}
+
+.ant-table-wrapper .ant-pagination .ant-pagination-prev .ant-pagination-item-link,
+.ant-table-wrapper .ant-pagination .ant-pagination-next .ant-pagination-item-link {
+  border-radius: 8px;
+  border-color: #e2e8f0;
+}
+
+.ant-table-wrapper .ant-table-placeholder .ant-table-cell {
+  border-bottom: none !important;
+  padding: 40px 16px !important;
+}
+
+.ant-table-wrapper .ant-empty-description {
+  color: #94a3b8;
+  font-size: 14px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ant-table-wrapper .ant-table-tbody > tr > td {
+    transition: none;
+  }
+}
+
+/* ---- Transição de rota + revelar conteúdo (VlMotion) ---- */
+@keyframes vl-page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes vl-content-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.vl-page-transition {
+  animation: vl-page-enter 0.3s cubic-bezier(0.33, 1, 0.68, 1) both;
+  min-height: 0;
+}
+
+.vl-reveal-pending {
+  opacity: 0;
+  transform: translateY(8px);
+}
+
+.vl-reveal {
+  animation: vl-content-reveal 0.34s cubic-bezier(0.33, 1, 0.68, 1) both;
+}
+
+.vl-reveal--delay-1 {
+  animation-delay: 0.07s;
+}
+
+.vl-reveal--delay-2 {
+  animation-delay: 0.14s;
+}
+
+.vl-reveal--delay-3 {
+  animation-delay: 0.21s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vl-page-transition,
+  .vl-reveal {
+    animation: none !important;
+  }
+
+  .vl-reveal-pending,
+  .vl-reveal {
+    opacity: 1 !important;
+    transform: none !important;
+  }
 }

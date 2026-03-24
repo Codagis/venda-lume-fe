@@ -17,11 +17,13 @@ import {
   Tag,
   Tooltip,
   Alert,
+  Skeleton,
 } from 'antd'
 import {
   InboxOutlined,
   SearchOutlined,
   FilterOutlined,
+  DownOutlined,
   PlusOutlined,
   MinusOutlined,
   SwapOutlined,
@@ -54,6 +56,8 @@ export default function Stock() {
   const [loading, setLoading] = useState(false)
   const [loadingList, setLoadingList] = useState(false)
   const [tenants, setTenants] = useState([])
+  /** Root: true no 1º paint evita “vazio” e depois o seletor aparecer do nada */
+  const [tenantsLoading, setTenantsLoading] = useState(() => user?.isRoot === true)
   const [selectedTenantId, setSelectedTenantId] = useState(null)
   const [filterSearch, setFilterSearch] = useState('')
   const [filterLowStock, setFilterLowStock] = useState('__all__')
@@ -70,13 +74,22 @@ export default function Stock() {
   const [filtersExpanded, setFiltersExpanded] = useState(false)
 
   const loadTenants = useCallback(async () => {
-    if (!isRoot) return
+    if (!isRoot) {
+      setTenantsLoading(false)
+      return
+    }
+    setTenantsLoading(true)
     try {
       const data = await tenantService.listTenants()
       setTenants(data || [])
-      if (data?.length && !selectedTenantId) setSelectedTenantId(data[0].id)
+      setSelectedTenantId((prev) => {
+        if (data?.length && (prev == null || prev === undefined)) return data[0].id
+        return prev
+      })
     } catch (e) {
       message.error(e?.message || 'Erro ao carregar empresas.')
+    } finally {
+      setTenantsLoading(false)
     }
   }, [isRoot])
 
@@ -324,15 +337,41 @@ export default function Stock() {
             </div>
           </div>
 
-          {isRoot && tenants.length > 0 && (
-            <div className="stock-tenant-row">
-              <Select
-                placeholder="Empresa"
-                options={tenants.map((t) => ({ value: t.id, label: t.name }))}
-                value={selectedTenantId}
-                onChange={setSelectedTenantId}
-                style={{ minWidth: 220 }}
-              />
+          {isRoot && (
+            <div className="stock-tenant-shell" aria-busy={tenantsLoading}>
+              {tenantsLoading ? (
+                <div className="stock-tenant-skeleton">
+                  <Skeleton.Input active className="stock-tenant-skeleton-input" />
+                  <span className="stock-tenant-skeleton-hint">Carregando empresas…</span>
+                </div>
+              ) : tenants.length === 0 ? (
+                <Alert
+                  type="info"
+                  showIcon
+                  message="Nenhuma empresa encontrada"
+                  description="Não foi possível listar empresas ou sua conta ainda não tem tenants vinculados."
+                  className="stock-tenant-alert"
+                />
+              ) : (
+                <div className="stock-tenant-row stock-tenant-row--ready">
+                  <label className="stock-tenant-label" htmlFor="stock-tenant-select">
+                    Empresa
+                  </label>
+                  <Select
+                    id="stock-tenant-select"
+                    placeholder="Selecione a empresa"
+                    options={tenants.map((t) => ({ value: t.id, label: t.name }))}
+                    value={selectedTenantId}
+                    onChange={setSelectedTenantId}
+                    style={{ minWidth: 240, maxWidth: '100%' }}
+                    showSearch
+                    optionFilterProp="label"
+                    getPopupContainer={(trigger) => trigger.parentElement || document.body}
+                    popupClassName="stock-tenant-select-dropdown"
+                    transitionName=""
+                  />
+                </div>
+              )}
             </div>
           )}
 
@@ -364,16 +403,26 @@ export default function Stock() {
           )}
 
           <Card className="stock-filters-card sales-consult-filters-card">
-            <div className="sales-consult-filters-toggle">
+            <div className="vl-filters-toggle sales-consult-filters-toggle">
               <Button
+                type="button"
+                className={`vl-filters-toggle-btn${filtersExpanded ? ' vl-filters-toggle-btn--open' : ''}`}
                 icon={<FilterOutlined />}
                 onClick={() => setFiltersExpanded((v) => !v)}
+                aria-expanded={filtersExpanded}
               >
-                {filtersExpanded ? 'Ocultar filtros' : 'Mostrar filtros'}
+                <span className="vl-filters-toggle-label">
+                  {filtersExpanded ? 'Ocultar filtros' : 'Mostrar filtros'}
+                </span>
+                <DownOutlined className="vl-filters-chevron" aria-hidden />
               </Button>
             </div>
-            {filtersExpanded && (
-              <Row gutter={16} align="middle" style={{ marginTop: 16 }}>
+            <div
+              className={`vl-filters-expand${filtersExpanded ? ' vl-filters-expand--open' : ''}`}
+              aria-hidden={!filtersExpanded}
+            >
+              <div className="vl-filters-expand-inner">
+              <Row gutter={16} align="middle" className="vl-filters-row">
                 <Col xs={24} sm={12} md={6}>
                   <label>Buscar produto</label>
                   <Input
@@ -419,7 +468,8 @@ export default function Stock() {
                   </Button>
                 </Col>
               </Row>
-            )}
+              </div>
+            </div>
           </Card>
 
           <Card className="stock-table-card">
