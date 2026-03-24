@@ -702,10 +702,15 @@ export default function SalesConsult() {
                 const deliveryVal = Number(paymentFormDeliveryFee) || 0
                 const total = Math.max(0, subtotal - saleDiscount + deliveryVal)
                 const selectedCardMachine = paymentFormCardMachineId ? cardMachines.find((m) => m.id === paymentFormCardMachineId) : null
+                const effectiveMaxInstallments = selectedCardMachine?.maxInstallments ?? tenantConfig.maxInstallments ?? 12
+                const effectiveMaxInstallmentsNoInterest = selectedCardMachine?.maxInstallmentsNoInterest ?? tenantConfig.maxInstallmentsNoInterest ?? 1
+                const effectiveInterestRatePercent = selectedCardMachine?.interestRatePercent != null
+                  ? Number(selectedCardMachine.interestRatePercent)
+                  : (Number(tenantConfig.interestRatePercent) || 0)
                 const installmentsCalc = paymentFormPaymentMethod === 'CREDIT_CARD' && paymentFormInstallmentsCount > 0 ? (() => {
-                  const maxNoInterest = tenantConfig.maxInstallmentsNoInterest ?? 1
-                  const interestPercent = Number(tenantConfig.interestRatePercent) || 0
-                  const n = paymentFormInstallmentsCount
+                  const maxNoInterest = effectiveMaxInstallmentsNoInterest
+                  const interestPercent = effectiveInterestRatePercent
+                  const n = Math.min(paymentFormInstallmentsCount, effectiveMaxInstallments)
                   let totalWithInterest = total
                   if (n > maxNoInterest && interestPercent > 0) {
                     const i = interestPercent / 100
@@ -822,10 +827,10 @@ export default function SalesConsult() {
                               <Select
                                 value={paymentFormInstallmentsCount}
                                 onChange={setPaymentFormInstallmentsCount}
-                                options={Array.from({ length: Math.max(1, tenantConfig.maxInstallments || 12) }, (_, i) => {
+                                options={Array.from({ length: Math.max(1, effectiveMaxInstallments) }, (_, i) => {
                                   const n = i + 1
-                                  const maxNoInterest = tenantConfig.maxInstallmentsNoInterest ?? 1
-                                  const interestPercent = Number(tenantConfig.interestRatePercent) || 0
+                                  const maxNoInterest = effectiveMaxInstallmentsNoInterest
+                                  const interestPercent = effectiveInterestRatePercent
                                   let totalWithInt = total
                                   if (n > maxNoInterest && interestPercent > 0) {
                                     totalWithInt = total * Math.pow(1 + interestPercent / 100, n - maxNoInterest)

@@ -43,7 +43,7 @@ const { RangePicker } = DatePicker
 
 function formatQty(value) {
   if (value == null) return '—'
-  return Number(value).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 4 })
+  return Number(value).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 4 })
 }
 
 export default function Stock() {
