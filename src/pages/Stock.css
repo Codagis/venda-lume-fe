@@ -118,7 +118,9 @@
 .stock-tenant-select-dropdown.ant-select-dropdown {
   padding: 4px;
   border-radius: 10px;
+  z-index: 3000 !important;
 }
+
 
 @media (prefers-reduced-motion: reduce) {
   .stock-tenant-row--ready {

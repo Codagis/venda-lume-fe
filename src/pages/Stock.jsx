@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import {
   Card,
   Row,
@@ -72,6 +72,7 @@ export default function Stock() {
   const [historyLoading, setHistoryLoading] = useState(false)
   const [form] = Form.useForm()
   const [filtersExpanded, setFiltersExpanded] = useState(false)
+  const prevSelectedTenantIdRef = useRef(selectedTenantId)
 
   const loadTenants = useCallback(async () => {
     if (!isRoot) {
@@ -128,6 +129,19 @@ export default function Stock() {
   useEffect(() => {
     if (isRoot) loadTenants()
   }, [isRoot, loadTenants])
+
+  // Quando o usuário troca a empresa (tenant), executa a busca automaticamente
+  // usando os filtros atuais (sem precisar clicar em "Filtrar").
+  useEffect(() => {
+    if (!isRoot) return
+    if (tenantsLoading) return
+    if (!selectedTenantId) return
+
+    if (prevSelectedTenantIdRef.current !== selectedTenantId) {
+      prevSelectedTenantIdRef.current = selectedTenantId
+      handleFilter()
+    }
+  }, [isRoot, selectedTenantId, tenantsLoading, handleFilter])
 
 
 
@@ -366,7 +380,8 @@ export default function Stock() {
                     style={{ minWidth: 240, maxWidth: '100%' }}
                     showSearch
                     optionFilterProp="label"
-                    getPopupContainer={(trigger) => trigger.parentElement || document.body}
+                    /* Garante dropdown acima do layout (evita ficar "por trás" por causa de stacking contexts/overflow) */
+                    getPopupContainer={() => (typeof document !== 'undefined' ? document.body : null)}
                     popupClassName="stock-tenant-select-dropdown"
                     transitionName=""
                   />
