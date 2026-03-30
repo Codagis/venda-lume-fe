@@ -25,6 +25,8 @@ import { useAuth } from '../contexts/AuthContext'
 import { confirmDeleteModal } from '../utils/confirmModal'
 import * as supplierService from '../services/supplierService'
 import * as tenantService from '../services/tenantService'
+import { normalizeCpfCnpj, normalizePhone } from '../utils/masks'
+import { antdRuleCpfCnpj, antdRuleEmail } from '../utils/validators'
 import './Suppliers.css'
 
 const { TextArea } = Input
@@ -400,8 +402,8 @@ export default function Suppliers() {
             <Form.Item name="tradeName" label="Nome fantasia" rules={[{ max: 255 }]}>
               <Input placeholder="Nome fantasia" />
             </Form.Item>
-            <Form.Item name="document" label="CPF/CNPJ" rules={[{ max: 20 }]}>
-              <Input placeholder="Documento" />
+            <Form.Item name="document" label="CPF/CNPJ" normalize={normalizeCpfCnpj} rules={[{ max: 20 }, antdRuleCpfCnpj()]}>
+              <Input placeholder="CPF ou CNPJ" inputMode="numeric" />
             </Form.Item>
             <Form.Item name="stateRegistration" label="Inscrição estadual" rules={[{ max: 50 }]}>
               <Input placeholder="Inscrição estadual" />
@@ -416,10 +418,10 @@ export default function Suppliers() {
             <Form.Item name="contactName" label="Nome do contato" rules={[{ max: 255 }]}>
               <Input placeholder="Nome do contato" />
             </Form.Item>
-            <Form.Item name="contactPhone" label="Telefone" rules={[{ max: 20 }]}>
-              <Input placeholder="Telefone do contato" />
+            <Form.Item name="contactPhone" label="Telefone" normalize={normalizePhone} rules={[{ max: 20 }]}>
+              <Input placeholder="Telefone com DDD" inputMode="tel" />
             </Form.Item>
-            <Form.Item name="contactEmail" label="E-mail" rules={[{ max: 255 }]}>
+            <Form.Item name="contactEmail" label="E-mail" rules={[{ max: 255 }, antdRuleEmail()]}>
               <Input placeholder="E-mail do contato" type="email" />
             </Form.Item>
           </div>

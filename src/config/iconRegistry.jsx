@@ -39,7 +39,6 @@ const icons = {
 }
 
 export function getIcon(name, moduleCode) {
-  if (moduleCode === 'RESTAURANT_TABLES') return CoffeeOutlined
   if (moduleCode === 'DASHBOARD') return FundOutlined
   return icons[name] || AppstoreOutlined
 }

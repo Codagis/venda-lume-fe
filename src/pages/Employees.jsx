@@ -34,17 +34,15 @@ import { useAuth } from '../contexts/AuthContext'
 import * as employeeService from '../services/employeeService'
 import { confirmDeleteModal } from '../utils/confirmModal'
 import * as tenantService from '../services/tenantService'
-import * as contractorService from '../services/contractorService'
+import { normalizeCpfCnpj, normalizePhone } from '../utils/masks'
+import { antdRuleCpfCnpj, antdRuleEmail } from '../utils/validators'
 import './Employees.css'
 
 const { TextArea } = Input
 const { RangePicker } = DatePicker
 
 const FILTER_ALL = '__all__'
-const CONTRACT_TYPE_OPTIONS = [
-  { value: 'CLT', label: 'CLT' },
-  { value: 'PJ', label: 'PJ' },
-]
+const CONTRACT_TYPE_OPTIONS = [{ value: 'CLT', label: 'CLT' }]
 const initialFormValues = { active: true, paymentDay: 5, salary: 0, contractType: 'CLT' }
 
 const MONTHS = [
@@ -74,7 +72,6 @@ export default function Employees() {
   const [receiptLoadingId, setReceiptLoadingId] = useState(null)
   const [drawerReceiptYear, setDrawerReceiptYear] = useState(new Date().getFullYear())
   const [drawerReceiptMonth, setDrawerReceiptMonth] = useState(new Date().getMonth() + 1)
-  const [contractors, setContractors] = useState([])
   const [generateDrawerOpen, setGenerateDrawerOpen] = useState(false)
   const [selectedEmployeeIds, setSelectedEmployeeIds] = useState([])
   const [generateMonthRange, setGenerateMonthRange] = useState(null)
@@ -96,16 +93,6 @@ export default function Employees() {
       message.error(e?.message || 'Erro ao carregar empresas.')
     }
   }, [isRoot])
-
-  const loadContractors = useCallback(async () => {
-    try {
-      const tenantId = isRoot ? selectedTenantId : undefined
-      const data = await contractorService.listContractorsOptions(tenantId)
-      setContractors(Array.isArray(data) ? data : [])
-    } catch (e) {
-      setContractors([])
-    }
-  }, [isRoot, selectedTenantId])
 
   const handleFilter = useCallback(async () => {
     if (isRoot && !selectedTenantId) {
@@ -131,10 +118,6 @@ export default function Employees() {
   useEffect(() => {
     if (isRoot) loadTenants()
   }, [isRoot, loadTenants])
-
-  useEffect(() => {
-    if (drawerOpen) loadContractors()
-  }, [drawerOpen, loadContractors])
 
   useEffect(() => {
     if (generateDrawerOpen && employees.length === 0) handleFilter()
@@ -178,7 +161,6 @@ export default function Employees() {
         notes: employee.notes,
         active: employee.active ?? true,
         contractType: employee.contractType ?? 'CLT',
-        contractorId: employee.contractorId ?? undefined,
       })
     } else if (isRoot) {
       form.setFieldsValue({ tenantId: selectedTenantId ?? undefined })
@@ -237,8 +219,7 @@ export default function Employees() {
         hireDate: values.hireDate || undefined,
         notes: values.notes?.trim() || undefined,
         active: values.active ?? true,
-        contractType: values.contractType === 'PJ' ? 'PJ' : 'CLT',
-        contractorId: values.contractType === 'PJ' && values.contractorId ? values.contractorId : undefined,
+        contractType: 'CLT',
       }
       if (editingId) {
         await employeeService.updateEmployee(editingId, payload)
@@ -724,21 +705,6 @@ export default function Employees() {
             <Form.Item name="contractType" label="Tipo" rules={[{ required: true }]}>
               <Select options={CONTRACT_TYPE_OPTIONS} placeholder="CLT ou PJ" />
             </Form.Item>
-            <Form.Item noStyle shouldUpdate={(prev, curr) => prev.contractType !== curr.contractType}>
-              {({ getFieldValue }) =>
-                getFieldValue('contractType') === 'PJ' ? (
-                  <Form.Item name="contractorId" label="Prestador PJ vinculado">
-                    <Select
-                      placeholder="Selecione o prestador (opcional)"
-                      options={contractors.map((c) => ({ value: c.id, label: c.name || c.tradeName || c.cnpj || c.id }))}
-                      showSearch
-                      optionFilterProp="label"
-                      allowClear
-                    />
-                  </Form.Item>
-                ) : null
-              }
-            </Form.Item>
           </div>
 
           <div className="employees-drawer-section">
@@ -746,17 +712,17 @@ export default function Employees() {
             <Form.Item name="name" label="Nome completo" rules={[{ required: true, message: 'Obrigatório' }, { max: 255 }]}>
               <Input placeholder="Nome completo" />
             </Form.Item>
-            <Form.Item name="document" label="CPF/CNPJ" rules={[{ max: 20 }]}>
-              <Input placeholder="CPF ou CNPJ" />
+            <Form.Item name="document" label="CPF/CNPJ" normalize={normalizeCpfCnpj} rules={[{ max: 20 }, antdRuleCpfCnpj()]}>
+              <Input placeholder="CPF ou CNPJ" inputMode="numeric" />
             </Form.Item>
-            <Form.Item name="email" label="E-mail" rules={[{ max: 255 }]}>
+            <Form.Item name="email" label="E-mail" rules={[{ max: 255 }, antdRuleEmail()]}>
               <Input placeholder="E-mail" type="email" />
             </Form.Item>
-            <Form.Item name="phone" label="Telefone" rules={[{ max: 20 }]}>
-              <Input placeholder="Telefone principal" />
+            <Form.Item name="phone" label="Telefone" normalize={normalizePhone} rules={[{ max: 20 }]}>
+              <Input placeholder="Telefone com DDD" inputMode="tel" />
             </Form.Item>
-            <Form.Item name="phoneAlt" label="Telefone alternativo" rules={[{ max: 20 }]}>
-              <Input placeholder="Telefone alternativo" />
+            <Form.Item name="phoneAlt" label="Telefone alternativo" normalize={normalizePhone} rules={[{ max: 20 }]}>
+              <Input placeholder="Telefone com DDD" inputMode="tel" />
             </Form.Item>
           </div>
 

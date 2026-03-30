@@ -46,6 +46,8 @@ import * as deliveryService from '../services/deliveryService'
 import { confirmDeleteModal } from '../utils/confirmModal'
 import dayjs from 'dayjs'
 import './Sales.css'
+import { normalizeCpfCnpj } from '../utils/masks'
+import { antdRuleCpfCnpj } from '../utils/validators'
 
 function formatPrice(value) {
   if (value == null) return 'R$ 0,00'
@@ -947,8 +949,8 @@ export default function Sales() {
             <Form.Item name="name" label="Nome" rules={[{ required: true, message: 'Nome é obrigatório' }, { max: 255 }]}>
               <Input placeholder="Nome do cliente" />
             </Form.Item>
-            <Form.Item name="document" label="CPF/CNPJ (opcional)" rules={[{ max: 20 }]}>
-              <Input placeholder="Documento" />
+            <Form.Item name="document" label="CPF/CNPJ (opcional)" normalize={normalizeCpfCnpj} rules={[{ max: 20 }, antdRuleCpfCnpj()]}>
+              <Input placeholder="CPF ou CNPJ" inputMode="numeric" />
             </Form.Item>
             <Form.Item style={{ marginBottom: 0 }}>
               <Button type="primary" htmlType="submit" loading={loadingCustomerCreate}>Cadastrar e selecionar</Button>

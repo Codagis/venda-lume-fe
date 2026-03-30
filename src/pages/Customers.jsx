@@ -25,6 +25,8 @@ import { useAuth } from '../contexts/AuthContext'
 import { confirmDeleteModal } from '../utils/confirmModal'
 import * as customerService from '../services/customerService'
 import * as tenantService from '../services/tenantService'
+import { normalizeCpfCnpj, normalizePhone } from '../utils/masks'
+import { antdRuleCpfCnpj, antdRuleEmail } from '../utils/validators'
 import './Customers.css'
 
 const { TextArea } = Input
@@ -382,17 +384,23 @@ export default function Customers() {
             <Form.Item name="name" label="Nome" rules={[{ required: true, message: 'Obrigatório' }, { max: 255 }]}>
               <Input placeholder="Nome ou razão social" />
             </Form.Item>
-            <Form.Item name="document" label="CPF ou CNPJ" rules={[{ max: 20 }]} extra="Aceita CPF (11 dígitos) ou CNPJ (14 dígitos), com ou sem formatação.">
-              <Input placeholder="CPF ou CNPJ" />
+            <Form.Item
+              name="document"
+              label="CPF ou CNPJ"
+              normalize={normalizeCpfCnpj}
+              rules={[{ max: 20 }, antdRuleCpfCnpj()]}
+              extra="Aceita CPF (11 dígitos) ou CNPJ (14 dígitos), com ou sem formatação."
+            >
+              <Input placeholder="CPF ou CNPJ" inputMode="numeric" />
             </Form.Item>
-            <Form.Item name="email" label="E-mail" rules={[{ max: 255 }]}>
+            <Form.Item name="email" label="E-mail" rules={[{ max: 255 }, antdRuleEmail()]}>
               <Input placeholder="E-mail" type="email" />
             </Form.Item>
-            <Form.Item name="phone" label="Telefone" rules={[{ max: 20 }]}>
-              <Input placeholder="Telefone principal" />
+            <Form.Item name="phone" label="Telefone" normalize={normalizePhone} rules={[{ max: 20 }]}>
+              <Input placeholder="Telefone com DDD" inputMode="tel" />
             </Form.Item>
-            <Form.Item name="phoneAlt" label="Telefone alternativo" rules={[{ max: 20 }]}>
-              <Input placeholder="Opcional" />
+            <Form.Item name="phoneAlt" label="Telefone alternativo" normalize={normalizePhone} rules={[{ max: 20 }]}>
+              <Input placeholder="Opcional (com DDD)" inputMode="tel" />
             </Form.Item>
           </div>
 

@@ -4,6 +4,8 @@ import { UserOutlined, PlusOutlined } from '@ant-design/icons'
 import { useAuth } from '../contexts/AuthContext'
 import * as tenantService from '../services/tenantService'
 import * as userService from '../services/userService'
+import { normalizePhone } from '../utils/masks'
+import { antdRuleEmail } from '../utils/validators'
 import './Deliveries.css'
 
 export default function DeliveryPersons() {
@@ -180,11 +182,11 @@ export default function DeliveryPersons() {
           <Form.Item name="fullName" label="Nome completo" rules={[{ required: true }]}>
             <Input placeholder="Nome completo" />
           </Form.Item>
-          <Form.Item name="email" label="E-mail" rules={[{ required: true }, { type: 'email' }]}>
+          <Form.Item name="email" label="E-mail" rules={[{ required: true }, antdRuleEmail({ required: true })]}>
             <Input placeholder="E-mail" type="email" />
           </Form.Item>
-          <Form.Item name="phone" label="Telefone">
-            <Input placeholder="Telefone com DDD" />
+          <Form.Item name="phone" label="Telefone" normalize={normalizePhone}>
+            <Input placeholder="Telefone com DDD" inputMode="tel" />
           </Form.Item>
         </Form>
       </Drawer>

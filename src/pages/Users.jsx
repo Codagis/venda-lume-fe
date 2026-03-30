@@ -15,6 +15,7 @@ import { useAuth } from '../contexts/AuthContext'
 import * as userService from '../services/userService'
 import * as tenantService from '../services/tenantService'
 import * as profileService from '../services/profileService'
+import { antdRuleEmail } from '../utils/validators'
 import './Settings.css'
 
 const USER_ROLES = [
@@ -272,7 +273,7 @@ export default function Users() {
               <Form.Item name="fullName" label="Nome completo" rules={[{ required: true }]}>
                 <Input placeholder="Nome do usuário" />
               </Form.Item>
-              <Form.Item name="email" label="E-mail" rules={[{ required: true }, { type: 'email' }]}>
+              <Form.Item name="email" label="E-mail" rules={[{ required: true }, antdRuleEmail({ required: true })]}>
                 <Input placeholder="E-mail" />
               </Form.Item>
               <Form.Item name="role" label="Papel" rules={[{ required: true }]}>

@@ -80,6 +80,13 @@ export function apiFetch(path, options = {}) {
     ...options,
     headers: { ...defaultOptions.headers, ...options?.headers },
   }
+  // Para uploads multipart/form-data, o browser precisa definir o Content-Type com boundary.
+  if (opts.body instanceof FormData) {
+    const headers = { ...(opts.headers || {}) }
+    delete headers['Content-Type']
+    delete headers['content-type']
+    opts.headers = headers
+  }
   return fetch(`${API_BASE}${path}`, opts).then((res) => {
     if (res.status === 401) {
       return handleUnauthorized(res, path, opts)

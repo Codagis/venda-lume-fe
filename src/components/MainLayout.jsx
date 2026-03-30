@@ -338,17 +338,7 @@ export default function MainLayout() {
       <Layout className={`main-layout-main ${!sidebarOpen ? 'main-layout-main-expanded' : ''}`}>
         <Header className="main-layout-header">
           <div className="main-layout-header-left">
-            {!sidebarOpen && (
-              <Button
-                type="button"
-                icon={<MenuUnfoldOutlined />}
-                onClick={() => setSidebarOpen(true)}
-                className="main-layout-open-btn"
-                title="Abrir menu"
-              >
-                Menu
-              </Button>
-            )}
+            
             <div ref={searchAnchorRef} className="main-layout-search-anchor">
               <Input
                 key={navSearchInputKey}
