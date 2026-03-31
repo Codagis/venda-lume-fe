@@ -4,11 +4,59 @@
   box-sizing: border-box;
 }
 
+:root {
+  /*
+    Escala global da UI (para “tirar o zoom” e deixar tudo menor).
+    Ajuste aqui: 0.92, 0.90, 0.88...
+  */
+  --vl-ui-scale: 0.75;
+}
+
+html {
+  /* Chrome/Edge (Windows) */
+  zoom: var(--vl-ui-scale);
+}
+
+/* Com `zoom` (< 1), `100vh` fica visualmente menor. Compensa a altura do layout/sider. */
+@supports (zoom: 1) {
+  .main-layout,
+  .main-layout-loading,
+  .main-layout-main {
+    min-height: calc(100vh / var(--vl-ui-scale));
+  }
+
+  .main-layout-sider.ant-layout-sider {
+    height: calc(100vh / var(--vl-ui-scale)) !important;
+    min-height: calc(100vh / var(--vl-ui-scale)) !important;
+    max-height: calc(100vh / var(--vl-ui-scale)) !important;
+  }
+
+  .main-layout-sider-inner {
+    max-height: calc(100vh / var(--vl-ui-scale));
+  }
+}
+
 body {
   font-family: 'Urbanist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
     Oxygen, Ubuntu, Cantarell, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Fallback para navegadores sem suporte a `zoom` */
+@supports not (zoom: 1) {
+  html,
+  body {
+    height: 100%;
+  }
+
+  body {
+    transform: scale(var(--vl-ui-scale));
+    transform-origin: top left;
+    width: calc(100% / var(--vl-ui-scale));
+    height: calc(100% / var(--vl-ui-scale));
+    overflow-x: hidden;
+  }
 }
 
 .ant-select-item-option-active:not(.ant-select-item-option-disabled) {

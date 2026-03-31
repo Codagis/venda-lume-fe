@@ -7,6 +7,13 @@
   background-color: #F2F4F7;
 }
 
+/* Com `zoom` (< 1), `100vh` fica visualmente menor. Compensa para manter centralização. */
+@supports (zoom: 1) {
+  .login-page {
+    min-height: calc(100vh / var(--vl-ui-scale));
+  }
+}
+
 .login-backdrop {
   position: fixed;
   inset: 0;

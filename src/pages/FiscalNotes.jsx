@@ -570,7 +570,6 @@ export default function FiscalNotes() {
             maxCount={1}
             accept="application/pdf"
           >
-            <Button disabled>PDF não suportado</Button>
           </Upload>
           <Upload
             beforeUpload={(file) => {
