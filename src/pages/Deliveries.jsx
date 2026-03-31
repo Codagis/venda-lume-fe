@@ -23,6 +23,7 @@ import {
   PlusOutlined,
   SearchOutlined,
   FilterOutlined,
+  DownOutlined,
   MoreOutlined,
   UserOutlined,
   ClockCircleOutlined,
@@ -438,15 +439,28 @@ export default function Deliveries() {
                   />
                 </Col>
                 <Col xs={24} sm={12} md={6}>
-                  <div className="deliveries-filters-toggle" style={{ marginTop: 24 }}>
-                    <Button icon={<FilterOutlined />} onClick={() => setFiltersExpanded((v) => !v)}>
-                      {filtersExpanded ? 'Ocultar filtros' : 'Mostrar filtros'}
+                  <div className="vl-filters-toggle deliveries-filters-toggle" style={{ marginTop: 24 }}>
+                    <Button
+                      type="button"
+                      className={`vl-filters-toggle-btn${filtersExpanded ? ' vl-filters-toggle-btn--open' : ''}`}
+                      icon={<FilterOutlined />}
+                      onClick={() => setFiltersExpanded((v) => !v)}
+                      aria-expanded={filtersExpanded}
+                    >
+                      <span className="vl-filters-toggle-label">
+                        {filtersExpanded ? 'Ocultar filtros' : 'Mostrar filtros'}
+                      </span>
+                      <DownOutlined className="vl-filters-chevron" aria-hidden />
                     </Button>
                   </div>
                 </Col>
               </Row>
-              {filtersExpanded && (
-                <Row gutter={16} align="bottom" style={{ marginTop: 16 }}>
+              <div
+                className={`vl-filters-expand${filtersExpanded ? ' vl-filters-expand--open' : ''}`}
+                aria-hidden={!filtersExpanded}
+              >
+                <div className="vl-filters-expand-inner">
+                <Row gutter={16} align="bottom" className="vl-filters-row">
                   <Col xs={24} sm={12} md={6}>
                     <label>Buscar</label>
                     <Input
@@ -496,7 +510,8 @@ export default function Deliveries() {
                     </Button>
                   </Col>
                 </Row>
-              )}
+                </div>
+              </div>
             </Card>
             <div className="deliveries-toolbar-actions">
               <Button type="primary" icon={<PlusOutlined />} onClick={() => setCreateDrawerOpen(true)} className="deliveries-add-btn">

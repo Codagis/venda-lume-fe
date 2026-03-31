@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react'
-import { Table, Button, Drawer, Form, Input, InputNumber, Switch, message, Popconfirm, Space } from 'antd'
+import { Table, Button, Drawer, Form, Input, InputNumber, Switch, message, Space } from 'antd'
 import { AppstoreOutlined, PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons'
 import { useAuth } from '../contexts/AuthContext'
 import { useModules } from '../contexts/ModulesContext'
 import * as moduleService from '../services/moduleService'
 import * as permissionService from '../services/permissionService'
+import { confirmDeleteModal } from '../utils/confirmModal'
 import './Settings.css'
 
 export default function Modules() {
@@ -131,9 +132,18 @@ export default function Modules() {
       render: (_, r) => (
         <Space>
           <Button type="link" size="small" icon={<EditOutlined />} onClick={() => openModal(r.id)} />
-          <Popconfirm title="Excluir este módulo?" onConfirm={() => onDelete(r.id)}>
-            <Button type="link" size="small" danger icon={<DeleteOutlined />} />
-          </Popconfirm>
+          <Button
+            type="link"
+            size="small"
+            danger
+            icon={<DeleteOutlined />}
+            onClick={() =>
+              confirmDeleteModal({
+                title: 'Excluir este módulo?',
+                onOk: () => onDelete(r.id),
+              })
+            }
+          />
         </Space>
       ),
     },

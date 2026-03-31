@@ -42,7 +42,7 @@ export const MENU_GROUPS = [
     children: [
       { moduleCode: 'COST_CONTROL', route: '/cost-control' },
       { moduleCode: 'EMPLOYEES', route: '/employees' },
-      { moduleCode: 'CONTRACTORS', route: '/contractors' },
+      { moduleCode: 'FISCAL', route: '/fiscal-notes' },
     ],
   },
   {
@@ -65,13 +65,6 @@ export const MENU_GROUPS = [
       { moduleCode: 'REGISTERS', route: '/registers' },
       { moduleCode: 'CASHIERS', route: '/cashiers' },
     ],
-  },
-  {
-    type: 'submenu',
-    key: 'restaurante',
-    label: 'Restaurante',
-    icon: 'CoffeeOutlined',
-    children: [{ moduleCode: 'RESTAURANT_TABLES', route: '/restaurant-tables' }],
   },
   {
     type: 'submenu',

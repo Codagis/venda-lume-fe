@@ -43,8 +43,11 @@ import {
 import * as tenantService from '../services/tenantService'
 import * as customerService from '../services/customerService'
 import * as deliveryService from '../services/deliveryService'
+import { confirmDeleteModal } from '../utils/confirmModal'
 import dayjs from 'dayjs'
 import './Sales.css'
+import { normalizeCpfCnpj } from '../utils/masks'
+import { antdRuleCpfCnpj } from '../utils/validators'
 
 function formatPrice(value) {
   if (value == null) return 'R$ 0,00'
@@ -493,7 +496,7 @@ export default function Sales() {
 
   return (
     <div className="sales-page">
-      <main className="sales-main">
+      <main className={`sales-main${!salesFormExpanded ? ' sales-main--pdv-landing' : ''}`}>
         <div className="sales-container">
           {!salesFormExpanded ? (
             <Card className="sales-pdv-cta-card">
@@ -625,7 +628,19 @@ export default function Sales() {
                         </div>
                         <div className="sales-cart-item-right">
                           <span className="sales-cart-item-total">{formatPrice(itemSubtotal)}</span>
-                          <Button type="text" size="small" danger icon={<DeleteOutlined />} onClick={() => removeFromCart(c.productId)} />
+                          <Button
+                            type="text"
+                            size="small"
+                            danger
+                            icon={<DeleteOutlined />}
+                            onClick={() =>
+                              confirmDeleteModal({
+                                title: 'Remover este item do carrinho?',
+                                okText: 'Remover',
+                                onOk: () => removeFromCart(c.productId),
+                              })
+                            }
+                          />
                         </div>
                       </div>
                     )
@@ -934,8 +949,8 @@ export default function Sales() {
             <Form.Item name="name" label="Nome" rules={[{ required: true, message: 'Nome é obrigatório' }, { max: 255 }]}>
               <Input placeholder="Nome do cliente" />
             </Form.Item>
-            <Form.Item name="document" label="CPF/CNPJ (opcional)" rules={[{ max: 20 }]}>
-              <Input placeholder="Documento" />
+            <Form.Item name="document" label="CPF/CNPJ (opcional)" normalize={normalizeCpfCnpj} rules={[{ max: 20 }, antdRuleCpfCnpj()]}>
+              <Input placeholder="CPF ou CNPJ" inputMode="numeric" />
             </Form.Item>
             <Form.Item style={{ marginBottom: 0 }}>
               <Button type="primary" htmlType="submit" loading={loadingCustomerCreate}>Cadastrar e selecionar</Button>

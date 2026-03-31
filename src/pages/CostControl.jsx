@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import {
   Form,
   Input,
@@ -19,12 +19,14 @@ import {
   Dropdown,
   Modal,
   Alert,
+  AutoComplete,
 } from 'antd'
 import {
   DollarOutlined,
   PlusOutlined,
   SearchOutlined,
   FilterOutlined,
+  DownOutlined,
   DeleteOutlined,
   CreditCardOutlined,
   BankOutlined,
@@ -34,7 +36,6 @@ import {
   EditOutlined,
   FileExcelOutlined,
   FilePdfOutlined,
-  WarningOutlined,
 } from '@ant-design/icons'
 import dayjs from 'dayjs'
 import {
@@ -51,7 +52,7 @@ import * as supplierService from '../services/supplierService'
 import * as customerService from '../services/customerService'
 import * as employeeService from '../services/employeeService'
 import * as tenantService from '../services/tenantService'
-import * as contractorService from '../services/contractorService'
+import CostAccountCategoriesPanel from '../components/CostAccountCategoriesPanel'
 import './CostControl.css'
 
 const { TextArea } = Input
@@ -101,6 +102,8 @@ export default function CostControl() {
   const [formPayable] = Form.useForm()
   const [formReceivable] = Form.useForm()
   const [formPayment] = Form.useForm()
+  const watchedPayableTenantId = Form.useWatch('tenantId', formPayable)
+  const watchedReceivableTenantId = Form.useWatch('tenantId', formReceivable)
   const [activeTab, setActiveTab] = useState('payables')
   const [payables, setPayables] = useState([])
   const [receivables, setReceivables] = useState([])
@@ -118,7 +121,7 @@ export default function CostControl() {
   const [editingReceivableId, setEditingReceivableId] = useState(null)
   const [paymentDrawerOpen, setPaymentDrawerOpen] = useState(false)
   const [paymentTarget, setPaymentTarget] = useState(null)
-  const [filtersPayable, setFiltersPayable] = useState({ search: '', status: undefined, supplierId: undefined, employeeId: undefined, contractorId: undefined, dueDateRange: null })
+  const [filtersPayable, setFiltersPayable] = useState({ search: '', status: undefined, supplierId: undefined, employeeId: undefined, dueDateRange: null })
   const [filtersReceivable, setFiltersReceivable] = useState({ search: '', status: undefined, customerId: undefined, dueDateRange: null })
   const [filtersPayableExpanded, setFiltersPayableExpanded] = useState(false)
   const [filtersReceivableExpanded, setFiltersReceivableExpanded] = useState(false)
@@ -127,9 +130,83 @@ export default function CostControl() {
   const [loadingGeneratedPayrolls, setLoadingGeneratedPayrolls] = useState(false)
   const [receiptPayableLoadingId, setReceiptPayableLoadingId] = useState(null)
   const [payrollPdfLoadingKey, setPayrollPdfLoadingKey] = useState(null)
-  const [contractors, setContractors] = useState([])
-  const [contractorInvoices, setContractorInvoices] = useState([])
-  const [payableContractorId, setPayableContractorId] = useState(null)
+  const [payableCategoryNames, setPayableCategoryNames] = useState([])
+  const [receivableCategoryNames, setReceivableCategoryNames] = useState([])
+  // Prestadores PJ (extinto): removido do sistema
+
+  const tenantForPayableCategories = useMemo(() => {
+    if (!drawerPayableOpen) return null
+    if (isRoot) {
+      if (editingPayableId) return selectedTenantId
+      return watchedPayableTenantId || selectedTenantId
+    }
+    return user?.tenantId ?? null
+  }, [drawerPayableOpen, isRoot, editingPayableId, selectedTenantId, watchedPayableTenantId, user?.tenantId])
+
+  useEffect(() => {
+    if (!drawerPayableOpen) {
+      setPayableCategoryNames([])
+      return
+    }
+    if (!tenantForPayableCategories) {
+      setPayableCategoryNames([])
+      return
+    }
+    let cancelled = false
+    costControlService
+      .listCostCategories('PAYABLE', isRoot ? tenantForPayableCategories : undefined)
+      .then((list) => {
+        if (cancelled) return
+        const names = (list || [])
+          .filter((c) => c.active !== false)
+          .map((c) => c.name)
+          .filter(Boolean)
+        setPayableCategoryNames(names)
+      })
+      .catch(() => {
+        if (!cancelled) setPayableCategoryNames([])
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [drawerPayableOpen, tenantForPayableCategories, isRoot])
+
+  const tenantForReceivableCategories = useMemo(() => {
+    if (!drawerReceivableOpen) return null
+    if (isRoot) {
+      if (editingReceivableId) return selectedTenantId
+      return watchedReceivableTenantId || selectedTenantId
+    }
+    return user?.tenantId ?? null
+  }, [drawerReceivableOpen, isRoot, editingReceivableId, selectedTenantId, watchedReceivableTenantId, user?.tenantId])
+
+  useEffect(() => {
+    if (!drawerReceivableOpen) {
+      setReceivableCategoryNames([])
+      return
+    }
+    if (!tenantForReceivableCategories) {
+      setReceivableCategoryNames([])
+      return
+    }
+    let cancelled = false
+    costControlService
+      .listCostCategories('RECEIVABLE', isRoot ? tenantForReceivableCategories : undefined)
+      .then((list) => {
+        if (cancelled) return
+        const names = (list || [])
+          .filter((c) => c.active !== false)
+          .map((c) => c.name)
+          .filter(Boolean)
+        setReceivableCategoryNames(names)
+      })
+      .catch(() => {
+        if (!cancelled) setReceivableCategoryNames([])
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [drawerReceivableOpen, tenantForReceivableCategories, isRoot])
 
   const loadTenants = useCallback(async () => {
     if (!isRoot) return
@@ -175,28 +252,7 @@ export default function CostControl() {
     }
   }, [isRoot, selectedTenantId])
 
-  const loadContractors = useCallback(async () => {
-    try {
-      const tenantId = isRoot ? selectedTenantId : undefined
-      const data = await contractorService.listContractorsOptions(tenantId)
-      setContractors(Array.isArray(data) ? data : [])
-    } catch (e) {
-      setContractors([])
-    }
-  }, [isRoot, selectedTenantId])
-
-  const loadContractorInvoices = useCallback(async (contractorId) => {
-    if (!contractorId) {
-      setContractorInvoices([])
-      return
-    }
-    try {
-      const data = await contractorService.listContractorInvoices(contractorId)
-      setContractorInvoices(Array.isArray(data) ? data : [])
-    } catch (e) {
-      setContractorInvoices([])
-    }
-  }, [])
+  // Prestadores PJ (extinto): removido do sistema
 
   const loadGeneratedPayrolls = useCallback(async () => {
     if (isRoot && !selectedTenantId) {
@@ -225,7 +281,6 @@ export default function CostControl() {
       if (filtersPayable.status) filter.status = filtersPayable.status
     if (filtersPayable.supplierId) filter.supplierId = filtersPayable.supplierId
     if (filtersPayable.employeeId) filter.employeeId = filtersPayable.employeeId
-    if (filtersPayable.contractorId != null && filtersPayable.contractorId !== '') filter.contractorId = filtersPayable.contractorId
       if (filtersPayable.dueDateRange?.[0]) filter.dueDateFrom = filtersPayable.dueDateRange[0].format('YYYY-MM-DD')
       if (filtersPayable.dueDateRange?.[1]) filter.dueDateTo = filtersPayable.dueDateRange[1].format('YYYY-MM-DD')
       const tenantId = isRoot ? selectedTenantId : undefined
@@ -269,8 +324,7 @@ export default function CostControl() {
     loadSuppliers()
     loadCustomers()
     loadEmployees()
-    loadContractors()
-  }, [loadSuppliers, loadCustomers, loadEmployees, loadContractors])
+  }, [loadSuppliers, loadCustomers, loadEmployees])
 
   useEffect(() => {
     if (activeTab === 'payables') loadGeneratedPayrolls()
@@ -312,7 +366,6 @@ export default function CostControl() {
 
   const openPayableDrawer = (item = null) => {
     setEditingPayableId(item?.id ?? null)
-    setPayableContractorId(item?.contractorId ?? null)
     formPayable.resetFields()
     if (item) {
       formPayable.setFieldsValue({
@@ -324,11 +377,8 @@ export default function CostControl() {
         supplierId: item.supplierId,
         employeeId: item.employeeId,
         payrollReference: item.payrollReference,
-        contractorId: item.contractorId,
-        contractorInvoiceId: item.contractorInvoiceId,
         notes: item.notes,
       })
-      if (item.contractorId) loadContractorInvoices(item.contractorId)
     } else {
       formPayable.setFieldsValue({ dueDate: dayjs(), tenantId: isRoot ? selectedTenantId : undefined })
     }
@@ -381,8 +431,6 @@ export default function CostControl() {
         supplierId: values.supplierId || undefined,
         employeeId: values.employeeId || undefined,
         payrollReference: values.payrollReference?.trim() || undefined,
-        contractorId: values.contractorId || undefined,
-        contractorInvoiceId: values.contractorInvoiceId || undefined,
         notes: values.notes?.trim() || undefined,
       }
       if (isRoot && !editingPayableId) payload.tenantId = values.tenantId
@@ -521,7 +569,6 @@ export default function CostControl() {
     if (filtersPayable.status) f.status = filtersPayable.status
     if (filtersPayable.supplierId) f.supplierId = filtersPayable.supplierId
     if (filtersPayable.employeeId) f.employeeId = filtersPayable.employeeId
-    if (filtersPayable.contractorId) f.contractorId = filtersPayable.contractorId
     if (filtersPayable.dueDateRange?.[0]) f.dueDateFrom = filtersPayable.dueDateRange[0].format('YYYY-MM-DD')
     if (filtersPayable.dueDateRange?.[1]) f.dueDateTo = filtersPayable.dueDateRange[1].format('YYYY-MM-DD')
     return f
@@ -605,7 +652,6 @@ export default function CostControl() {
     { title: 'Descrição', dataIndex: 'description', key: 'description', ellipsis: true },
     { title: 'Fornecedor', dataIndex: 'supplierName', key: 'supplierName', width: 140, ellipsis: true },
     { title: 'Funcionário', dataIndex: 'employeeName', key: 'employeeName', width: 140, ellipsis: true },
-    { title: 'Prestador PJ', dataIndex: 'contractorName', key: 'contractorName', width: 140, ellipsis: true },
     { title: 'Categoria', dataIndex: 'category', key: 'category', width: 100 },
     { title: 'Vencimento', dataIndex: 'dueDate', key: 'dueDate', width: 110, render: (d) => formatDate(d) },
     { title: 'Valor', dataIndex: 'amount', key: 'amount', width: 110, render: (v) => formatMoney(v) },
@@ -630,8 +676,7 @@ export default function CostControl() {
                 ? [{
                   key: 'pay',
                   icon: <CreditCardOutlined />,
-                  label: r.contractorId && r.contractorInvoiceHasFile === false ? 'Pagar (NF obrigatória)' : 'Pagar',
-                  disabled: r.contractorId && r.contractorInvoiceHasFile === false,
+                  label: 'Pagar',
                   onClick: () => openPaymentDrawer('payable', r),
                 }]
                 : []),
@@ -857,12 +902,18 @@ export default function CostControl() {
                       </Row>
                     )}
                     <Card className="cost-control-filters-card">
-                      <div className="cost-control-filters-toggle" style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                      <div className="vl-filters-toggle cost-control-filters-toggle">
                         <Button
+                          type="button"
+                          className={`vl-filters-toggle-btn${filtersPayableExpanded ? ' vl-filters-toggle-btn--open' : ''}`}
                           icon={<FilterOutlined />}
                           onClick={() => setFiltersPayableExpanded((v) => !v)}
+                          aria-expanded={filtersPayableExpanded}
                         >
-                          {filtersPayableExpanded ? 'Ocultar filtros' : 'Mostrar filtros'}
+                          <span className="vl-filters-toggle-label">
+                            {filtersPayableExpanded ? 'Ocultar filtros' : 'Mostrar filtros'}
+                          </span>
+                          <DownOutlined className="vl-filters-chevron" aria-hidden />
                         </Button>
                         <Space>
                           <Button
@@ -883,8 +934,12 @@ export default function CostControl() {
                           </Button>
                         </Space>
                       </div>
-                      {filtersPayableExpanded && (
-                        <Row gutter={16} align="middle" style={{ marginTop: 16 }}>
+                      <div
+                        className={`vl-filters-expand${filtersPayableExpanded ? ' vl-filters-expand--open' : ''}`}
+                        aria-hidden={!filtersPayableExpanded}
+                      >
+                        <div className="vl-filters-expand-inner">
+                        <Row gutter={16} align="middle" className="vl-filters-row">
                           <Col xs={24} sm={12} md={6}>
                             <label className="cost-control-filter-label">Buscar</label>
                             <Input
@@ -934,19 +989,6 @@ export default function CostControl() {
                               allowClear
                             />
                           </Col>
-                          <Col xs={24} sm={12} md={4}>
-                            <label className="cost-control-filter-label">Prestador PJ</label>
-                            <Select
-                              placeholder="Todos"
-                              options={contractors.map((c) => ({ value: c.id, label: c.name || c.tradeName || c.cnpj }))}
-                              value={filtersPayable.contractorId}
-                              onChange={(v) => setFiltersPayable((f) => ({ ...f, contractorId: v }))}
-                              style={{ width: '100%' }}
-                              showSearch
-                              optionFilterProp="label"
-                              allowClear
-                            />
-                          </Col>
                           <Col xs={24} sm={12} md={6}>
                             <label className="cost-control-filter-label">Vencimento</label>
                             <RangePicker
@@ -962,7 +1004,8 @@ export default function CostControl() {
                             </Button>
                           </Col>
                         </Row>
-                      )}
+                        </div>
+                      </div>
                     </Card>
                     <div style={{ marginTop: 16 }}>
                       <Button type="primary" icon={<PlusOutlined />} onClick={() => openPayableDrawer()} className="cost-control-add-btn">
@@ -1046,12 +1089,18 @@ export default function CostControl() {
                       </Row>
                     )}
                     <Card className="cost-control-filters-card">
-                      <div className="cost-control-filters-toggle" style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                      <div className="vl-filters-toggle cost-control-filters-toggle">
                         <Button
+                          type="button"
+                          className={`vl-filters-toggle-btn${filtersReceivableExpanded ? ' vl-filters-toggle-btn--open' : ''}`}
                           icon={<FilterOutlined />}
                           onClick={() => setFiltersReceivableExpanded((v) => !v)}
+                          aria-expanded={filtersReceivableExpanded}
                         >
-                          {filtersReceivableExpanded ? 'Ocultar filtros' : 'Mostrar filtros'}
+                          <span className="vl-filters-toggle-label">
+                            {filtersReceivableExpanded ? 'Ocultar filtros' : 'Mostrar filtros'}
+                          </span>
+                          <DownOutlined className="vl-filters-chevron" aria-hidden />
                         </Button>
                         <Space>
                           <Button
@@ -1072,8 +1121,12 @@ export default function CostControl() {
                           </Button>
                         </Space>
                       </div>
-                      {filtersReceivableExpanded && (
-                        <Row gutter={16} align="middle" style={{ marginTop: 16 }}>
+                      <div
+                        className={`vl-filters-expand${filtersReceivableExpanded ? ' vl-filters-expand--open' : ''}`}
+                        aria-hidden={!filtersReceivableExpanded}
+                      >
+                        <div className="vl-filters-expand-inner">
+                        <Row gutter={16} align="middle" className="vl-filters-row">
                           <Col xs={24} sm={12} md={6}>
                             <label className="cost-control-filter-label">Buscar</label>
                             <Input
@@ -1125,7 +1178,8 @@ export default function CostControl() {
                             </Button>
                           </Col>
                         </Row>
-                      )}
+                        </div>
+                      </div>
                     </Card>
                     <div style={{ marginTop: 16 }}>
                       <Button type="primary" icon={<PlusOutlined />} onClick={() => openReceivableDrawer()} className="cost-control-add-btn">
@@ -1142,6 +1196,16 @@ export default function CostControl() {
                       className="cost-control-table"
                     />
                   </Card>
+                ),
+              },
+              {
+                key: 'categories',
+                label: 'Categorias',
+                children: (
+                  <CostAccountCategoriesPanel
+                    tenantId={isRoot ? selectedTenantId : user?.tenantId}
+                    isRoot={isRoot}
+                  />
                 ),
               },
             ]}
@@ -1182,8 +1246,16 @@ export default function CostControl() {
           <Form.Item name="reference" label="Referência">
             <Input placeholder="Nº documento, NF, etc." />
           </Form.Item>
-          <Form.Item name="category" label="Categoria">
-            <Input placeholder="Ex: Despesas operacionais" />
+          <Form.Item name="category" label="Categoria" tooltip="Digite para filtrar as categorias cadastradas na aba Categorias.">
+            <AutoComplete
+              allowClear
+              placeholder="Digite ou escolha uma categoria"
+              options={payableCategoryNames.map((name) => ({ value: name }))}
+              filterOption={(input, option) => {
+                const label = String(option?.value ?? '')
+                return label.toLowerCase().includes(String(input ?? '').toLowerCase())
+              }}
+            />
           </Form.Item>
           <Form.Item name="dueDate" label="Vencimento" rules={[{ required: true }]}>
             <DatePicker style={{ width: '100%' }} format="DD/MM/YYYY" />
@@ -1199,51 +1271,6 @@ export default function CostControl() {
               optionFilterProp="label"
               allowClear
             />
-          </Form.Item>
-          <Form.Item name="contractorId" label="Prestador PJ">
-            <Select
-              placeholder="Selecione o prestador (pagamento PJ)"
-              options={contractors.map((c) => ({ value: c.id, label: c.name || c.tradeName || c.cnpj }))}
-              showSearch
-              optionFilterProp="label"
-              allowClear
-              onChange={(v) => {
-                setPayableContractorId(v || null)
-                formPayable.setFieldValue('contractorInvoiceId', undefined)
-                if (v) loadContractorInvoices(v)
-                else setContractorInvoices([])
-              }}
-            />
-          </Form.Item>
-          <Form.Item noStyle shouldUpdate={(prev, curr) => prev.contractorId !== curr.contractorId}>
-            {({ getFieldValue }) =>
-              getFieldValue('contractorId') ? (
-                <Form.Item
-                  name="contractorInvoiceId"
-                  label="Nota fiscal da competência"
-                  rules={[{ required: true, message: 'Selecione a NF do prestador. Cadastre a NF em Prestadores PJ e envie o arquivo (PDF/XML) antes de registrar o pagamento.' }]}
-                >
-                  <Select
-                    placeholder="Selecione a NF (com arquivo anexado para poder pagar)"
-                    options={contractorInvoices.map((inv) => ({
-                      value: inv.id,
-                      label: `${inv.referenceMonth || '-'} - ${formatMoney(inv.amount)} ${inv.fileGcsPath ? '✓ NF anexada' : '(sem arquivo)'}`,
-                    }))}
-                    showSearch
-                    optionFilterProp="label"
-                    onChange={(invoiceId) => {
-                      const inv = contractorInvoices.find((i) => i.id === invoiceId)
-                      if (inv) {
-                        formPayable.setFieldsValue({
-                          amount: inv.amount,
-                          description: formPayable.getFieldValue('description') || `Pagamento prestador ${inv.contractorName || ''} - ${inv.referenceMonth}`,
-                        })
-                      }
-                    }}
-                  />
-                </Form.Item>
-              ) : null
-            }
           </Form.Item>
           <Form.Item name="notes" label="Observações">
             <TextArea rows={2} />
@@ -1284,8 +1311,16 @@ export default function CostControl() {
           <Form.Item name="reference" label="Referência">
             <Input placeholder="Nº venda, parcela" />
           </Form.Item>
-          <Form.Item name="category" label="Categoria">
-            <Input placeholder="Ex: Vendas" />
+          <Form.Item name="category" label="Categoria" tooltip="Digite para filtrar as categorias cadastradas (aba Categorias → Contas a receber).">
+            <AutoComplete
+              allowClear
+              placeholder="Digite ou escolha uma categoria"
+              options={receivableCategoryNames.map((name) => ({ value: name }))}
+              filterOption={(input, option) => {
+                const label = String(option?.value ?? '')
+                return label.toLowerCase().includes(String(input ?? '').toLowerCase())
+              }}
+            />
           </Form.Item>
           <Form.Item name="dueDate" label="Vencimento" rules={[{ required: true }]}>
             <DatePicker style={{ width: '100%' }} format="DD/MM/YYYY" />
@@ -1322,23 +1357,12 @@ export default function CostControl() {
               type="primary"
               loading={loadingSubmit}
               onClick={() => formPayment.submit()}
-              disabled={paymentTarget?.type === 'payable' && paymentTarget?.item?.contractorId && paymentTarget?.item?.contractorInvoiceHasFile === false}
             >
               Confirmar
             </Button>
           </Space>
         }
       >
-        {paymentTarget?.type === 'payable' && paymentTarget?.item?.contractorId && paymentTarget?.item?.contractorInvoiceHasFile === false && (
-          <Alert
-            type="warning"
-            showIcon
-            icon={<WarningOutlined />}
-            message="Nota Fiscal obrigatória"
-            description="Para registrar o pagamento de um prestador PJ é obrigatório anexar a Nota Fiscal da competência. Acesse o menu Prestadores PJ, localize o prestador e envie o arquivo da NF (PDF ou XML). Depois volte aqui para registrar o pagamento."
-            style={{ marginBottom: 16 }}
-          />
-        )}
         <Form form={formPayment} layout="vertical" onFinish={handlePaymentSubmit} className="cost-control-drawer-form">
           <Form.Item name="amount" label="Valor (R$)" rules={[{ required: true }]}>
             <InputNumber min={0.01} step={0.01} style={{ width: '100%' }} prefix="R$" />

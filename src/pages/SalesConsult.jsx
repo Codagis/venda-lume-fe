@@ -15,7 +15,6 @@ import {
   Drawer,
   Modal,
   Descriptions,
-  Popconfirm,
   Statistic,
   Tooltip,
   Alert,
@@ -33,6 +32,7 @@ import {
   FilePdfOutlined,
   HistoryOutlined,
   FileExcelOutlined,
+  DownOutlined,
 } from '@ant-design/icons'
 import { useAuth } from '../contexts/AuthContext'
 import {
@@ -57,6 +57,7 @@ import {
 } from '../services/salesService'
 import * as tenantService from '../services/tenantService'
 import * as cardMachineService from '../services/cardMachineService'
+import { confirmDeleteModal } from '../utils/confirmModal'
 import dayjs from 'dayjs'
 import './SalesConsult.css'
 
@@ -422,12 +423,18 @@ export default function SalesConsult() {
           )}
 
           <Card className="sales-consult-filters-card">
-            <div className="sales-consult-filters-toggle" style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+            <div className="vl-filters-toggle sales-consult-filters-toggle">
               <Button
+                type="button"
+                className={`vl-filters-toggle-btn${filtersExpanded ? ' vl-filters-toggle-btn--open' : ''}`}
                 icon={<FilterOutlined />}
                 onClick={() => setFiltersExpanded((v) => !v)}
+                aria-expanded={filtersExpanded}
               >
-                {filtersExpanded ? 'Ocultar filtros' : 'Mostrar filtros'}
+                <span className="vl-filters-toggle-label">
+                  {filtersExpanded ? 'Ocultar filtros' : 'Mostrar filtros'}
+                </span>
+                <DownOutlined className="vl-filters-chevron" aria-hidden />
               </Button>
               <Space>
                 <Button
@@ -448,8 +455,12 @@ export default function SalesConsult() {
                 </Button>
               </Space>
             </div>
-            {filtersExpanded && (
-            <Row gutter={16} align="middle" style={{ marginTop: 16 }}>
+            <div
+              className={`vl-filters-expand${filtersExpanded ? ' vl-filters-expand--open' : ''}`}
+              aria-hidden={!filtersExpanded}
+            >
+              <div className="vl-filters-expand-inner">
+            <Row gutter={16} align="middle" className="vl-filters-row">
               <Col xs={24} sm={12} md={4}>
                 <label>Data início</label>
                 <DatePicker
@@ -514,7 +525,8 @@ export default function SalesConsult() {
                 </Button>
               </Col>
             </Row>
-            )}
+              </div>
+            </div>
           </Card>
 
           {summary != null && (
@@ -702,10 +714,15 @@ export default function SalesConsult() {
                 const deliveryVal = Number(paymentFormDeliveryFee) || 0
                 const total = Math.max(0, subtotal - saleDiscount + deliveryVal)
                 const selectedCardMachine = paymentFormCardMachineId ? cardMachines.find((m) => m.id === paymentFormCardMachineId) : null
+                const effectiveMaxInstallments = selectedCardMachine?.maxInstallments ?? tenantConfig.maxInstallments ?? 12
+                const effectiveMaxInstallmentsNoInterest = selectedCardMachine?.maxInstallmentsNoInterest ?? tenantConfig.maxInstallmentsNoInterest ?? 1
+                const effectiveInterestRatePercent = selectedCardMachine?.interestRatePercent != null
+                  ? Number(selectedCardMachine.interestRatePercent)
+                  : (Number(tenantConfig.interestRatePercent) || 0)
                 const installmentsCalc = paymentFormPaymentMethod === 'CREDIT_CARD' && paymentFormInstallmentsCount > 0 ? (() => {
-                  const maxNoInterest = tenantConfig.maxInstallmentsNoInterest ?? 1
-                  const interestPercent = Number(tenantConfig.interestRatePercent) || 0
-                  const n = paymentFormInstallmentsCount
+                  const maxNoInterest = effectiveMaxInstallmentsNoInterest
+                  const interestPercent = effectiveInterestRatePercent
+                  const n = Math.min(paymentFormInstallmentsCount, effectiveMaxInstallments)
                   let totalWithInterest = total
                   if (n > maxNoInterest && interestPercent > 0) {
                     const i = interestPercent / 100
@@ -822,10 +839,10 @@ export default function SalesConsult() {
                               <Select
                                 value={paymentFormInstallmentsCount}
                                 onChange={setPaymentFormInstallmentsCount}
-                                options={Array.from({ length: Math.max(1, tenantConfig.maxInstallments || 12) }, (_, i) => {
+                                options={Array.from({ length: Math.max(1, effectiveMaxInstallments) }, (_, i) => {
                                   const n = i + 1
-                                  const maxNoInterest = tenantConfig.maxInstallmentsNoInterest ?? 1
-                                  const interestPercent = Number(tenantConfig.interestRatePercent) || 0
+                                  const maxNoInterest = effectiveMaxInstallmentsNoInterest
+                                  const interestPercent = effectiveInterestRatePercent
                                   let totalWithInt = total
                                   if (n > maxNoInterest && interestPercent > 0) {
                                     totalWithInt = total * Math.pow(1 + interestPercent / 100, n - maxNoInterest)
@@ -1100,19 +1117,24 @@ export default function SalesConsult() {
                   </Button>
                 )}
                 {selectedSale.status !== 'CANCELLED' && (
-                  <Popconfirm
-                    title="Cancelar esta venda?"
-                    description="A venda será marcada como cancelada. Esta ação pode ser registrada na auditoria."
-                    onConfirm={() => handleCancelSale(selectedSale.id)}
-                    okText="Sim, cancelar"
-                    cancelText="Não"
-                    okButtonProps={{ danger: true }}
-                    className="sale-detail-action-btn-popconfirm"
+                  <Button
+                    danger
+                    icon={<DeleteOutlined />}
+                    className="sale-detail-action-btn"
+                    block
+                    onClick={() =>
+                      confirmDeleteModal({
+                        title: 'Cancelar esta venda?',
+                        description:
+                          'A venda será marcada como cancelada. Esta ação pode ser registrada na auditoria.',
+                        okText: 'Sim, cancelar',
+                        cancelText: 'Não',
+                        onOk: () => handleCancelSale(selectedSale.id),
+                      })
+                    }
                   >
-                    <Button danger icon={<DeleteOutlined />} className="sale-detail-action-btn" block>
-                      Cancelar venda
-                    </Button>
-                  </Popconfirm>
+                    Cancelar venda
+                  </Button>
                 )}
               </div>
             </Card>

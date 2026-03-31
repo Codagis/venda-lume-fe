@@ -1,5 +1,5 @@
 .sales-page {
-  height: 100%;
+  flex: 1 1 auto;
   min-height: 0;
   overflow: hidden;
   display: flex;
@@ -7,17 +7,27 @@
 }
 
 .sales-main {
-  flex: 1;
+  flex: 1 1 auto;
   min-height: 0;
-  overflow: hidden;
+  overflow: auto;
   display: flex;
   flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  padding: 24px 28px;
+  box-sizing: border-box;
+}
+
+/* Só na landing do PDV: centraliza o card na área útil */
+.sales-main.sales-main--pdv-landing {
   justify-content: center;
 }
 
 .sales-container {
+  width: 100%;
   max-width: 900px;
-  margin: 0 auto;
+  margin: 0;
+  align-self: center;
 }
 
 .sales-header {
@@ -458,6 +468,7 @@
 
 .sales-pdv-cta-card {
   max-width: 520px;
+  width: 100%;
   margin: 0 auto;
   border-radius: 16px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);

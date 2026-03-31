@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import {
   Tabs,
   Table,
@@ -11,7 +11,6 @@ import {
   Select,
   Switch,
   message,
-  Popconfirm,
   Space,
   Upload,
   Avatar,
@@ -33,6 +32,9 @@ import * as cardMachineService from '../services/cardMachineService'
 import { uploadTenantLogo } from '../services/uploadService'
 import * as permissionService from '../services/permissionService'
 import * as profileService from '../services/profileService'
+import { confirmDeleteModal } from '../utils/confirmModal'
+import { normalizeCpfCnpj, normalizePhone } from '../utils/masks'
+import { antdRuleCpfCnpj, antdRuleEmail } from '../utils/validators'
 import './Settings.css'
 
 const UF_OPTIONS = [
@@ -57,9 +59,30 @@ const AMBIENTE_OPTIONS = [
   { value: 'producao', label: 'Produção' },
 ]
 
+/** Lista de strings PERMISSION_* (API pode enviar array ou objeto serializado). */
+function userAuthorityList(user) {
+  const auth = user?.authorities
+  if (auth == null) return []
+  if (Array.isArray(auth)) return auth
+  if (typeof auth === 'object') return Object.values(auth)
+  return []
+}
+
+function userHasPermission(user, code) {
+  return userAuthorityList(user).includes(`PERMISSION_${code}`)
+}
+
 export default function Settings() {
-  const { user } = useAuth()
+  const { user, refreshUser } = useAuth()
   const isRoot = user?.isRoot === true
+  /** Ver / editar própria empresa na aba (dados vêm de GET /tenants/current). */
+  const canViewOwnCompanyTab =
+    !isRoot &&
+    !!user?.tenantId &&
+    (userHasPermission(user, 'TENANT_MANAGE') || userHasPermission(user, 'TENANT_VIEW'))
+  const canEditOwnTenant = !isRoot && userHasPermission(user, 'TENANT_MANAGE')
+  const canViewProfiles =
+    !isRoot && (userHasPermission(user, 'PROFILE_VIEW') || userHasPermission(user, 'PROFILE_MANAGE'))
 
   const [tenants, setTenants] = useState([])
   const [permissions, setPermissions] = useState([])
@@ -76,8 +99,24 @@ export default function Settings() {
   const [pendingCardMachines, setPendingCardMachines] = useState([])
   const [cardMachineModal, setCardMachineModal] = useState({ open: false, id: null })
   const [cardMachineForm] = Form.useForm()
+  const [myTenant, setMyTenant] = useState(null)
+  const [loadingMyTenant, setLoadingMyTenant] = useState(false)
 
   const displayCardMachines = modal.type === 'tenant' && modal.id ? cardMachines : pendingCardMachines
+
+  const loadMyTenant = useCallback(async () => {
+    if (!user?.tenantId || isRoot) return
+    setLoadingMyTenant(true)
+    try {
+      const t = await tenantService.getCurrentTenant()
+      setMyTenant(t)
+    } catch {
+      setMyTenant(null)
+      message.error('Não foi possível carregar os dados da sua empresa.')
+    } finally {
+      setLoadingMyTenant(false)
+    }
+  }, [user?.tenantId, isRoot])
 
   const loadCardMachines = async (tenantId) => {
     if (!tenantId) return
@@ -128,10 +167,24 @@ export default function Settings() {
   }
 
   useEffect(() => {
+    refreshUser()
+  }, [refreshUser])
+
+  useEffect(() => {
     if (isRoot) loadTenants()
-    loadPermissions()
-    loadProfiles()
-  }, [isRoot])
+    if (isRoot || canViewProfiles) {
+      loadProfiles()
+      loadPermissions()
+    }
+  }, [isRoot, canViewProfiles])
+
+  useEffect(() => {
+    if (!canViewOwnCompanyTab) {
+      setMyTenant(null)
+      return
+    }
+    loadMyTenant()
+  }, [canViewOwnCompanyTab, loadMyTenant])
 
   useEffect(() => {
     if (isRoot && tenants.length) {
@@ -234,9 +287,16 @@ export default function Settings() {
         crtNfe: values.crtNfe ?? null,
         ambienteNfe: values.ambienteNfe ?? null,
       }
+      if (!isRoot && modal.id) {
+        delete payload.active
+      }
       if (modal.id) {
         await tenantService.updateTenant(modal.id, payload)
         message.success('Empresa atualizada.')
+        if (!isRoot) {
+          await refreshUser()
+          await loadMyTenant()
+        }
       } else {
         const createPayload = {
           ...payload,
@@ -442,18 +502,42 @@ export default function Settings() {
     }
   }
 
-  const tenantColumns = [
+  const tenantLogoColumn = {
+    title: '',
+    key: 'logo',
+    width: 56,
+    render: (_, r) =>
+      r.logoUrl ? (
+        <Avatar src={r.logoUrl} shape="square" size={40} alt={r.name} />
+      ) : (
+        <Avatar shape="square" size={40} style={{ background: '#e4e7ec' }}>{r?.name?.charAt(0)?.toUpperCase() || '?'}</Avatar>
+      ),
+  }
+
+  const tenantColumnsOwn = [
+    tenantLogoColumn,
+    { title: 'Nome', dataIndex: 'name', key: 'name' },
+    { title: 'Nome fantasia', dataIndex: 'tradeName', key: 'tradeName' },
+    { title: 'Documento', dataIndex: 'document', key: 'document' },
+    { title: 'E-mail', dataIndex: 'email', key: 'email' },
+    { title: 'Ativo', dataIndex: 'active', key: 'active', render: (v) => (v ? 'Sim' : 'Não') },
     {
-      title: '',
-      key: 'logo',
-      width: 56,
+      title: 'Ações',
+      key: 'actions',
+      width: 100,
       render: (_, r) =>
-        r.logoUrl ? (
-          <Avatar src={r.logoUrl} shape="square" size={40} alt={r.name} />
+        canEditOwnTenant ? (
+          <Button type="link" size="small" icon={<EditOutlined />} onClick={() => openModal('tenant', r.id)}>
+            Editar
+          </Button>
         ) : (
-          <Avatar shape="square" size={40} style={{ background: '#e4e7ec' }}>{r?.name?.charAt(0)?.toUpperCase() || '?'}</Avatar>
+          <span style={{ color: 'var(--ant-color-text-secondary, #8c8c8c)', fontSize: 12 }}>Somente visualização</span>
         ),
     },
+  ]
+
+  const tenantColumns = [
+    tenantLogoColumn,
     { title: 'Nome', dataIndex: 'name', key: 'name' },
     { title: 'Nome fantasia', dataIndex: 'tradeName', key: 'tradeName' },
     { title: 'Documento', dataIndex: 'document', key: 'document' },
@@ -465,9 +549,18 @@ export default function Settings() {
       render: (_, r) => (
         <Space>
           <Button type="link" size="small" icon={<EditOutlined />} onClick={() => openModal('tenant', r.id)} />
-          <Popconfirm title="Excluir esta empresa?" onConfirm={() => onDeleteTenant(r.id)}>
-            <Button type="link" size="small" danger icon={<DeleteOutlined />} />
-          </Popconfirm>
+          <Button
+            type="link"
+            size="small"
+            danger
+            icon={<DeleteOutlined />}
+            onClick={() =>
+              confirmDeleteModal({
+                title: 'Excluir esta empresa?',
+                onOk: () => onDeleteTenant(r.id),
+              })
+            }
+          />
         </Space>
       ),
     },
@@ -484,9 +577,18 @@ export default function Settings() {
       render: (_, r) => (
         <Space>
           <Button type="link" size="small" icon={<EditOutlined />} onClick={() => openModal('permission', r.id)} />
-          <Popconfirm title="Excluir esta permissão?" onConfirm={() => onDeletePermission(r.id)}>
-            <Button type="link" size="small" danger icon={<DeleteOutlined />} />
-          </Popconfirm>
+          <Button
+            type="link"
+            size="small"
+            danger
+            icon={<DeleteOutlined />}
+            onClick={() =>
+              confirmDeleteModal({
+                title: 'Excluir esta permissão?',
+                onOk: () => onDeletePermission(r.id),
+              })
+            }
+          />
         </Space>
       ),
     },
@@ -507,90 +609,131 @@ export default function Settings() {
       render: (_, r) => (
         <Space>
           <Button type="link" size="small" icon={<EditOutlined />} onClick={() => openModal('profile', r.id)} />
-          <Popconfirm title="Excluir este perfil?" onConfirm={() => onDeleteProfile(r.id)}>
-            <Button type="link" size="small" danger icon={<DeleteOutlined />} />
-          </Popconfirm>
+          <Button
+            type="link"
+            size="small"
+            danger
+            icon={<DeleteOutlined />}
+            onClick={() =>
+              confirmDeleteModal({
+                title: 'Excluir este perfil?',
+                onOk: () => onDeleteProfile(r.id),
+              })
+            }
+          />
         </Space>
       ),
     },
   ]
 
-  const tabItems = [
-    ...(isRoot
-      ? [
-          {
-            key: 'tenants',
-            label: (
-              <span>
-                <BankOutlined /> Empresas
-              </span>
-            ),
-            children: (
-              <div className="settings-tab">
-                <Button type="primary" icon={<PlusOutlined />} onClick={() => openModal('tenant')} className="settings-add-btn">
-                  Nova empresa
-                </Button>
-                <Table
-                  rowKey="id"
-                  columns={tenantColumns}
-                  dataSource={tenants}
-                  loading={loading.tenants}
-                  pagination={{ pageSize: 10 }}
-                />
-              </div>
-            ),
-          },
-        ]
-      : []),
-    {
-      key: 'profiles',
-      label: (
-        <span>
-          <TeamOutlined /> Perfis
-        </span>
-      ),
-      children: (
-        <div className="settings-tab">
-          <Button type="primary" icon={<PlusOutlined />} onClick={() => openModal('profile')} className="settings-add-btn">
-            Novo perfil
-          </Button>
-          <Table
-            rowKey="id"
-            columns={profileColumns}
-            dataSource={profiles}
-            loading={loading.profiles}
-            pagination={{ pageSize: 10 }}
-          />
-        </div>
-      ),
-    },
-    ...(isRoot
-      ? [
-          {
-            key: 'permissions',
-            label: (
-              <span>
-                <SafetyOutlined /> Permissões
-              </span>
-            ),
-            children: (
-              <div className="settings-tab">
-                <Button type="primary" icon={<PlusOutlined />} onClick={() => openModal('permission')} className="settings-add-btn">
-                  Nova permissão
-                </Button>
-                <Table
-                  rowKey="id"
-                  columns={permissionColumns}
-                  dataSource={permissions}
-                  loading={loading.permissions}
-                  pagination={{ pageSize: 10 }}
-                />
-              </div>
-            ),
-          },
-        ]
-      : []),
-  ]
+  const profilesTabItem = {
+    key: 'profiles',
+    label: (
+      <span>
+        <TeamOutlined /> Perfis
+      </span>
+    ),
+    children: (
+      <div className="settings-tab">
+        <Button type="primary" icon={<PlusOutlined />} onClick={() => openModal('profile')} className="settings-add-btn">
+          Novo perfil
+        </Button>
+        <Table
+          rowKey="id"
+          columns={profileColumns}
+          dataSource={profiles}
+          loading={loading.profiles}
+          pagination={{ pageSize: 10 }}
+        />
+      </div>
+    ),
+  }
+
+  const tabItems = isRoot
+    ? [
+        {
+          key: 'tenants',
+          label: (
+            <span>
+              <BankOutlined /> Empresas
+            </span>
+          ),
+          children: (
+            <div className="settings-tab">
+              <Button type="primary" icon={<PlusOutlined />} onClick={() => openModal('tenant')} className="settings-add-btn">
+                Nova empresa
+              </Button>
+              <Table
+                rowKey="id"
+                columns={tenantColumns}
+                dataSource={tenants}
+                loading={loading.tenants}
+                pagination={{ pageSize: 10 }}
+              />
+            </div>
+          ),
+        },
+        profilesTabItem,
+        {
+          key: 'permissions',
+          label: (
+            <span>
+              <SafetyOutlined /> Permissões
+            </span>
+          ),
+          children: (
+            <div className="settings-tab">
+              <Button type="primary" icon={<PlusOutlined />} onClick={() => openModal('permission')} className="settings-add-btn">
+                Nova permissão
+              </Button>
+              <Table
+                rowKey="id"
+                columns={permissionColumns}
+                dataSource={permissions}
+                loading={loading.permissions}
+                pagination={{ pageSize: 10 }}
+              />
+            </div>
+          ),
+        },
+      ]
+    : [
+        ...(canViewOwnCompanyTab
+          ? [
+              {
+                key: 'my-tenant',
+                label: (
+                  <span>
+                    <BankOutlined /> Minha empresa
+                  </span>
+                ),
+                children: (
+                  <div className="settings-tab">
+                    {canEditOwnTenant && (
+                      <Button
+                        type="primary"
+                        icon={<EditOutlined />}
+                        onClick={() => openModal('tenant', user.tenantId)}
+                        className="settings-add-btn"
+                      >
+                        Editar dados da empresa
+                      </Button>
+                    )}
+                    <Table
+                      rowKey="id"
+                      columns={tenantColumnsOwn}
+                      dataSource={myTenant ? [myTenant] : []}
+                      loading={loadingMyTenant}
+                      pagination={false}
+                      locale={{ emptyText: loadingMyTenant ? 'Carregando…' : 'Nenhum dado da empresa.' }}
+                    />
+                  </div>
+                ),
+              },
+            ]
+          : []),
+        ...(canViewProfiles ? [profilesTabItem] : []),
+      ]
 
   return (
     <div className="settings-page">
@@ -603,7 +746,9 @@ export default function Settings() {
             <div className="settings-header-card-content">
               <h2 className="settings-page-title">Permissões e empresas</h2>
               <p className="settings-page-subtitle">
-                Gerencie empresas (tenants), perfis de acesso e permissões. Apenas usuário root vê Empresas e Permissões.
+                {isRoot
+                  ? 'Gerencie empresas (tenants), perfis de acesso e permissões. Apenas o usuário root vê a lista de empresas e permissões globais.'
+                  : 'Gerencie perfis da sua empresa ou edite os dados da empresa quando tiver a permissão correspondente.'}
               </p>
             </div>
           </div>
@@ -683,14 +828,14 @@ export default function Settings() {
                 <Form.Item name="tradeName" label="Nome fantasia">
                   <Input placeholder="Nome fantasia" />
                 </Form.Item>
-                <Form.Item name="document" label="CNPJ/Documento">
-                  <Input placeholder="Documento" />
+                <Form.Item name="document" label="CNPJ/Documento" normalize={normalizeCpfCnpj} rules={[antdRuleCpfCnpj()]}>
+                  <Input placeholder="CNPJ/CPF" inputMode="numeric" />
                 </Form.Item>
-                <Form.Item name="email" label="E-mail">
-                  <Input placeholder="E-mail" />
+                <Form.Item name="email" label="E-mail" rules={[antdRuleEmail()]}>
+                  <Input placeholder="E-mail" type="email" />
                 </Form.Item>
-                <Form.Item name="phone" label="Telefone">
-                  <Input placeholder="Telefone" />
+                <Form.Item name="phone" label="Telefone" normalize={normalizePhone}>
+                  <Input placeholder="Telefone com DDD" inputMode="tel" />
                 </Form.Item>
                 <Card size="small" title="Endereço da empresa" style={{ marginBottom: 20 }}>
                   <div style={{ fontSize: 12, color: 'var(--ant-color-text-secondary)', marginBottom: 12 }}>
@@ -851,18 +996,29 @@ export default function Settings() {
                         render: (_, r) => (
                           <Space>
                             <Button type="link" size="small" icon={<EditOutlined />} onClick={() => openCardMachineModal(r.id)} />
-                            <Popconfirm title="Excluir esta maquininha?" onConfirm={() => onDeleteCardMachine(r.id)}>
-                              <Button type="link" size="small" danger icon={<DeleteOutlined />} />
-                            </Popconfirm>
+                            <Button
+                              type="link"
+                              size="small"
+                              danger
+                              icon={<DeleteOutlined />}
+                              onClick={() =>
+                                confirmDeleteModal({
+                                  title: 'Excluir esta maquininha?',
+                                  onOk: () => onDeleteCardMachine(r.id),
+                                })
+                              }
+                            />
                           </Space>
                         ),
                       },
                     ]}
                   />
                 </Card>
-                <Form.Item name="active" label="Ativo" valuePropName="checked" initialValue={true}>
-                  <Switch />
-                </Form.Item>
+                {isRoot && (
+                  <Form.Item name="active" label="Ativo" valuePropName="checked" initialValue={true}>
+                    <Switch />
+                  </Form.Item>
+                )}
               </Form>
             )}
             {modal.type === 'permission' && (

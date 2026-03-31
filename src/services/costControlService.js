@@ -230,3 +230,56 @@ export async function downloadReceivablesReportPdf(filter = {}, tenantId) {
   document.body.removeChild(a)
   URL.revokeObjectURL(urlObj)
 }
+
+function categoriesUrl(kind, tenantId) {
+  let url = `/cost-control/categories?kind=${encodeURIComponent(kind)}`
+  if (tenantId != null && tenantId !== '') {
+    url += `&tenantId=${encodeURIComponent(tenantId)}`
+  }
+  return url
+}
+
+export async function listCostCategories(kind, tenantId) {
+  const res = await apiFetch(categoriesUrl(kind, tenantId))
+  if (!res.ok) throw new Error('Erro ao listar categorias.')
+  return res.json()
+}
+
+export async function createCostCategory(data) {
+  const res = await apiFetch('/cost-control/categories', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    const msg = err?.message || err?.error || 'Erro ao cadastrar categoria.'
+    throw new Error(typeof msg === 'string' ? msg : 'Erro ao cadastrar categoria.')
+  }
+  return res.json()
+}
+
+export async function updateCostCategory(id, data) {
+  const res = await apiFetch(`/cost-control/categories/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    const msg = err?.message || err?.error || 'Erro ao atualizar categoria.'
+    throw new Error(typeof msg === 'string' ? msg : 'Erro ao atualizar categoria.')
+  }
+  return res.json()
+}
+
+export async function deleteCostCategory(id, tenantId) {
+  let url = `/cost-control/categories/${id}`
+  if (tenantId != null && tenantId !== '') {
+    url += `?tenantId=${encodeURIComponent(tenantId)}`
+  }
+  const res = await apiFetch(url, { method: 'DELETE' })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    const msg = err?.message || err?.error || 'Erro ao excluir categoria.'
+    throw new Error(typeof msg === 'string' ? msg : 'Erro ao excluir categoria.')
+  }
+}
