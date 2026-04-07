@@ -10,7 +10,7 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
 })
 
-export default function DeliveryMap({ delivery }) {
+export default function DeliveryMap({ delivery, refreshKey = 0 }) {
   const [osmData, setOsmData] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
@@ -32,7 +32,7 @@ export default function DeliveryMap({ delivery }) {
         setError('Não foi possível carregar o mapa.')
       })
       .finally(() => setLoading(false))
-  }, [delivery?.id])
+  }, [delivery?.id, refreshKey])
 
   useEffect(() => {
     if (!osmData?.destLat || !osmData?.destLon || !mapRef.current) return

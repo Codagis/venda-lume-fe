@@ -88,3 +88,15 @@ export async function updateDeliveryStatus(id, data) {
   }
   return res.json()
 }
+
+export async function updateDelivery(id, data) {
+  const res = await apiFetch(`/deliveries/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err?.message || err?.error || 'Erro ao atualizar entrega.')
+  }
+  return res.json()
+}
