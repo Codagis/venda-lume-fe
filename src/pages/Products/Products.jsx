@@ -5,6 +5,7 @@ import {
   InputNumber,
   Select,
   Switch,
+  DatePicker,
   Button,
   Card,
   Row,
@@ -47,6 +48,7 @@ import {
   createProduct,
   updateProduct,
   deleteProduct,
+  getProductById,
   searchProducts,
   UNIT_OF_MEASURE_OPTIONS,
 } from '../../services/productService'
@@ -54,6 +56,7 @@ import * as tenantService from '../../services/tenantService'
 import { uploadProductImage } from '../../services/uploadService'
 import { confirmDeleteModal } from '../../utils/confirmModal'
 import './Products.css'
+import dayjs from 'dayjs'
 
 const { TextArea } = Input
 
@@ -238,10 +241,39 @@ export default function Products() {
           maxOrderQuantity: product.maxOrderQuantity,
           sellMultiple: product.sellMultiple,
           preparationTimeMinutes: product.preparationTimeMinutes,
+          hasLots: Array.isArray(product.lots) && product.lots.length > 0,
+          lots: Array.isArray(product.lots)
+            ? product.lots.map((l) => ({
+                lotCode: l.lotCode,
+                expiresAt: l.expiresAt ? dayjs(l.expiresAt) : null,
+                quantity: l.quantity ?? 0,
+              }))
+            : [],
         }
       : { ...initialFormValues, ...(isRoot && selectedTenantId && { tenantId: selectedTenantId }) }
     setDrawerFormInitialValues(initial)
     setDrawerOpen(true)
+
+    if (product?.id) {
+      ;(async () => {
+        try {
+          const full = await getProductById(product.id)
+          if (!full) return
+          form.setFieldsValue({
+            hasLots: Array.isArray(full.lots) && full.lots.length > 0,
+            lots: Array.isArray(full.lots)
+              ? full.lots.map((l) => ({
+                  lotCode: l.lotCode,
+                  expiresAt: l.expiresAt ? dayjs(l.expiresAt) : null,
+                  quantity: l.quantity ?? 0,
+                }))
+              : [],
+          })
+        } catch (e) {
+          // Se falhar, mantém o formulário com os dados já disponíveis na lista
+        }
+      })()
+    }
   }
 
   const closeDrawer = () => {
@@ -338,6 +370,16 @@ export default function Products() {
         emitsComprovanteSimples: typeof values.emitsComprovanteSimples === 'boolean' ? values.emitsComprovanteSimples : true,
         displayOrder: values.displayOrder ?? undefined,
         imageUrl,
+        lots:
+          values.hasLots && Array.isArray(values.lots)
+            ? values.lots
+                .filter((l) => l && (l.lotCode || l.expiresAt || l.quantity != null))
+                .map((l) => ({
+                  lotCode: l.lotCode?.trim(),
+                  expiresAt: l.expiresAt ? l.expiresAt.format('YYYY-MM-DD') : undefined,
+                  quantity: l.quantity ?? 0,
+                }))
+            : undefined,
       }
       if (editingId) {
         await updateProduct(editingId, payload)
@@ -1147,6 +1189,72 @@ export default function Products() {
                   </Row>
                 )
               }
+            </Form.Item>
+
+            <Divider orientation="left">Lotes (opcional)</Divider>
+            <Row gutter={16}>
+              <Col span={24}>
+                <Form.Item
+                  name="hasLots"
+                  valuePropName="checked"
+                  label="Cadastrar lotes deste produto"
+                  extra="Use lotes para controlar validade e rastreabilidade. Se você informar lotes com controle de estoque ativo, o estoque pode ser calculado pela soma das quantidades dos lotes."
+                >
+                  <Switch checkedChildren="Sim" unCheckedChildren="Não" />
+                </Form.Item>
+              </Col>
+            </Row>
+
+            <Form.Item noStyle shouldUpdate={(prev, curr) => prev.hasLots !== curr.hasLots || prev.trackStock !== curr.trackStock}>
+              {({ getFieldValue }) => {
+                const enabled = !!getFieldValue('hasLots')
+                if (!enabled) return null
+                return (
+                  <Form.List name="lots">
+                    {(fields, { add, remove }) => (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                        {fields.map(({ key, name, ...restField }) => (
+                          <Card key={key} size="small" style={{ borderRadius: 10 }}>
+                            <Row gutter={12} align="middle">
+                              <Col xs={24} md={9}>
+                                <Form.Item
+                                  {...restField}
+                                  name={[name, 'lotCode']}
+                                  label="Lote"
+                                  rules={[{ required: true, message: 'Informe o lote' }, { max: 60 }]}
+                                >
+                                  <Input placeholder="Ex: LOTE-2026-001" />
+                                </Form.Item>
+                              </Col>
+                              <Col xs={24} md={8}>
+                                <Form.Item {...restField} name={[name, 'expiresAt']} label="Validade">
+                                  <DatePicker format="DD/MM/YYYY" style={{ width: '100%' }} placeholder="Opcional" />
+                                </Form.Item>
+                              </Col>
+                              <Col xs={18} md={5}>
+                                <Form.Item
+                                  {...restField}
+                                  name={[name, 'quantity']}
+                                  label="Qtd."
+                                  rules={[{ type: 'number', min: 0, message: '>= 0' }]}
+                                >
+                                  <InputNumber min={0} step={1} precision={2} style={{ width: '100%' }} />
+                                </Form.Item>
+                              </Col>
+                              <Col xs={6} md={2} style={{ marginTop: 22, textAlign: 'right' }}>
+                                <Button type="text" danger icon={<DeleteOutlined />} onClick={() => remove(name)} />
+                              </Col>
+                            </Row>
+                          </Card>
+                        ))}
+                        <Button type="dashed" onClick={() => add({ lotCode: '', expiresAt: null, quantity: 0 })} icon={<PlusOutlined />}>
+                          Adicionar lote
+                        </Button>
+                      </div>
+                    )}
+                  </Form.List>
+                )
+              }}
             </Form.Item>
           </div>
 
