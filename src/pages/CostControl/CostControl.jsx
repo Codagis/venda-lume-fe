@@ -1216,7 +1216,7 @@ export default function CostControl() {
         onClose={() => setDrawerPayableOpen(false)}
         placement="right"
         width={520}
-        destroyOnClose
+        destroyOnHidden
         extra={
           <Space>
             <Button onClick={() => setDrawerPayableOpen(false)}>Cancelar</Button>
@@ -1281,7 +1281,7 @@ export default function CostControl() {
         onClose={() => setDrawerReceivableOpen(false)}
         placement="right"
         width={520}
-        destroyOnClose
+        destroyOnHidden
         extra={
           <Space>
             <Button onClick={() => setDrawerReceivableOpen(false)}>Cancelar</Button>
@@ -1346,7 +1346,7 @@ export default function CostControl() {
         onClose={() => { setPaymentDrawerOpen(false); setPaymentTarget(null) }}
         placement="right"
         width={420}
-        destroyOnClose
+        destroyOnHidden
         extra={
           <Space>
             <Button onClick={() => { setPaymentDrawerOpen(false); setPaymentTarget(null) }}>Cancelar</Button>

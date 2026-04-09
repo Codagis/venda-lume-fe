@@ -199,7 +199,7 @@ export default function CostAccountCategoriesPanel({ tenantId, isRoot }) {
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
         width={420}
-        destroyOnClose
+        destroyOnHidden
         extra={
           <Space>
             <Button onClick={() => setDrawerOpen(false)}>Cancelar</Button>

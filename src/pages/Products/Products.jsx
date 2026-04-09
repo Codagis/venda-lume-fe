@@ -755,7 +755,7 @@ export default function Products() {
         onClose={closeDetailDrawer}
         placement="right"
         width={520}
-        destroyOnClose
+        destroyOnHidden
         className="products-detail-drawer-wrapper"
         extra={
           <Space>
@@ -916,7 +916,7 @@ export default function Products() {
         onClose={closeDrawer}
         placement="right"
         width={520}
-        destroyOnClose
+        destroyOnHidden
         extra={
           <Space>
             <Button onClick={closeDrawer}>Cancelar</Button>

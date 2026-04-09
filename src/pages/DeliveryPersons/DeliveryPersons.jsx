@@ -152,7 +152,7 @@ export default function DeliveryPersons() {
         open={deliveryPersonDrawerOpen}
         onClose={() => setDeliveryPersonDrawerOpen(false)}
         width={460}
-        destroyOnClose
+        destroyOnHidden
         extra={
           <Space>
             <Button onClick={() => setDeliveryPersonDrawerOpen(false)}>Cancelar</Button>

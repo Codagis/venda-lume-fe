@@ -701,7 +701,7 @@ export default function SalesConsult() {
               onCancel={() => setAddPaymentModalOpen(false)}
               footer={null}
               width={460}
-              destroyOnClose
+              destroyOnHidden
             >
               {selectedSale && (() => {
                 const subtotal = Number(selectedSale.subtotal) || 0
@@ -817,10 +817,12 @@ export default function SalesConsult() {
                               placeholder="Selecione a maquininha"
                               value={paymentFormCardMachineId}
                               onChange={setPaymentFormCardMachineId}
-                              options={cardMachines.map((m) => ({
-                                value: m.id,
-                                label: m.acquirerCnpj ? `${m.name} (CNPJ adq.)` : m.name,
-                              }))}
+                              options={cardMachines
+                                .filter((m) => m != null && m.id != null)
+                                .map((m) => ({
+                                  value: m.id,
+                                  label: m.acquirerCnpj ? `${m.name} (CNPJ adq.)` : m.name,
+                                }))}
                               style={{ width: '100%' }}
                               allowClear
                             />

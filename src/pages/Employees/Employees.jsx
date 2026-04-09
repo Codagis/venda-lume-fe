@@ -672,7 +672,7 @@ export default function Employees() {
         onClose={closeDrawer}
         placement="right"
         width={540}
-        destroyOnClose
+        destroyOnHidden
         extra={
           <Space>
             <Button onClick={closeDrawer}>Cancelar</Button>
@@ -912,7 +912,7 @@ export default function Employees() {
         onClose={() => setGenerateDrawerOpen(false)}
         placement="right"
         width={480}
-        destroyOnClose
+        destroyOnHidden
         footer={
           <Space style={{ width: '100%', justifyContent: 'flex-end' }}>
             <Button htmlType="button" onClick={() => setGenerateDrawerOpen(false)}>Cancelar</Button>

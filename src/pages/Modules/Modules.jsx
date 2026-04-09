@@ -188,7 +188,7 @@ export default function Modules() {
             onClose={closeModal}
             placement="right"
             width={440}
-            destroyOnClose
+            destroyOnHidden
             extra={
               <Space>
                 <Button onClick={closeModal} disabled={saving}>Cancelar</Button>

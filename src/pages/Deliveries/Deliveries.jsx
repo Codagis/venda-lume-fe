@@ -615,28 +615,29 @@ export default function Deliveries() {
         open={detailDrawerOpen}
         onClose={() => setDetailDrawerOpen(false)}
         width={520}
-        extra={
-          <Space>
-            <Button
-              icon={<ReloadOutlined />}
-              onClick={() => setMapRefreshKey((k) => k + 1)}
-              disabled={!selectedDelivery?.id}
-            >
-              Atualizar mapa
-            </Button>
-            {(selectedDelivery?.status === 'PENDING' || selectedDelivery?.status === 'ASSIGNED') && (
-              <Button icon={<UserOutlined />} onClick={() => openAssign(selectedDelivery)}>
-                Atribuir
-              </Button>
-            )}
-            <Button type="primary" onClick={() => openStatus(selectedDelivery)}>
-              Atualizar status
-            </Button>
-          </Space>
-        }
+        className="deliveries-detail-drawer"
       >
         {selectedDelivery && (
           <>
+            <div className="deliveries-detail-drawer-actions">
+              <Space wrap size="small">
+                <Button
+                  icon={<ReloadOutlined />}
+                  onClick={() => setMapRefreshKey((k) => k + 1)}
+                  disabled={!selectedDelivery?.id}
+                >
+                  Atualizar mapa
+                </Button>
+                {(selectedDelivery?.status === 'PENDING' || selectedDelivery?.status === 'ASSIGNED') && (
+                  <Button icon={<UserOutlined />} onClick={() => openAssign(selectedDelivery)}>
+                    Atribuir
+                  </Button>
+                )}
+                <Button type="primary" onClick={() => openStatus(selectedDelivery)}>
+                  Atualizar status
+                </Button>
+              </Space>
+            </div>
             <Steps
               direction="vertical"
               size="small"
@@ -739,7 +740,7 @@ export default function Deliveries() {
         open={createDrawerOpen}
         onClose={() => setCreateDrawerOpen(false)}
         width={480}
-        destroyOnClose
+        destroyOnHidden
         extra={
           <Space>
             <Button onClick={() => setCreateDrawerOpen(false)}>Cancelar</Button>
@@ -778,7 +779,7 @@ export default function Deliveries() {
         open={editDrawerOpen}
         onClose={() => setEditDrawerOpen(false)}
         width={520}
-        destroyOnClose
+        destroyOnHidden
         extra={
           <Space>
             <Button onClick={() => setEditDrawerOpen(false)}>Cancelar</Button>

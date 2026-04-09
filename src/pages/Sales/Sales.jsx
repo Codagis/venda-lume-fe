@@ -915,7 +915,7 @@ export default function Sales() {
         onCancel={closeCustomerModal}
         footer={null}
         width={480}
-        destroyOnClose
+        destroyOnHidden
       >
         <div style={{ marginBottom: 16 }}>
           <Space.Compact style={{ width: '100%' }}>

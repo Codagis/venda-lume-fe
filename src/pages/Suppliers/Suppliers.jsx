@@ -362,7 +362,7 @@ export default function Suppliers() {
         onClose={closeDrawer}
         placement="right"
         width={520}
-        destroyOnClose
+        destroyOnHidden
         extra={
           <Space>
             <Button onClick={closeDrawer}>Cancelar</Button>

@@ -759,7 +759,7 @@ export default function Settings() {
             onClose={closeModal}
             placement="right"
             width={modal.type === 'profile' ? 480 : modal.type === 'tenant' ? 520 : 400}
-            destroyOnClose
+            destroyOnHidden
             extra={
               <Space>
                 <Button onClick={closeModal} disabled={saving}>Cancelar</Button>
@@ -1066,7 +1066,7 @@ export default function Settings() {
             open={cardMachineModal.open}
             onCancel={closeCardMachineModal}
             footer={null}
-            destroyOnClose
+            destroyOnHidden
           >
             <Form form={cardMachineForm} layout="vertical" onFinish={onFinishCardMachine}>
               <Form.Item name="name" label="Nome" rules={[{ required: true, message: 'Informe o nome' }]}>

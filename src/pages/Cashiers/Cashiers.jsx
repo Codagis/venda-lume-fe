@@ -165,7 +165,7 @@ export default function Cashiers() {
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
         width={460}
-        destroyOnClose
+        destroyOnHidden
         extra={
           <Space>
             <Button onClick={() => setDrawerOpen(false)}>Cancelar</Button>

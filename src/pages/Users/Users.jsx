@@ -151,7 +151,15 @@ export default function Users() {
     }
   }
 
-  const tenantOptions = (tenants || []).map((t) => ({ value: t.id, label: t.name }))
+  const tenantOptions = (tenants || [])
+    .filter((t) => t != null && t.id != null)
+    .map((t) => ({ value: t.id, label: t.name ?? String(t.id) }))
+  const profileSelectOptions = (profiles || [])
+    .filter((p) => p != null && p.id != null)
+    .map((p) => ({
+      value: p.id,
+      label: p.tenantId ? `${p.name ?? ''}` : `${p.name ?? ''} (Sistema)`,
+    }))
 
   const columns = [
     { title: 'Usuário', dataIndex: 'username', key: 'username', width: 120 },
@@ -244,7 +252,7 @@ export default function Users() {
             onClose={closeModal}
             placement="right"
             width={420}
-            destroyOnClose
+            destroyOnHidden
             extra={
               <Space>
                 <Button onClick={closeModal} disabled={saving}>Cancelar</Button>
@@ -297,11 +305,7 @@ export default function Users() {
                 </Form.Item>
               )}
               <Form.Item name="profileId" label="Perfil">
-                <Select
-                  options={(profiles || []).map((p) => ({ value: p.id, label: p.tenantId ? `${p.name}` : `${p.name} (Sistema)` }))}
-                  placeholder="Selecione o perfil (opcional)"
-                  allowClear
-                />
+                <Select options={profileSelectOptions} placeholder="Selecione o perfil (opcional)" allowClear />
               </Form.Item>
               {editingId && (
                 <Form.Item name="active" valuePropName="checked" label="Ativo">

@@ -339,7 +339,7 @@ export default function Registers() {
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
         width={480}
-        destroyOnClose
+        destroyOnHidden
         extra={
           <Space>
             <Button onClick={() => setDrawerOpen(false)}>Cancelar</Button>
@@ -381,7 +381,7 @@ export default function Registers() {
         open={operatorsDrawerOpen}
         onClose={() => setOperatorsDrawerOpen(false)}
         width={440}
-        destroyOnClose
+        destroyOnHidden
         extra={
           <Space>
             <Button onClick={() => setOperatorsDrawerOpen(false)}>Cancelar</Button>
@@ -413,7 +413,7 @@ export default function Registers() {
         open={sessionHistoryOpen}
         onClose={() => { setSessionHistoryOpen(false); setSessionDetail(null) }}
         width={Math.min(720, window.innerWidth * 0.9)}
-        destroyOnClose
+        destroyOnHidden
       >
         <Table
           rowKey="id"
