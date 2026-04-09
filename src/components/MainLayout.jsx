@@ -95,7 +95,6 @@ export default function MainLayout() {
   const [menuOpenKeys, setMenuOpenKeys] = useState([])
   const [menuSearchQuery, setMenuSearchQuery] = useState('')
   const [menuSearchPanelOpen, setMenuSearchPanelOpen] = useState(false)
-  /** Troca ao escolher um resultado: remonta o Input e zera estado interno do Ant Design. */
   const [navSearchInputKey, setNavSearchInputKey] = useState(0)
   const searchAnchorRef = useRef(null)
   const searchFocusOutTimer = useRef(null)
@@ -151,11 +150,6 @@ export default function MainLayout() {
 
   useEffect(() => () => clearSearchFocusOutTimer(), [clearSearchFocusOutTimer])
 
-  /*
-   * Controle do painel só por focusin/focusout no âncora (não usar onBlur do Input).
-   * O Input do Ant Design (affix, allowClear) faz o blur competir com timeout e deixa
-   * menuSearchPanelOpen=false com o cursor ainda no campo — a lista não volta até clicar fora/dentro.
-   */
   useLayoutEffect(() => {
     if (loading) return
     const root = searchAnchorRef.current

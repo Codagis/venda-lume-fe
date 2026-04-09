@@ -80,7 +80,6 @@ export function apiFetch(path, options = {}) {
     ...options,
     headers: { ...defaultOptions.headers, ...options?.headers },
   }
-  // Para uploads multipart/form-data, o browser precisa definir o Content-Type com boundary.
   if (opts.body instanceof FormData) {
     const headers = { ...(opts.headers || {}) }
     delete headers['Content-Type']

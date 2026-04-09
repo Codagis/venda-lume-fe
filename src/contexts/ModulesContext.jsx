@@ -4,7 +4,6 @@ import { useAuth } from './AuthContext'
 
 const ModulesContext = createContext(null)
 
-/** Mesas do Restaurante: apenas no app VendaLume Garçom — não expor no painel web. */
 const FE_EXCLUDED_MODULE_CODES = new Set(['RESTAURANT_TABLES'])
 
 const DEFAULT_MODULES = [

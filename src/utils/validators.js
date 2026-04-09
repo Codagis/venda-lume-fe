@@ -4,14 +4,13 @@ function onlyDigits(v) {
 
 export function isValidEmail(v) {
   const s = (v ?? '').toString().trim()
-  if (!s) return true // campo opcional: valida só se preenchido
-  // Usa validação simples + robusta (sem exagerar regras RFC)
+  if (!s) return true
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s)
 }
 
 export function isValidCpf(v) {
   const cpf = onlyDigits(v)
-  if (!cpf) return true // opcional
+  if (!cpf) return true
   if (cpf.length !== 11) return false
   if (/^(\d)\1{10}$/.test(cpf)) return false
   let sum = 0
@@ -28,7 +27,7 @@ export function isValidCpf(v) {
 
 export function isValidCnpj(v) {
   const cnpj = onlyDigits(v)
-  if (!cnpj) return true // opcional
+  if (!cnpj) return true
   if (cnpj.length !== 14) return false
   if (/^(\d)\1{13}$/.test(cnpj)) return false
 

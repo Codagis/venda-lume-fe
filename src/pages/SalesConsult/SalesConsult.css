@@ -1,10 +1,11 @@
 .sales-consult-page {
-  min-height: 100vh;
+  min-height: 0;
 }
 
 .sales-consult-container {
-  max-width: 1200px;
-  margin: 0 auto;
+  width: 100%;
+  max-width: none;
+  margin: 0;
 }
 
 .sales-consult-header-card {

@@ -1,9 +1,5 @@
 import { Modal } from 'antd'
 
-/**
- * Modal de confirmação para exclusões (substitui Popconfirm com experiência mais clara).
- * onOk pode ser async; o botão OK fica em loading até concluir.
- */
 export function confirmDeleteModal({
   title,
   description = 'Esta ação não pode ser desfeita.',

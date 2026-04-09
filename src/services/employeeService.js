@@ -68,11 +68,6 @@ export async function generatePayroll(tenantId, year, month) {
   return res.json()
 }
 
-/**
- * Gera contas a pagar para funcionários e meses selecionados.
- * @param {string|null} tenantId - ID da empresa (root)
- * @param {Object} payload - { employeeIds: string[], months: { year: number, month: number }[] }
- */
 export async function generatePayrollBatch(tenantId, payload) {
   let url = '/payroll/generate-batch'
   if (tenantId != null && tenantId !== '') {

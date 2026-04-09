@@ -141,13 +141,10 @@ export default function SalesConsult() {
     const f = {
       startDate: start,
       endDate: end,
-      status: filterStatus || undefined,
-      saleType: filterSaleType || undefined,
-      search: filterSearch?.trim() || undefined,
     }
     if (effectiveTenantId) f.tenantId = effectiveTenantId
     return f
-  }, [effectiveTenantId, startDate, endDate, filterStatus, filterSaleType, filterSearch])
+  }, [effectiveTenantId, startDate, endDate])
 
   const loadTenants = useCallback(async () => {
     if (!isRoot) return

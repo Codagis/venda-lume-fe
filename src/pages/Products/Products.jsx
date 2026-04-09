@@ -270,7 +270,6 @@ export default function Products() {
               : [],
           })
         } catch (e) {
-          // Se falhar, mantém o formulário com os dados já disponíveis na lista
         }
       })()
     }

@@ -35,7 +35,6 @@ export function maskCpfCnpj(v) {
 }
 
 export function maskPhoneBr(v) {
-  // (11) 91234-5678 ou (11) 1234-5678
   const d = onlyDigits(v).slice(0, 11)
   if (!d) return ''
   const ddd = d.slice(0, 2)
@@ -43,10 +42,8 @@ export function maskPhoneBr(v) {
   if (d.length <= 2) return `(${ddd}`
   if (rest.length <= 4) return `(${ddd}) ${rest}`
   if (rest.length <= 8) {
-    // fixo (8 dígitos) ou incompleto
     return `(${ddd}) ${rest.slice(0, 4)}-${rest.slice(4)}`
   }
-  // celular 9 dígitos
   return `(${ddd}) ${rest.slice(0, 5)}-${rest.slice(5)}`
 }
 

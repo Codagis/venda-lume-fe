@@ -126,12 +126,10 @@ export async function listNfeAll(params = {}) {
   if (params.skip != null) qs.set('$skip', String(params.skip))
   if (params.inlinecount != null) qs.set('$inlinecount', String(params.inlinecount))
 
-  // filtros para emitidas
   if (params.referencia) qs.set('referencia', params.referencia)
   if (params.chave) qs.set('chave', params.chave)
   if (params.serie) qs.set('serie', params.serie)
 
-  // filtros para recebidas
   if (params.distNsu != null) qs.set('dist_nsu', String(params.distNsu))
   if (params.formaDistribuicao) qs.set('forma_distribuicao', params.formaDistribuicao)
   if (params.chaveAcesso) qs.set('chave_acesso', params.chaveAcesso)

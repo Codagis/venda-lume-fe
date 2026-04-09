@@ -1,9 +1,10 @@
 .main-layout {
   --sider-w: 268px;
   --sider-radius: 22px;
-  /* Curta + ease-out “iOS-like”: menos reflow que animar width */
   --layout-motion-duration: 0.26s;
   --layout-motion-ease: cubic-bezier(0.32, 0.72, 0, 1);
+  --menu-edge-w: 36px;
+  --menu-edge-gap: 12px;
 
   min-height: 100vh;
   width: 100%;
@@ -35,11 +36,6 @@
   overflow: visible;
 }
 
-/*
- * Aberto: largura real no aside (senão overflow:hidden do ant corta o menu inteiro).
- * Fechado: largura 0 no flex; inner desliza com transform; children com overflow visible.
- * Coluna principal: padding-left sem transição (evita lag; ver .main-layout-main).
- */
 .main-layout-sider-open.ant-layout-sider {
   flex: 0 0 var(--sider-w) !important;
   width: var(--sider-w) !important;
@@ -207,7 +203,6 @@
 }
 
 .main-layout-main {
-  /* Sem transição: troca em 1 frame evita reflow contínuo (lag) com tabelas/páginas pesadas */
   margin-left: 0;
   padding-left: var(--sider-w);
   box-sizing: border-box;
@@ -549,6 +544,10 @@
   background: #f4f5f8;
 }
 
+.main-layout-main-expanded .main-layout-content {
+  padding-left: calc(28px + var(--menu-edge-w) + var(--menu-edge-gap));
+}
+
 .main-layout-content-no-scroll {
   overflow: hidden !important;
   padding: 0 !important;
@@ -557,7 +556,6 @@
   min-height: 0;
 }
 
-/* Permite que a página de vendas ocupe a altura útil e centralize o bloco PDV */
 .main-layout-content-no-scroll > .vl-page-transition {
   flex: 1 1 auto;
   min-height: 0;
@@ -568,6 +566,10 @@
 @media (max-width: 768px) {
   .main-layout-content:not(.main-layout-content-no-scroll) {
     padding: 16px 16px 24px;
+  }
+
+  .main-layout-main-expanded .main-layout-content:not(.main-layout-content-no-scroll) {
+    padding-left: calc(16px + var(--menu-edge-w) + var(--menu-edge-gap));
   }
 }
 

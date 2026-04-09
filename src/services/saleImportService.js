@@ -12,7 +12,7 @@ export async function importSaleFromInvoice({ tenantId, saleType, pdf, xml, json
 
   const res = await apiFetch('/sales/import/invoice', {
     method: 'POST',
-    headers: {}, // deixa o browser setar multipart boundary
+    headers: {},
     body: form,
   })
 

@@ -5,19 +5,13 @@
 }
 
 :root {
-  /*
-    Escala global da UI (para “tirar o zoom” e deixar tudo menor).
-    Ajuste aqui: 0.92, 0.90, 0.88...
-  */
   --vl-ui-scale: 0.75;
 }
 
 html {
-  /* Chrome/Edge (Windows) */
   zoom: var(--vl-ui-scale);
 }
 
-/* Com `zoom` (< 1), `100vh` fica visualmente menor. Compensa a altura do layout/sider. */
 @supports (zoom: 1) {
   .main-layout,
   .main-layout-loading,
@@ -43,7 +37,6 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Fallback para navegadores sem suporte a `zoom` */
 @supports not (zoom: 1) {
   html,
   body {
@@ -90,7 +83,6 @@ body {
   background-color: #e8ecf2 !important;
 }
 
-/* Filtros colapsáveis (grid 0fr / 1fr) — alinhado ao dashboard */
 :root {
   --vl-filters-motion-ease: cubic-bezier(0.33, 1, 0.68, 1);
   --vl-filters-motion-duration: 0.4s;
@@ -179,7 +171,6 @@ body {
   }
 }
 
-/* ——— Tabelas de dados (Ant Design), alinhadas à UI VendaLume ——— */
 .ant-table-wrapper {
   font-variant-numeric: tabular-nums;
 }
@@ -198,7 +189,6 @@ body {
   border-bottom: 1px solid #e2e8f0 !important;
   padding-top: 13px !important;
   padding-bottom: 13px !important;
-  /* Evita “DESCONT / O” em colunas estreitas */
   white-space: nowrap;
 }
 
@@ -286,7 +276,6 @@ body {
   }
 }
 
-/* ---- Transição de rota + revelar conteúdo (VlMotion) ---- */
 @keyframes vl-page-enter {
   from {
     opacity: 0;

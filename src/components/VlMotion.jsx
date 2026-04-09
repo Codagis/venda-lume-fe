@@ -1,9 +1,4 @@
 import { useState, useEffect } from 'react'
-
-/**
- * Conteúdo que só deve aparecer com animação depois de um pequeno atraso (ex.: após fetch).
- * Quando `ready` vira true, espera `delayMs` e aplica a entrada.
- */
 export function RevealWhenReady({ ready, delayMs = 100, children, className = '' }) {
   const [show, setShow] = useState(false)
 
@@ -27,10 +22,6 @@ export function RevealWhenReady({ ready, delayMs = 100, children, className = ''
   )
 }
 
-/**
- * Sempre renderiza `children`; após `delayMs` na montagem (ou quando `delayMs` muda), anima a entrada.
- * Útil para blocos que já existem no DOM mas devem “entrar” logo depois.
- */
 export function DelayedReveal({ delayMs = 160, children, className = '' }) {
   const [show, setShow] = useState(false)
 

@@ -7,8 +7,9 @@
 }
 
 .deliveries-container {
-  max-width: 1400px;
-  margin: 0 auto;
+  width: 100%;
+  max-width: none;
+  margin: 0;
 }
 
 .deliveries-header-card {
