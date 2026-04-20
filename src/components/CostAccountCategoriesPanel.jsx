@@ -3,13 +3,14 @@ import { Card, Tabs, Table, Button, Drawer, Form, Input, InputNumber, Switch, Sp
 import { PlusOutlined, EditOutlined, DeleteOutlined, TagsOutlined } from '@ant-design/icons'
 import * as costControlService from '../services/costControlService'
 import { confirmDeleteModal } from '../utils/confirmModal'
+import './CostAccountCategoriesPanel.css'
 
 const KIND_LABEL = {
   PAYABLE: 'Contas a pagar',
   RECEIVABLE: 'Contas a receber',
 }
 
-export default function CostAccountCategoriesPanel({ tenantId, isRoot }) {
+export default function CostAccountCategoriesPanel({ tenantId, isRoot, compact = false }) {
   const [activeKind, setActiveKind] = useState('PAYABLE')
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(false)
@@ -109,28 +110,37 @@ export default function CostAccountCategoriesPanel({ tenantId, isRoot }) {
   }
 
   const columns = [
-    { title: 'Nome', dataIndex: 'name', key: 'name' },
-    { title: 'Descrição', dataIndex: 'description', key: 'description', ellipsis: true, render: (t) => t || '—' },
+    { title: 'Nome', dataIndex: 'name', key: 'name', ellipsis: true },
+    {
+      title: 'Descrição',
+      dataIndex: 'description',
+      key: 'description',
+      ellipsis: true,
+      responsive: compact ? ['sm'] : undefined,
+      render: (t) => t || '—',
+    },
     {
       title: 'Ordem',
       dataIndex: 'displayOrder',
       key: 'displayOrder',
-      width: 90,
+      width: compact ? 72 : 90,
+      responsive: compact ? ['sm'] : undefined,
       render: (v) => (v != null ? v : 0),
     },
     {
       title: 'Ativa',
       dataIndex: 'active',
       key: 'active',
-      width: 80,
+      width: compact ? 64 : 80,
       render: (v) => (v !== false ? 'Sim' : 'Não'),
     },
     {
       title: 'Ações',
       key: 'actions',
-      width: 140,
+      width: compact ? 108 : 140,
+      align: compact ? 'center' : undefined,
       render: (_, record) => (
-        <Space>
+        <Space direction={compact ? 'vertical' : 'horizontal'} size={0}>
           <Button type="link" size="small" icon={<EditOutlined />} onClick={() => openEdit(record)}>
             Editar
           </Button>
@@ -160,6 +170,7 @@ export default function CostAccountCategoriesPanel({ tenantId, isRoot }) {
 
   return (
     <Card
+      className={compact ? 'cost-categories-card cost-categories-card--compact' : 'cost-categories-card'}
       title={
         <span>
           <TagsOutlined style={{ marginRight: 8 }} />
@@ -167,13 +178,15 @@ export default function CostAccountCategoriesPanel({ tenantId, isRoot }) {
         </span>
       }
     >
-      <p style={{ marginBottom: 16, color: '#666', fontSize: 13 }}>
+      <p className="cost-categories-intro">
         Cadastre nomes de categoria para organizar lançamentos de contas a pagar e a receber. Use os mesmos nomes ao preencher o campo
         &quot;Categoria&quot; nas contas.
       </p>
       <Tabs
         activeKey={activeKind}
         onChange={setActiveKind}
+        size={compact ? 'small' : 'middle'}
+        className="cost-categories-tabs"
         items={[
           { key: 'PAYABLE', label: KIND_LABEL.PAYABLE },
           { key: 'RECEIVABLE', label: KIND_LABEL.RECEIVABLE },
@@ -181,7 +194,7 @@ export default function CostAccountCategoriesPanel({ tenantId, isRoot }) {
         style={{ marginBottom: 16 }}
       />
       <div style={{ marginBottom: 12 }}>
-        <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>
+        <Button type="primary" icon={<PlusOutlined />} onClick={openCreate} block={compact}>
           Nova categoria ({KIND_LABEL[activeKind]})
         </Button>
       </div>
@@ -190,16 +203,29 @@ export default function CostAccountCategoriesPanel({ tenantId, isRoot }) {
         columns={columns}
         dataSource={rows}
         loading={loading}
-        pagination={{ pageSize: 12 }}
-        size="middle"
+        size={compact ? 'small' : 'middle'}
+        scroll={{ x: compact ? 420 : undefined }}
+        pagination={{
+          pageSize: 12,
+          simple: compact,
+          showSizeChanger: false,
+          responsive: true,
+        }}
+        className="cost-categories-table"
       />
 
       <Drawer
         title={editingId ? 'Editar categoria' : 'Nova categoria'}
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
-        width={420}
+        width={compact ? '100%' : 420}
         destroyOnHidden
+        rootClassName={compact ? 'cost-categories-drawer-root cost-categories-drawer-root--compact' : 'cost-categories-drawer-root'}
+        styles={{
+          body: {
+            paddingBottom: compact ? 'max(20px, env(safe-area-inset-bottom, 0px))' : 24,
+          },
+        }}
         extra={
           <Space>
             <Button onClick={() => setDrawerOpen(false)}>Cancelar</Button>

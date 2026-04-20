@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import {
   Form,
   Input,
@@ -20,6 +20,7 @@ import {
   Tooltip,
   Alert,
   Tag,
+  Grid,
 } from 'antd'
 import {
   PlusOutlined,
@@ -105,6 +106,14 @@ function isOutOfStock(r) {
 }
 
 export default function Products() {
+  const screens = Grid.useBreakpoint()
+  const isCompact = screens.sm === false
+  const isNarrow = screens.md === false
+  const dashGutter = useMemo(
+    () => (isCompact ? [12, 12] : isNarrow ? [14, 14] : [16, 16]),
+    [isCompact, isNarrow]
+  )
+
   const { user } = useAuth()
   const isRoot = user?.isRoot === true
   const [form] = Form.useForm()
@@ -126,7 +135,19 @@ export default function Products() {
   const [filtersExpanded, setFiltersExpanded] = useState(false)
   const [previewImageUrl, setPreviewImageUrl] = useState(null)
   const [selectedImageFile, setSelectedImageFile] = useState(null)
-  const [drawerFormInitialValues, setDrawerFormInitialValues] = useState(initialFormValues)
+  const [drawerFormInstanceKey, setDrawerFormInstanceKey] = useState(0)
+  const [drawerFormInitialValues, setDrawerFormInitialValues] = useState(() => ({ ...initialFormValues }))
+  const drawerLoadGenRef = useRef(0)
+
+  const getEmptyDrawerInitial = useCallback(
+    () => ({
+      ...initialFormValues,
+      ...(isRoot && selectedTenantId != null && selectedTenantId !== ''
+        ? { tenantId: selectedTenantId }
+        : {}),
+    }),
+    [isRoot, selectedTenantId]
+  )
 
   const FILTER_OPTIONS = [
     { value: FILTER_ALL, label: 'Todos' },
@@ -192,6 +213,9 @@ export default function Products() {
 
 
   const openDrawer = (product = null) => {
+    drawerLoadGenRef.current += 1
+    const loadGen = drawerLoadGenRef.current
+
     setEditingId(product?.id ?? null)
     setPreviewImageUrl(product?.imageUrl ?? null)
     setSelectedImageFile(null)
@@ -250,15 +274,16 @@ export default function Products() {
               }))
             : [],
         }
-      : { ...initialFormValues, ...(isRoot && selectedTenantId && { tenantId: selectedTenantId }) }
+      : getEmptyDrawerInitial()
     setDrawerFormInitialValues(initial)
+    setDrawerFormInstanceKey((k) => k + 1)
     setDrawerOpen(true)
 
     if (product?.id) {
       ;(async () => {
         try {
           const full = await getProductById(product.id)
-          if (!full) return
+          if (drawerLoadGenRef.current !== loadGen || !full) return
           form.setFieldsValue({
             hasLots: Array.isArray(full.lots) && full.lots.length > 0,
             lots: Array.isArray(full.lots)
@@ -276,18 +301,15 @@ export default function Products() {
   }
 
   const closeDrawer = () => {
+    drawerLoadGenRef.current += 1
+    const empty = getEmptyDrawerInitial()
+    setDrawerFormInitialValues(empty)
     setDrawerOpen(false)
     setEditingId(null)
     setPreviewImageUrl(null)
     setSelectedImageFile(null)
     form.resetFields()
   }
-
-  useEffect(() => {
-    if (drawerOpen) {
-      form.setFieldsValue(drawerFormInitialValues)
-    }
-  }, [drawerOpen, drawerFormInitialValues, form])
 
   const openDetailDrawer = (product) => {
     setSelectedProduct(product)
@@ -400,9 +422,9 @@ export default function Products() {
     {
       title: 'Foto',
       key: 'image',
-      width: 88,
+      width: isCompact ? 64 : 88,
       align: 'center',
-      fixed: 'left',
+      ...(isCompact ? {} : { fixed: 'left' }),
       render: (_, record) =>
         record.imageUrl ? (
           <img src={record.imageUrl} alt="" className="products-table-img" />
@@ -413,7 +435,7 @@ export default function Products() {
     {
       title: 'Códigos',
       key: 'codes',
-      width: 200,
+      width: isCompact ? 150 : 200,
       render: (_, record) => (
         <div className="products-table-codes">
           <div className="products-table-sku">{record.sku || '—'}</div>
@@ -450,6 +472,7 @@ export default function Products() {
       key: 'brand',
       width: 110,
       ellipsis: true,
+      responsive: ['md'],
       render: (v) => v || '—',
     },
     {
@@ -469,8 +492,9 @@ export default function Products() {
     {
       title: 'Custo',
       key: 'costPrice',
-      width: 95,
+      width: 88,
       align: 'right',
+      responsive: ['sm'],
       render: (_, r) => (
         <span className="products-table-cost">{r.costPrice != null ? formatPrice(r.costPrice) : '—'}</span>
       ),
@@ -526,9 +550,9 @@ export default function Products() {
     {
       title: '',
       key: 'actions',
-      width: 112,
+      width: isCompact ? 100 : 112,
       align: 'center',
-      fixed: 'right',
+      ...(isCompact ? {} : { fixed: 'right' }),
       render: (_, record) => (
         <Space size={0} className="products-table-actions" onClick={(e) => e.stopPropagation()}>
           <Tooltip title="Ver detalhes">
@@ -556,7 +580,7 @@ export default function Products() {
   ]
 
   return (
-    <div className="products-page">
+    <div className={`products-page${isCompact ? ' products-page--compact' : ''}`}>
       <main className="products-main">
         <div className="products-container">
           <div className="products-header-card">
@@ -573,7 +597,9 @@ export default function Products() {
 
           <div className="products-toolbar">
             <Card className="products-filters-card sales-consult-filters-card" style={{ width: '100%' }}>
-              <div className="vl-filters-toggle sales-consult-filters-toggle">
+              <div
+                className={`products-filters-head vl-filters-toggle sales-consult-filters-toggle${isCompact ? ' products-filters-head--stack' : ''}`}
+              >
                 <Button
                   type="button"
                   className={`vl-filters-toggle-btn${filtersExpanded ? ' vl-filters-toggle-btn--open' : ''}`}
@@ -586,13 +612,22 @@ export default function Products() {
                   </span>
                   <DownOutlined className="vl-filters-chevron" aria-hidden />
                 </Button>
+                <Button
+                  type="primary"
+                  icon={<PlusOutlined />}
+                  onClick={() => openDrawer()}
+                  className="products-add-btn"
+                  block={isCompact}
+                >
+                  Novo produto
+                </Button>
               </div>
               <div
                 className={`vl-filters-expand${filtersExpanded ? ' vl-filters-expand--open' : ''}`}
                 aria-hidden={!filtersExpanded}
               >
                 <div className="vl-filters-expand-inner">
-                <Row gutter={16} align="middle" className="vl-filters-row">
+                <Row gutter={dashGutter} align="middle" className="vl-filters-row">
                   <Col xs={24} sm={12} md={4}>
                     <label>Buscar</label>
                     <Input
@@ -659,10 +694,12 @@ export default function Products() {
                         onChange={setSelectedTenantId}
                         style={{ width: '100%' }}
                         allowClear={false}
+                        showSearch
+                        optionFilterProp="label"
                       />
                     </Col>
                   )}
-                  <Col xs={24} md={4} style={{ marginTop: 24 }}>
+                  <Col xs={24} md={4} className="products-filter-submit-col">
                     <Button type="primary" icon={<FilterOutlined />} onClick={handleFilter} loading={loadingList} block>
                       Filtrar
                     </Button>
@@ -671,16 +708,6 @@ export default function Products() {
                 </div>
               </div>
             </Card>
-            <div className="products-toolbar-actions">
-              <Button
-                type="primary"
-                icon={<PlusOutlined />}
-                onClick={() => openDrawer()}
-                className="products-add-btn"
-              >
-                Novo produto
-              </Button>
-            </div>
           </div>
 
           {(() => {
@@ -732,14 +759,17 @@ export default function Products() {
             columns={columns}
             dataSource={products}
             loading={loadingList}
-            scroll={{ x: 1280 }}
+            size={isCompact ? 'small' : 'middle'}
+            scroll={{ x: isCompact ? 920 : 1280 }}
             pagination={{
               pageSize: 20,
-              showSizeChanger: true,
-              showTotal: (t) => `${t} produto(s)`,
+              showSizeChanger: !isCompact,
+              showTotal: isCompact ? undefined : (t) => `${t} produto(s)`,
               pageSizeOptions: ['10', '20', '50', '100'],
+              simple: isCompact,
+              responsive: true,
             }}
-            className="products-table products-table-pro"
+            className="products-table products-table-pro products-data-table"
             rowClassName={(record) => (isLowStock(record) ? 'products-row-low-stock' : '')}
             onRow={(record) => ({
               onClick: () => openDetailDrawer(record),
@@ -754,9 +784,15 @@ export default function Products() {
         open={detailDrawerOpen}
         onClose={closeDetailDrawer}
         placement="right"
-        width={520}
+        width={isCompact ? '100%' : 520}
         destroyOnHidden
         className="products-detail-drawer-wrapper"
+        rootClassName={`products-drawer-root${isCompact ? ' products-drawer-root--compact' : ''}`}
+        styles={{
+          body: {
+            paddingBottom: isCompact ? 'max(20px, env(safe-area-inset-bottom, 0px))' : 24,
+          },
+        }}
         extra={
           <Space>
             <Button onClick={closeDetailDrawer}>Fechar</Button>
@@ -915,8 +951,14 @@ export default function Products() {
         open={drawerOpen}
         onClose={closeDrawer}
         placement="right"
-        width={520}
+        width={isCompact ? '100%' : 520}
         destroyOnHidden
+        rootClassName={`products-drawer-root products-drawer-root--form${isCompact ? ' products-drawer-root--compact' : ''}`}
+        styles={{
+          body: {
+            paddingBottom: isCompact ? 'max(20px, env(safe-area-inset-bottom, 0px))' : 24,
+          },
+        }}
         extra={
           <Space>
             <Button onClick={closeDrawer}>Cancelar</Button>
@@ -928,9 +970,10 @@ export default function Products() {
       >
         <Form
           form={form}
-          key={drawerOpen ? `form-${editingId ?? 'new'}` : 'form-closed'}
+          key={drawerOpen ? `product-form-${drawerFormInstanceKey}` : 'product-form-closed'}
           layout="vertical"
           onFinish={onFinish}
+          preserve={false}
           initialValues={drawerFormInitialValues}
           className="products-form products-drawer-form"
         >

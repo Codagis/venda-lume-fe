@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import {
   Form,
   Input,
@@ -10,13 +10,13 @@ import {
   Drawer,
   message,
   Tag,
-  Space,
   Steps,
   Descriptions,
   Statistic,
   Image,
   Select,
   Dropdown,
+  Grid,
 } from 'antd'
 import {
   CarOutlined,
@@ -72,6 +72,14 @@ function formatDate(d) {
 }
 
 export default function MyDeliveries() {
+  const screens = Grid.useBreakpoint()
+  const isCompact = screens.sm === false
+  const isNarrow = screens.md === false
+  const dashGutter = useMemo(
+    () => (isCompact ? [12, 12] : isNarrow ? [14, 14] : [16, 16]),
+    [isCompact, isNarrow]
+  )
+
   const [formStatus] = Form.useForm()
   const [deliveries, setDeliveries] = useState([])
   const [loading, setLoading] = useState(false)
@@ -195,14 +203,27 @@ export default function MyDeliveries() {
   }
 
   const columns = [
-    { title: 'Nº', dataIndex: 'deliveryNumber', key: 'deliveryNumber', width: 100 },
-    { title: 'Venda', dataIndex: 'saleNumber', key: 'saleNumber', width: 90 },
+    { title: 'Nº', dataIndex: 'deliveryNumber', key: 'deliveryNumber', width: isCompact ? 76 : 100 },
+    {
+      title: 'Venda',
+      dataIndex: 'saleNumber',
+      key: 'saleNumber',
+      width: 90,
+      responsive: ['sm'],
+    },
     { title: 'Destinatário', dataIndex: 'recipientName', key: 'recipientName', ellipsis: true },
-    { title: 'Telefone', dataIndex: 'recipientPhone', key: 'recipientPhone', width: 120 },
+    {
+      title: 'Telefone',
+      dataIndex: 'recipientPhone',
+      key: 'recipientPhone',
+      width: 120,
+      responsive: ['md'],
+    },
     {
       title: 'Endereço',
       key: 'address',
       ellipsis: true,
+      responsive: ['lg'],
       render: (_, r) => (
         <span title={r.address}>
           {r.address?.length > 40 ? r.address.slice(0, 40) + '...' : r.address || '-'}
@@ -213,7 +234,7 @@ export default function MyDeliveries() {
       title: 'Status',
       dataIndex: 'status',
       key: 'status',
-      width: 110,
+      width: isCompact ? 100 : 110,
       render: (v) => <Tag color={STATUS_COLORS[v] || 'default'}>{STATUS_OPTIONS.find((o) => o.value === v)?.label ?? v}</Tag>,
     },
     {
@@ -221,13 +242,17 @@ export default function MyDeliveries() {
       dataIndex: 'saleTotal',
       key: 'saleTotal',
       width: 100,
+      align: 'right',
+      responsive: ['sm'],
       render: (v) => formatMoney(v),
     },
     {
       title: '',
       key: 'actions',
-      width: 80,
+      width: isCompact ? 44 : 80,
+      align: 'center',
       className: 'my-deliveries-actions-col',
+      ...(isCompact ? {} : { fixed: 'right' }),
       render: (_, record) => {
         const items = [
           { key: 'detail', label: 'Ver detalhes', icon: <UserOutlined />, onClick: () => openDetail(record) },
@@ -255,8 +280,13 @@ export default function MyDeliveries() {
     total: deliveries.length,
   }
 
+  const drawerRootClass = `deliveries-drawer-root${isCompact ? ' deliveries-drawer-root--compact' : ''}`
+  const drawerBodyStyle = {
+    paddingBottom: isCompact ? 'max(20px, env(safe-area-inset-bottom, 0px))' : 24,
+  }
+
   return (
-    <div className="deliveries-page">
+    <div className={`deliveries-page${isCompact ? ' deliveries-page--compact' : ''}`}>
       <main className="deliveries-main">
         <div className="deliveries-container">
           <div className="deliveries-header-card">
@@ -272,7 +302,7 @@ export default function MyDeliveries() {
           </div>
 
           <div className="deliveries-stats-row">
-            <Row gutter={16}>
+            <Row gutter={dashGutter}>
               <Col xs={24} sm={12} md={6}>
                 <Card className="deliveries-stat-card">
                   <Statistic title="Pendentes" value={stats.pending} />
@@ -301,8 +331,17 @@ export default function MyDeliveries() {
             columns={columns}
             dataSource={deliveries}
             loading={loading}
-            pagination={{ pageSize: 15, showSizeChanger: true, showTotal: (t) => `${t} entrega(s)` }}
-            className="deliveries-table"
+            size={isCompact ? 'small' : 'middle'}
+            scroll={{ x: isCompact ? 720 : 1100 }}
+            pagination={{
+              pageSize: 15,
+              showSizeChanger: !isCompact,
+              showTotal: isCompact ? undefined : (t) => `${t} entrega(s)`,
+              pageSizeOptions: ['10', '15', '30', '50'],
+              simple: isCompact,
+              responsive: true,
+            }}
+            className="deliveries-table deliveries-data-table"
           />
         </div>
       </main>
@@ -311,13 +350,17 @@ export default function MyDeliveries() {
         title={`Entrega ${selectedDelivery?.deliveryNumber || ''}`}
         open={detailDrawerOpen}
         onClose={() => setDetailDrawerOpen(false)}
-        width={520}
+        placement="right"
+        width={isCompact ? '100%' : 520}
+        rootClassName={drawerRootClass}
+        styles={{ body: drawerBodyStyle }}
+        className="deliveries-detail-drawer"
         extra={
-          selectedDelivery && !['DELIVERED', 'FAILED', 'CANCELLED', 'RETURNED'].includes(selectedDelivery.status) && (
-            <Button type="primary" onClick={() => openStatus(selectedDelivery)}>
+          selectedDelivery && !['DELIVERED', 'FAILED', 'CANCELLED', 'RETURNED'].includes(selectedDelivery.status) ? (
+            <Button type="primary" block={isCompact} onClick={() => openStatus(selectedDelivery)}>
               Atualizar status
             </Button>
-          )
+          ) : null
         }
       >
         {selectedDelivery && (
@@ -353,12 +396,14 @@ export default function MyDeliveries() {
               )}
               {selectedDelivery.proofOfDeliveryUrl && (
                 <Descriptions.Item label="Comprovante">
-                  <Image
-                    src={selectedDelivery.proofOfDeliveryUrl}
-                    alt="Comprovante de entrega"
-                    width={200}
-                    style={{ borderRadius: 8 }}
-                  />
+                  <div className="my-deliveries-proof-wrap">
+                    <Image
+                      src={selectedDelivery.proofOfDeliveryUrl}
+                      alt="Comprovante de entrega"
+                      {...(isCompact ? {} : { width: 200 })}
+                      style={{ borderRadius: 8, width: isCompact ? '100%' : undefined, maxWidth: '100%' }}
+                    />
+                  </div>
                 </Descriptions.Item>
               )}
             </Descriptions>
@@ -367,7 +412,16 @@ export default function MyDeliveries() {
         )}
       </Drawer>
 
-      <Drawer title="Registrar entrega" open={statusDrawerOpen} onClose={() => setStatusDrawerOpen(false)} width={440}>
+      <Drawer
+        title="Registrar entrega"
+        open={statusDrawerOpen}
+        onClose={() => setStatusDrawerOpen(false)}
+        placement="right"
+        width={isCompact ? '100%' : 440}
+        destroyOnHidden
+        rootClassName={drawerRootClass}
+        styles={{ body: drawerBodyStyle }}
+      >
         <Form form={formStatus} layout="vertical" onFinish={handleUpdateStatus}>
           <Form.Item name="status" label="Novo status" rules={[{ required: true }]}>
             <Select options={STATUS_OPTIONS} placeholder="Selecione o status" />
@@ -443,6 +497,7 @@ export default function MyDeliveries() {
               htmlType="submit"
               loading={uploadingPhoto || submittingStatus}
               icon={<CheckCircleOutlined />}
+              block={isCompact}
             >
               Confirmar
             </Button>

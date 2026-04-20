@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import {
   Form,
   Input,
@@ -12,6 +12,7 @@ import {
   Table,
   message,
   Space,
+  Grid,
 } from 'antd'
 import {
   ShopOutlined,
@@ -34,7 +35,42 @@ const { TextArea } = Input
 const FILTER_ALL = '__all__'
 const initialFormValues = { active: true }
 
+function mapSupplierToFormValues(supplier) {
+  return {
+    name: supplier.name,
+    tradeName: supplier.tradeName,
+    document: supplier.document,
+    stateRegistration: supplier.stateRegistration,
+    municipalRegistration: supplier.municipalRegistration,
+    contactName: supplier.contactName,
+    contactPhone: supplier.contactPhone,
+    contactEmail: supplier.contactEmail,
+    bankName: supplier.bankName,
+    bankAgency: supplier.bankAgency,
+    bankAccount: supplier.bankAccount,
+    bankPix: supplier.bankPix,
+    paymentTerms: supplier.paymentTerms,
+    addressStreet: supplier.addressStreet,
+    addressNumber: supplier.addressNumber,
+    addressComplement: supplier.addressComplement,
+    addressNeighborhood: supplier.addressNeighborhood,
+    addressCity: supplier.addressCity,
+    addressState: supplier.addressState,
+    addressZip: supplier.addressZip,
+    notes: supplier.notes,
+    active: supplier.active ?? true,
+  }
+}
+
 export default function Suppliers() {
+  const screens = Grid.useBreakpoint()
+  const isCompact = screens.sm === false
+  const isNarrow = screens.md === false
+  const dashGutter = useMemo(
+    () => (isCompact ? [12, 12] : isNarrow ? [14, 14] : [16, 16]),
+    [isCompact, isNarrow]
+  )
+
   const { user } = useAuth()
   const isRoot = user?.isRoot === true
   const [form] = Form.useForm()
@@ -42,6 +78,7 @@ export default function Suppliers() {
   const [loading, setLoading] = useState(false)
   const [loadingList, setLoadingList] = useState(false)
   const [drawerOpen, setDrawerOpen] = useState(false)
+  const [drawerRecord, setDrawerRecord] = useState(null)
   const [editingId, setEditingId] = useState(null)
   const [tenants, setTenants] = useState([])
   const [selectedTenantId, setSelectedTenantId] = useState(null)
@@ -93,56 +130,46 @@ export default function Suppliers() {
     if (isRoot) loadTenants()
   }, [isRoot, loadTenants])
 
+  useEffect(() => {
+    if (!drawerOpen) return
+    const t = window.setTimeout(() => {
+      form.resetFields()
+      if (drawerRecord) {
+        form.setFieldsValue({ ...initialFormValues, ...mapSupplierToFormValues(drawerRecord) })
+      } else {
+        const next = { ...initialFormValues }
+        if (isRoot) next.tenantId = selectedTenantId ?? undefined
+        form.setFieldsValue(next)
+      }
+    }, 0)
+    return () => window.clearTimeout(t)
+  }, [drawerOpen, drawerRecord, isRoot, selectedTenantId, form])
+
   const openDrawer = (supplier = null) => {
     setEditingId(supplier?.id ?? null)
-    form.resetFields()
-    form.setFieldsValue(initialFormValues)
-    if (supplier) {
-      form.setFieldsValue({
-        name: supplier.name,
-        tradeName: supplier.tradeName,
-        document: supplier.document,
-        stateRegistration: supplier.stateRegistration,
-        municipalRegistration: supplier.municipalRegistration,
-        contactName: supplier.contactName,
-        contactPhone: supplier.contactPhone,
-        contactEmail: supplier.contactEmail,
-        bankName: supplier.bankName,
-        bankAgency: supplier.bankAgency,
-        bankAccount: supplier.bankAccount,
-        bankPix: supplier.bankPix,
-        paymentTerms: supplier.paymentTerms,
-        addressStreet: supplier.addressStreet,
-        addressNumber: supplier.addressNumber,
-        addressComplement: supplier.addressComplement,
-        addressNeighborhood: supplier.addressNeighborhood,
-        addressCity: supplier.addressCity,
-        addressState: supplier.addressState,
-        addressZip: supplier.addressZip,
-        notes: supplier.notes,
-        active: supplier.active ?? true,
-      })
-    } else if (isRoot) {
-      form.setFieldsValue({ tenantId: selectedTenantId ?? undefined })
-    }
+    setDrawerRecord(supplier ?? null)
     setDrawerOpen(true)
   }
 
   const closeDrawer = () => {
     setDrawerOpen(false)
     setEditingId(null)
+    setDrawerRecord(null)
     form.resetFields()
   }
 
-  const handleDelete = async (id) => {
-    try {
-      await supplierService.deleteSupplier(id)
-      message.success('Fornecedor excluído.')
-      handleFilter()
-    } catch (e) {
-      message.error(e?.message || 'Erro ao excluir fornecedor.')
-    }
-  }
+  const handleDelete = useCallback(
+    async (id) => {
+      try {
+        await supplierService.deleteSupplier(id)
+        message.success('Fornecedor excluído.')
+        handleFilter()
+      } catch (e) {
+        message.error(e?.message || 'Erro ao excluir fornecedor.')
+      }
+    },
+    [handleFilter]
+  )
 
   const onFinish = async (values) => {
     setLoading(true)
@@ -198,56 +225,87 @@ export default function Suppliers() {
     return parts.length ? parts.join(', ') : '—'
   }
 
-  const columns = [
-    { title: 'Nome', dataIndex: 'name', key: 'name', ellipsis: true },
-    { title: 'Nome fantasia', dataIndex: 'tradeName', key: 'tradeName', width: 160, ellipsis: true },
-    { title: 'Documento', dataIndex: 'document', key: 'document', width: 130, ellipsis: true },
-    { title: 'E-mail contato', dataIndex: 'contactEmail', key: 'contactEmail', width: 180, ellipsis: true },
-    { title: 'Telefone contato', dataIndex: 'contactPhone', key: 'contactPhone', width: 120 },
-    {
-      title: 'Endereço',
-      key: 'address',
-      ellipsis: true,
-      render: (_, r) => formatAddress(r),
-    },
-    {
-      title: 'Status',
-      key: 'status',
-      width: 90,
-      render: (_, r) => (
-        <Space size={4}>
-          {r.active ? (
-            <span className="suppliers-badge suppliers-badge-active">Ativo</span>
-          ) : (
-            <span className="suppliers-badge suppliers-badge-inactive">Inativo</span>
-          )}
-        </Space>
-      ),
-    },
-    {
-      title: '',
-      key: 'actions',
-      width: 50,
-      render: (_, record) => (
-        <Button
-          type="text"
-          size="small"
-          danger
-          icon={<DeleteOutlined />}
-          onClick={(e) => {
-            e.stopPropagation()
-            confirmDeleteModal({
-              title: 'Excluir este fornecedor?',
-              onOk: () => handleDelete(record.id),
-            })
-          }}
-        />
-      ),
-    },
-  ]
+  const columns = useMemo(
+    () => [
+      { title: 'Nome', dataIndex: 'name', key: 'name', ellipsis: true },
+      {
+        title: 'Nome fantasia',
+        dataIndex: 'tradeName',
+        key: 'tradeName',
+        width: 160,
+        ellipsis: true,
+        responsive: ['sm'],
+      },
+      {
+        title: 'Documento',
+        dataIndex: 'document',
+        key: 'document',
+        width: isCompact ? 112 : 130,
+        ellipsis: true,
+      },
+      {
+        title: 'E-mail contato',
+        dataIndex: 'contactEmail',
+        key: 'contactEmail',
+        width: 180,
+        ellipsis: true,
+        responsive: ['sm'],
+      },
+      {
+        title: 'Telefone contato',
+        dataIndex: 'contactPhone',
+        key: 'contactPhone',
+        width: 120,
+        responsive: ['sm'],
+      },
+      {
+        title: 'Endereço',
+        key: 'address',
+        ellipsis: true,
+        responsive: ['md'],
+        render: (_, r) => formatAddress(r),
+      },
+      {
+        title: 'Status',
+        key: 'status',
+        width: isCompact ? 76 : 90,
+        render: (_, r) => (
+          <Space size={4}>
+            {r.active ? (
+              <span className="suppliers-badge suppliers-badge-active">Ativo</span>
+            ) : (
+              <span className="suppliers-badge suppliers-badge-inactive">Inativo</span>
+            )}
+          </Space>
+        ),
+      },
+      {
+        title: '',
+        key: 'actions',
+        width: isCompact ? 44 : 50,
+        align: 'center',
+        render: (_, record) => (
+          <Button
+            type="text"
+            size="small"
+            danger
+            icon={<DeleteOutlined />}
+            onClick={(e) => {
+              e.stopPropagation()
+              confirmDeleteModal({
+                title: 'Excluir este fornecedor?',
+                onOk: () => handleDelete(record.id),
+              })
+            }}
+          />
+        ),
+      },
+    ],
+    [isCompact, handleDelete]
+  )
 
   return (
-    <div className="suppliers-page">
+    <div className={`suppliers-page${isCompact ? ' suppliers-page--compact' : ''}`}>
       <main className="suppliers-main">
         <div className="suppliers-container">
           <div className="suppliers-header-card">
@@ -264,7 +322,9 @@ export default function Suppliers() {
 
           <div className="suppliers-toolbar">
             <Card className="suppliers-filters-card sales-consult-filters-card" style={{ width: '100%' }}>
-              <div className="vl-filters-toggle sales-consult-filters-toggle">
+              <div
+                className={`suppliers-filters-head vl-filters-toggle sales-consult-filters-toggle${isCompact ? ' suppliers-filters-head--stack' : ''}`}
+              >
                 <Button
                   type="button"
                   className={`vl-filters-toggle-btn${filtersExpanded ? ' vl-filters-toggle-btn--open' : ''}`}
@@ -277,13 +337,22 @@ export default function Suppliers() {
                   </span>
                   <DownOutlined className="vl-filters-chevron" aria-hidden />
                 </Button>
+                <Button
+                  type="primary"
+                  icon={<PlusOutlined />}
+                  onClick={() => openDrawer()}
+                  className="suppliers-add-btn"
+                  block={isCompact}
+                >
+                  Novo fornecedor
+                </Button>
               </div>
               <div
                 className={`vl-filters-expand${filtersExpanded ? ' vl-filters-expand--open' : ''}`}
                 aria-hidden={!filtersExpanded}
               >
                 <div className="vl-filters-expand-inner">
-                <Row gutter={16} align="middle" className="vl-filters-row">
+                <Row gutter={dashGutter} align="middle" className="vl-filters-row">
                   <Col xs={24} sm={12} md={6}>
                     <label>Buscar</label>
                     <Input
@@ -320,7 +389,7 @@ export default function Suppliers() {
                       />
                     </Col>
                   )}
-                  <Col xs={24} md={6} style={{ marginTop: 24 }}>
+                  <Col xs={24} md={6} className="suppliers-filter-submit-col">
                     <Button type="primary" icon={<FilterOutlined />} onClick={handleFilter} loading={loadingList} block>
                       Filtrar
                     </Button>
@@ -329,16 +398,6 @@ export default function Suppliers() {
                 </div>
               </div>
             </Card>
-            <div className="suppliers-toolbar-actions">
-              <Button
-                type="primary"
-                icon={<PlusOutlined />}
-                onClick={() => openDrawer()}
-                className="suppliers-add-btn"
-              >
-                Novo fornecedor
-              </Button>
-            </div>
           </div>
 
           <Table
@@ -346,8 +405,16 @@ export default function Suppliers() {
             columns={columns}
             dataSource={suppliers}
             loading={loadingList}
-            pagination={{ pageSize: 15, showSizeChanger: true, showTotal: (t) => `${t} fornecedor(es)` }}
-            className="suppliers-table"
+            size={isCompact ? 'small' : 'middle'}
+            scroll={{ x: isCompact ? 560 : 1200 }}
+            pagination={{
+              pageSize: 15,
+              showSizeChanger: !isCompact,
+              showTotal: isCompact ? undefined : (t) => `${t} fornecedor(es)`,
+              simple: isCompact,
+              responsive: true,
+            }}
+            className="suppliers-table suppliers-data-table"
             onRow={(record) => ({
               onClick: () => openDrawer(record),
               style: { cursor: 'pointer' },
@@ -361,8 +428,14 @@ export default function Suppliers() {
         open={drawerOpen}
         onClose={closeDrawer}
         placement="right"
-        width={520}
+        width={isCompact ? '100%' : 520}
         destroyOnHidden
+        rootClassName={`suppliers-drawer-root${isCompact ? ' suppliers-drawer-root--compact' : ''}`}
+        styles={{
+          body: {
+            paddingBottom: isCompact ? 'max(20px, env(safe-area-inset-bottom, 0px))' : 24,
+          },
+        }}
         extra={
           <Space>
             <Button onClick={closeDrawer}>Cancelar</Button>
@@ -376,7 +449,7 @@ export default function Suppliers() {
           form={form}
           layout="vertical"
           onFinish={onFinish}
-          initialValues={initialFormValues}
+          preserve={false}
           className="suppliers-form suppliers-drawer-form"
         >
           {isRoot && !editingId && (

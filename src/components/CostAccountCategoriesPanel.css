@@ -1,0 +1,32 @@
+.cost-categories-intro {
+  margin-bottom: 16px;
+  color: #666;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.cost-categories-card--compact .cost-categories-intro {
+  margin-bottom: 12px;
+  font-size: 12px;
+}
+
+.cost-categories-card--compact.ant-card .ant-card-body {
+  padding: 14px 14px 16px;
+}
+
+.cost-categories-tabs.cost-categories-tabs .ant-tabs-nav {
+  margin-bottom: 12px;
+}
+
+.cost-categories-table.cost-categories-table .ant-pagination {
+  padding: 8px 0 4px;
+}
+
+.cost-categories-drawer-root--compact .ant-drawer-content-wrapper {
+  max-width: 100vw;
+}
+
+.cost-categories-drawer-root--compact .ant-drawer-body {
+  padding-left: 16px !important;
+  padding-right: 16px !important;
+}

@@ -1,9 +1,124 @@
 .employees-page {
   min-height: 100vh;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
+  box-sizing: border-box;
 }
 
 .employees-main {
   padding: 0;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.employees-filters-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  margin-bottom: 0;
+}
+
+.employees-filters-head--stack {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.employees-filters-head--stack .vl-filters-toggle-btn.ant-btn {
+  width: 100%;
+  justify-content: center;
+  min-height: 48px;
+}
+
+.employees-filters-head--stack .employees-add-btn {
+  width: 100%;
+  min-height: 48px;
+}
+
+.employees-filter-submit-col {
+  margin-top: 24px;
+}
+
+.employees-page--compact .employees-filter-submit-col {
+  margin-top: 10px;
+}
+
+.employees-page--compact .employees-header-card {
+  padding: 18px 16px;
+  gap: 14px;
+  margin-bottom: 16px;
+  border-radius: 14px;
+}
+
+.employees-page--compact .employees-header-card-icon {
+  width: 46px;
+  height: 46px;
+  min-width: 46px;
+  font-size: 20px;
+}
+
+.employees-page--compact .employees-page-title {
+  font-size: 1.25rem;
+}
+
+.employees-page--compact .employees-page-subtitle {
+  font-size: 0.8125rem;
+}
+
+.employees-page--compact .employees-payroll-card .ant-card-head {
+  padding: 0 14px;
+  min-height: 48px;
+}
+
+.employees-page--compact .employees-payroll-card .ant-card-body {
+  padding: 14px 14px 16px;
+}
+
+.employees-page--compact .employees-payroll-desc {
+  font-size: 12px;
+  margin-bottom: 12px;
+}
+
+.employees-page--compact .employees-filters-card .ant-card-body {
+  padding: 14px 14px 16px;
+}
+
+.employees-page--compact .employees-data-table .ant-table {
+  font-size: 0.8125rem;
+}
+
+.employees-page--compact .employees-data-table .ant-table-tbody > tr > td,
+.employees-page--compact .employees-data-table .ant-table-thead > tr > th {
+  padding: 8px 10px;
+}
+
+.employees-page--compact .employees-table .ant-table-wrapper .ant-pagination {
+  padding: 10px 12px 6px;
+}
+
+.employees-drawer-root--compact .ant-drawer-content-wrapper {
+  max-width: 100vw;
+}
+
+.employees-drawer-root--compact .ant-drawer-body {
+  padding-left: 16px !important;
+  padding-right: 16px !important;
+}
+
+.employees-receipt-item--compact {
+  flex-wrap: wrap;
+}
+
+.employees-receipt-item--compact .employees-receipt-item-salary {
+  min-width: 0;
+  flex: 1 1 auto;
+  text-align: left;
+}
+
+.employees-drawer-receipt-row .ant-select {
+  max-width: 100%;
 }
 
 .employees-container {
@@ -185,22 +300,33 @@
   padding: 20px 22px;
 }
 
-.employees-toolbar-actions {
-  margin-top: 16px;
-}
-
+.employees-add-btn.ant-btn-primary,
 .employees-add-btn {
   height: 36px;
-  font-weight: 500;
-  border-radius: 6px;
-  background-color: #34495E;
-  border-color: #34495E;
+  font-weight: 600;
+  border-radius: 10px;
   flex-shrink: 0;
+  color: #ffffff !important;
+  background: linear-gradient(180deg, #115e59 0%, #0d9488 100%) !important;
+  border-color: #0f766e !important;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
 }
 
+.employees-add-btn.ant-btn-primary .anticon,
+.employees-add-btn .anticon,
+.employees-add-btn span {
+  color: #ffffff !important;
+}
+
+.employees-add-btn.ant-btn-primary:hover,
 .employees-add-btn:hover {
-  background-color: #5D6D7E !important;
-  border-color: #5D6D7E !important;
+  color: #ffffff !important;
+  background: linear-gradient(180deg, #0f766e 0%, #14b8a6 100%) !important;
+  border-color: #0d9488 !important;
+}
+
+.employees-add-btn:active {
+  color: #ffffff !important;
 }
 
 .employees-table {

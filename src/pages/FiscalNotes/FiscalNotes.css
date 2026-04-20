@@ -1,0 +1,278 @@
+.fiscal-notes-page {
+  min-height: 100vh;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  padding: 16px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-bottom: max(16px, env(safe-area-inset-bottom, 0px));
+  box-sizing: border-box;
+}
+
+.fiscal-notes-main {
+  max-width: 100%;
+}
+
+.fiscal-notes-card.ant-card {
+  border-radius: 12px;
+  border: 1px solid #e4e7ec;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+}
+
+.fiscal-notes-page--compact .fiscal-notes-card.ant-card .ant-card-head {
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  min-height: 0;
+}
+
+.fiscal-notes-page--compact .fiscal-notes-card.ant-card .ant-card-head .ant-card-extra {
+  margin-inline-start: 0 !important;
+  width: 100%;
+}
+
+.fiscal-notes-page--compact .fiscal-notes-card-extra {
+  width: 100%;
+}
+
+.fiscal-notes-tabs .ant-tabs-nav {
+  margin-bottom: 16px;
+}
+
+.fiscal-notes-page--compact .fiscal-notes-tabs .ant-tabs-nav {
+  margin-bottom: 12px;
+}
+
+.fiscal-notes-page--compact .fiscal-notes-tabs .ant-tabs-tab {
+  padding: 8px 10px;
+  font-size: 12px;
+}
+
+.fiscal-notes-page--compact .fiscal-notes-tabs .ant-tabs-nav-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
+
+.fiscal-notes-mobile-hint {
+  margin: 0 0 12px 0;
+  font-size: 12px;
+  line-height: 1.45;
+  color: #667085;
+}
+
+.fiscal-notes-filters-toggle.fiscal-notes-filters-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 48px;
+  margin-bottom: 12px;
+  font-weight: 500;
+  border-radius: 10px;
+  border-color: #e4e7ec;
+  color: #1d2939;
+}
+
+.fiscal-notes-filters-toggle .vl-filters-chevron {
+  margin-left: auto;
+  transition: transform 0.2s ease;
+}
+
+.fiscal-notes-filters-toggle.vl-filters-toggle-btn--open .vl-filters-chevron {
+  transform: rotate(180deg);
+}
+
+.fiscal-notes-filter-hint {
+  display: block;
+  margin-top: 4px;
+  font-size: 11px;
+  color: #98a2b3;
+  line-height: 1.35;
+}
+
+.fiscal-notes-header-btn.fiscal-notes-header-btn {
+  border-radius: 10px;
+  font-weight: 500;
+}
+
+.fiscal-notes-header-btn--primary.ant-btn-primary {
+  background: linear-gradient(180deg, #115e59 0%, #0d9488 100%);
+  border-color: #0f766e;
+  font-weight: 600;
+}
+
+.fiscal-notes-header-btn--primary.ant-btn-primary:hover {
+  background: linear-gradient(180deg, #0f766e 0%, #14b8a6 100%);
+  border-color: #0d9488;
+}
+
+.fiscal-notes-consult-btn.fiscal-notes-consult-btn {
+  border-radius: 10px;
+  font-weight: 600;
+  min-height: 48px;
+}
+
+.fiscal-notes-total--compact {
+  padding: 10px 12px;
+  margin-bottom: 10px;
+  background: #f9fafb;
+  border: 1px solid #e4e7ec;
+  border-radius: 10px;
+  font-size: 13px;
+}
+
+.fiscal-notes-total-filtered {
+  color: #667085;
+  font-weight: 400;
+}
+
+.fiscal-notes-empty {
+  padding: 14px 12px;
+  margin-bottom: 12px;
+  font-size: 13px;
+  color: #667085;
+  text-align: center;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 10px;
+}
+
+.fiscal-notes-table .fiscal-notes-dir-tag,
+.fiscal-notes-table .fiscal-notes-status-tag {
+  margin: 0;
+  max-width: 100%;
+  font-size: 11px;
+  line-height: 1.3;
+}
+
+.fiscal-notes-page--compact .fiscal-notes-table .fiscal-notes-status-tag {
+  display: inline-block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 96px;
+  vertical-align: middle;
+}
+
+.fiscal-notes-row-actions-btn {
+  min-width: 36px;
+}
+
+/* Modal de detalhes: sempre centralizado (vertical e horizontal) */
+.fiscal-notes-detail-modal-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.fiscal-notes-detail-modal-wrap .ant-modal {
+  top: 0;
+  margin: 0 auto;
+  padding-bottom: 0;
+  max-width: calc(100vw - 24px);
+}
+
+.fiscal-notes-detail-modal .ant-modal-content {
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.fiscal-notes-detail-loading {
+  padding: 24px 12px;
+  text-align: center;
+  color: #667085;
+}
+
+.fiscal-notes-detail-pre {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  word-break: break-word;
+  background: #0f172a;
+  color: #e2e8f0;
+  padding: 12px;
+  border-radius: 8px;
+  max-width: 100%;
+}
+
+.fiscal-notes-modal-wrap--mobile {
+  display: flex;
+  align-items: flex-end;
+  padding: 0 !important;
+}
+
+.fiscal-notes-modal-wrap--mobile .ant-modal {
+  top: 0;
+  padding: 0;
+  margin: 0;
+  max-width: 100vw !important;
+  width: 100% !important;
+}
+
+.fiscal-notes-modal-wrap--mobile .ant-modal-content {
+  border-radius: 14px 14px 0 0;
+  box-shadow: 0 -8px 32px rgba(15, 23, 42, 0.12);
+}
+
+.fiscal-notes-filters {
+  margin-bottom: 12px;
+}
+
+.fiscal-notes-filter-label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #344054;
+}
+
+.fiscal-notes-page--compact .fiscal-notes-filter-label {
+  font-size: 12px;
+}
+
+.fiscal-notes-filter-actions {
+  margin-top: 8px;
+  display: flex;
+  align-items: flex-end;
+}
+
+.fiscal-notes-page--compact .fiscal-notes-filter-actions {
+  margin-top: 4px;
+}
+
+.fiscal-notes-total {
+  margin-bottom: 10px;
+  font-size: 13px;
+}
+
+.fiscal-notes-table {
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.fiscal-notes-page--compact .fiscal-notes-table .ant-table {
+  font-size: 0.8125rem;
+}
+
+.fiscal-notes-page--compact .fiscal-notes-table .ant-table-tbody > tr > td,
+.fiscal-notes-page--compact .fiscal-notes-table .ant-table-thead > tr > th {
+  padding: 8px 10px;
+}
+
+.fiscal-notes-page--compact .fiscal-notes-card.ant-card .ant-card-body {
+  padding: 14px 14px 16px;
+}
+
+.fiscal-notes-import-hint {
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+@media (min-width: 576px) {
+  .fiscal-notes-page {
+    padding: 24px;
+  }
+}

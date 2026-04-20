@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import {
   Card,
   Row,
@@ -7,7 +7,6 @@ import {
   Input,
   Select,
   Button,
-  DatePicker,
   Space,
   message,
   Statistic,
@@ -18,6 +17,7 @@ import {
   Tooltip,
   Alert,
   Skeleton,
+  Grid,
 } from 'antd'
 import {
   InboxOutlined,
@@ -41,14 +41,20 @@ import {
 import * as tenantService from '../../services/tenantService'
 import './Stock.css'
 
-const { RangePicker } = DatePicker
-
 function formatQty(value) {
   if (value == null) return '—'
   return Number(value).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 4 })
 }
 
 export default function Stock() {
+  const screens = Grid.useBreakpoint()
+  const isCompact = screens.sm === false
+  const isNarrow = screens.md === false
+  const dashGutter = useMemo(
+    () => (isCompact ? [12, 12] : isNarrow ? [14, 14] : [16, 16]),
+    [isCompact, isNarrow]
+  )
+
   const { user } = useAuth()
   const isRoot = user?.isRoot === true
   const [products, setProducts] = useState([])
@@ -254,6 +260,7 @@ export default function Stock() {
       title: 'Baixa na venda',
       key: 'deductStockOnSale',
       width: 120,
+      responsive: ['sm'],
       render: (_, r) =>
         r.trackStock ? (
           r.deductStockOnSale !== false ? (
@@ -277,14 +284,15 @@ export default function Stock() {
     {
       title: 'Ações',
       key: 'actions',
-      width: 200,
+      width: isCompact ? 148 : 200,
       render: (_, record) =>
         record.trackStock ? (
-          <Space wrap size={4}>
+          <Space direction={isCompact ? 'vertical' : 'horizontal'} wrap={!isCompact} size={isCompact ? 6 : 4} className="stock-actions-space">
             <Button
               type="text"
               size="small"
               icon={<PlusOutlined />}
+              block={isCompact}
               onClick={(e) => {
                 e.stopPropagation()
                 openMovementDrawer(record, 'MANUAL_ENTRY')
@@ -296,6 +304,7 @@ export default function Stock() {
               type="text"
               size="small"
               icon={<MinusOutlined />}
+              block={isCompact}
               onClick={(e) => {
                 e.stopPropagation()
                 openMovementDrawer(record, 'MANUAL_EXIT')
@@ -307,6 +316,7 @@ export default function Stock() {
               type="text"
               size="small"
               icon={<SwapOutlined />}
+              block={isCompact}
               onClick={(e) => {
                 e.stopPropagation()
                 openMovementDrawer(record, 'ADJUSTMENT')
@@ -318,6 +328,7 @@ export default function Stock() {
               type="text"
               size="small"
               icon={<HistoryOutlined />}
+              block={isCompact}
               onClick={(e) => {
                 e.stopPropagation()
                 openHistoryDrawer(record)
@@ -333,7 +344,7 @@ export default function Stock() {
   ]
 
   return (
-    <div className="stock-page">
+    <div className={`stock-page${isCompact ? ' stock-page--compact' : ''}`}>
       <main className="stock-main">
         <div className="stock-container">
           <div className="stock-header-card">
@@ -374,7 +385,7 @@ export default function Stock() {
                     options={tenants.map((t) => ({ value: t.id, label: t.name }))}
                     value={selectedTenantId}
                     onChange={setSelectedTenantId}
-                    style={{ minWidth: 240, maxWidth: '100%' }}
+                    style={{ width: '100%', maxWidth: isCompact ? 'none' : 420 }}
                     showSearch
                     optionFilterProp="label"
                     getPopupContainer={() => (typeof document !== 'undefined' ? document.body : null)}
@@ -386,7 +397,7 @@ export default function Stock() {
             </div>
           )}
 
-          <Row gutter={16} className="stock-kpis">
+          <Row gutter={dashGutter} className="stock-kpis">
             <Col xs={24} sm={12} md={6}>
               <Card className="stock-kpi-card">
                 <Statistic title="Produtos com controle de estoque" value={trackStockCount} />
@@ -414,7 +425,9 @@ export default function Stock() {
           )}
 
           <Card className="stock-filters-card sales-consult-filters-card">
-            <div className="vl-filters-toggle sales-consult-filters-toggle">
+            <div
+              className={`vl-filters-toggle sales-consult-filters-toggle stock-filters-head${isCompact ? ' stock-filters-head--stack' : ''}`}
+            >
               <Button
                 type="button"
                 className={`vl-filters-toggle-btn${filtersExpanded ? ' vl-filters-toggle-btn--open' : ''}`}
@@ -433,7 +446,7 @@ export default function Stock() {
               aria-hidden={!filtersExpanded}
             >
               <div className="vl-filters-expand-inner">
-              <Row gutter={16} align="middle" className="vl-filters-row">
+              <Row gutter={dashGutter} align="middle" className="vl-filters-row">
                 <Col xs={24} sm={12} md={6}>
                   <label>Buscar produto</label>
                   <Input
@@ -473,7 +486,7 @@ export default function Stock() {
                     style={{ width: '100%' }}
                   />
                 </Col>
-                <Col xs={24} md={6} style={{ marginTop: 24 }}>
+                <Col xs={24} md={6} className="stock-filter-submit-col">
                   <Button type="primary" icon={<FilterOutlined />} onClick={handleFilter} loading={loadingList} block>
                     Filtrar
                   </Button>
@@ -489,7 +502,16 @@ export default function Stock() {
               columns={columns}
               dataSource={products}
               loading={loadingList}
-              pagination={{ pageSize: 15, showSizeChanger: true, showTotal: (t) => `${t} produto(s)` }}
+              size={isCompact ? 'small' : 'middle'}
+              className="stock-data-table"
+              scroll={{ x: isCompact ? 720 : 960 }}
+              pagination={{
+                pageSize: 15,
+                showSizeChanger: !isCompact,
+                showTotal: isCompact ? undefined : (t) => `${t} produto(s)`,
+                simple: isCompact,
+                responsive: true,
+              }}
               rowClassName={(r) => (isLowStock(r) ? 'stock-row-low' : '')}
             />
           </Card>
@@ -506,7 +528,14 @@ export default function Stock() {
         }
         open={movementDrawerOpen}
         onClose={closeMovementDrawer}
-        width={400}
+        width={isCompact ? '100%' : 400}
+        destroyOnHidden
+        rootClassName={`stock-drawer-root${isCompact ? ' stock-drawer-root--compact' : ''}`}
+        styles={{
+          body: {
+            paddingBottom: isCompact ? 'max(20px, env(safe-area-inset-bottom, 0px))' : 24,
+          },
+        }}
         extra={
           <Button type="primary" loading={movementLoading} onClick={onMovementSubmit}>
             Confirmar
@@ -522,7 +551,7 @@ export default function Stock() {
                 Estoque atual: <strong>{formatQty(movementProduct.stockQuantity)}</strong>
               </div>
             </div>
-            <Form form={form} layout="vertical">
+            <Form form={form} layout="vertical" preserve={false}>
               <Form.Item name="productId" hidden>
                 <Input type="hidden" />
               </Form.Item>
@@ -554,7 +583,14 @@ export default function Stock() {
         title={`Histórico: ${historyProduct?.name || ''}`}
         open={historyDrawerOpen}
         onClose={() => setHistoryDrawerOpen(false)}
-        width={640}
+        width={isCompact ? '100%' : 640}
+        destroyOnHidden
+        rootClassName={`stock-drawer-root${isCompact ? ' stock-drawer-root--compact' : ''}`}
+        styles={{
+          body: {
+            paddingBottom: isCompact ? 'max(20px, env(safe-area-inset-bottom, 0px))' : 24,
+          },
+        }}
       >
         {historyLoading ? (
           <div style={{ textAlign: 'center', padding: 40 }}>Carregando...</div>
@@ -567,6 +603,8 @@ export default function Stock() {
             size="small"
             rowKey="id"
             dataSource={historyMovements}
+            scroll={{ x: isCompact ? 560 : undefined }}
+            className="stock-history-table"
             columns={[
               {
                 title: 'Data',

@@ -4,7 +4,6 @@ import {
   Input,
   Select,
   Button,
-  Card,
   Table,
   Drawer,
   Space,
@@ -13,6 +12,7 @@ import {
   Tag,
   Switch,
   Dropdown,
+  Grid,
 } from 'antd'
 import { DesktopOutlined, PlusOutlined, EditOutlined, UserOutlined, DeleteOutlined, HistoryOutlined, MoreOutlined } from '@ant-design/icons'
 import { useAuth } from '../../contexts/AuthContext'
@@ -29,6 +29,9 @@ const EQUIPMENT_OPTIONS = [
 ]
 
 export default function Registers() {
+  const screens = Grid.useBreakpoint()
+  const isCompact = screens.md === false
+
   const { user } = useAuth()
   const isRoot = user?.isRoot === true
   const [formRegister] = Form.useForm()
@@ -229,66 +232,116 @@ export default function Registers() {
   const formatDateTime = (v) => (v ? new Date(v).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : '-')
   const formatCurrency = (v) => (v != null ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v) : '-')
 
-  const columns = [
-    { title: 'Nome', dataIndex: 'name', key: 'name', width: 140, render: (v) => v || '-' },
-    { title: 'Código', dataIndex: 'code', key: 'code', width: 100, render: (v) => v || '-' },
-    {
-      title: 'Equipamento',
-      dataIndex: 'equipmentType',
-      key: 'equipmentType',
-      width: 130,
-      render: (v) => EQUIPMENT_OPTIONS.find((o) => o.value === v)?.label ?? v,
-    },
-    { title: 'Descrição', dataIndex: 'description', key: 'description', ellipsis: true, render: (v) => v || '-' },
-    {
-      title: 'Senha PDV',
-      key: 'hasAccessPassword',
-      width: 90,
-      render: (_, r) => (r.hasAccessPassword ? <Tag color="blue">Sim</Tag> : '-'),
-    },
-    {
-      title: 'Ativo',
-      dataIndex: 'active',
-      key: 'active',
-      width: 80,
-      render: (v) => (v !== false ? <Tag color="green">Sim</Tag> : <Tag color="default">Não</Tag>),
-    },
-    {
-      title: <span style={{ whiteSpace: 'nowrap' }}>Operadores</span>,
-      key: 'operators',
-      width: 110,
-      render: (_, r) => (
-        <span style={{ whiteSpace: 'nowrap' }}>
-          {r.operators?.length ? `${r.operators.length} operador(es)` : '-'}
-        </span>
-      ),
-    },
-    {
-      title: '',
-      key: 'actions',
-      width: 72,
-      align: 'center',
-      render: (_, record) => (
-        <Dropdown
-          menu={{
-            items: [
-              { key: 'edit', label: 'Editar', icon: <EditOutlined />, onClick: () => openEdit(record) },
-              { key: 'operators', label: 'Operadores', icon: <UserOutlined />, onClick: () => openOperatorsDrawer(record) },
-              { key: 'history', label: 'Histórico', icon: <HistoryOutlined />, onClick: () => openSessionHistory(record) },
-              { type: 'divider' },
-              { key: 'delete', label: 'Excluir', icon: <DeleteOutlined />, danger: true, onClick: () => handleDelete(record) },
-            ],
-          }}
-          trigger={['click']}
-        >
-          <Button type="text" size="small" icon={<MoreOutlined />} title="Ações" />
-        </Dropdown>
-      ),
-    },
-  ]
+  const actionColumn = {
+    title: '',
+    key: 'actions',
+    width: isCompact ? 44 : 72,
+    align: 'center',
+    ...(isCompact ? {} : { fixed: 'right' }),
+    render: (_, record) => (
+      <Dropdown
+        menu={{
+          items: [
+            { key: 'edit', label: 'Editar', icon: <EditOutlined />, onClick: () => openEdit(record) },
+            { key: 'operators', label: 'Operadores', icon: <UserOutlined />, onClick: () => openOperatorsDrawer(record) },
+            { key: 'history', label: 'Histórico', icon: <HistoryOutlined />, onClick: () => openSessionHistory(record) },
+            { type: 'divider' },
+            { key: 'delete', label: 'Excluir', icon: <DeleteOutlined />, danger: true, onClick: () => handleDelete(record) },
+          ],
+        }}
+        trigger={['click']}
+        placement="bottomRight"
+      >
+        <Button type="text" size="small" icon={<MoreOutlined />} title="Ações" />
+      </Dropdown>
+    ),
+  }
+
+  const columns = isCompact
+    ? [
+        {
+          title: 'Ponto de venda',
+          key: 'summary',
+          render: (_, r) => (
+            <div className="registers-mobile-cell">
+              <div className="registers-mobile-cell__name">{r.name || '—'}</div>
+              <div className="registers-mobile-cell__meta">
+                <span>{EQUIPMENT_OPTIONS.find((o) => o.value === r.equipmentType)?.label ?? r.equipmentType}</span>
+                {r.code ? <span className="registers-mobile-cell__code">Cód. {r.code}</span> : null}
+                {r.hasAccessPassword ? <Tag color="blue">Senha PDV</Tag> : null}
+                {r.active !== false ? <Tag color="green">Ativo</Tag> : <Tag>Inativo</Tag>}
+                <span className="registers-mobile-cell__ops">
+                  {r.operators?.length ? `${r.operators.length} operador(es)` : 'Sem operadores'}
+                </span>
+              </div>
+            </div>
+          ),
+        },
+        actionColumn,
+      ]
+    : [
+        { title: 'Nome', dataIndex: 'name', key: 'name', width: 140, ellipsis: true, render: (v) => v || '-' },
+        {
+          title: 'Código',
+          dataIndex: 'code',
+          key: 'code',
+          width: 100,
+          responsive: ['sm'],
+          render: (v) => v || '-',
+        },
+        {
+          title: 'Equipamento',
+          dataIndex: 'equipmentType',
+          key: 'equipmentType',
+          width: 130,
+          ellipsis: true,
+          render: (v) => EQUIPMENT_OPTIONS.find((o) => o.value === v)?.label ?? v,
+        },
+        {
+          title: 'Descrição',
+          dataIndex: 'description',
+          key: 'description',
+          ellipsis: true,
+          responsive: ['md'],
+          render: (v) => v || '-',
+        },
+        {
+          title: 'Senha PDV',
+          key: 'hasAccessPassword',
+          width: 90,
+          align: 'center',
+          responsive: ['md'],
+          render: (_, r) => (r.hasAccessPassword ? <Tag color="blue">Sim</Tag> : '-'),
+        },
+        {
+          title: 'Ativo',
+          dataIndex: 'active',
+          key: 'active',
+          width: 72,
+          align: 'center',
+          render: (v) => (v !== false ? <Tag color="green">Sim</Tag> : <Tag color="default">Não</Tag>),
+        },
+        {
+          title: <span style={{ whiteSpace: 'nowrap' }}>Operadores</span>,
+          key: 'operators',
+          width: 110,
+          responsive: ['sm'],
+          render: (_, r) => (
+            <span style={{ whiteSpace: 'nowrap' }}>
+              {r.operators?.length ? `${r.operators.length} operador(es)` : '-'}
+            </span>
+          ),
+        },
+        actionColumn,
+      ]
+
+  const drawerRootClass = `deliveries-drawer-root${isCompact ? ' deliveries-drawer-root--compact' : ''}`
+  const drawerBodyStyle = {
+    paddingBottom: isCompact ? 'max(20px, env(safe-area-inset-bottom, 0px))' : 24,
+  }
 
   return (
-    <div className="deliveries-page">
+    <div className={`deliveries-page${isCompact ? ' deliveries-page--compact' : ''}`}>
       <main className="deliveries-main">
         <div className="deliveries-container">
           <div className="deliveries-header-card">
@@ -311,14 +364,16 @@ export default function Registers() {
                 options={tenants.map((t) => ({ value: t.id, label: t.name }))}
                 value={selectedTenantId}
                 onChange={setSelectedTenantId}
-                style={{ width: 280 }}
+                style={{ width: isCompact ? '100%' : 280 }}
                 allowClear={false}
+                showSearch
+                optionFilterProp="label"
               />
             </div>
           )}
 
-          <div style={{ marginBottom: 16 }}>
-            <Button type="primary" icon={<PlusOutlined />} onClick={openCreate} className="deliveries-add-btn">
+          <div className="deliveries-toolbar" style={{ marginBottom: 16 }}>
+            <Button type="primary" icon={<PlusOutlined />} onClick={openCreate} className="deliveries-add-btn" block={isCompact}>
               Novo ponto de venda
             </Button>
           </div>
@@ -328,8 +383,18 @@ export default function Registers() {
             columns={columns}
             dataSource={registers}
             loading={loading}
-            pagination={{ pageSize: 15, showSizeChanger: true, showTotal: (t) => `${t} caixa(s)` }}
-            className="deliveries-table"
+            size={isCompact ? 'small' : 'middle'}
+            scroll={isCompact ? undefined : { x: 1000 }}
+            tableLayout={isCompact ? 'fixed' : undefined}
+            pagination={{
+              pageSize: 15,
+              showSizeChanger: !isCompact,
+              showTotal: isCompact ? undefined : (t) => `${t} caixa(s)`,
+              pageSizeOptions: ['10', '15', '30', '50'],
+              simple: isCompact,
+              responsive: true,
+            }}
+            className="deliveries-table deliveries-data-table"
           />
         </div>
       </main>
@@ -338,12 +403,17 @@ export default function Registers() {
         title={editingRegister ? 'Editar ponto de venda' : 'Novo ponto de venda'}
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
-        width={480}
+        placement="right"
+        width={isCompact ? '100%' : 480}
         destroyOnHidden
+        rootClassName={drawerRootClass}
+        styles={{ body: drawerBodyStyle }}
         extra={
-          <Space>
-            <Button onClick={() => setDrawerOpen(false)}>Cancelar</Button>
-            <Button type="primary" loading={saving} onClick={() => formRegister.submit()}>
+          <Space wrap={isCompact} size={isCompact ? 'small' : 'middle'} style={{ justifyContent: isCompact ? 'flex-end' : undefined }}>
+            <Button onClick={() => setDrawerOpen(false)} block={isCompact}>
+              Cancelar
+            </Button>
+            <Button type="primary" loading={saving} onClick={() => formRegister.submit()} block={isCompact}>
               {editingRegister ? 'Salvar' : 'Cadastrar'}
             </Button>
           </Space>
@@ -357,7 +427,13 @@ export default function Registers() {
             <Input placeholder="Código de identificação" />
           </Form.Item>
           <Form.Item name="equipmentType" label="Equipamento" rules={[{ required: true, message: 'Selecione o equipamento' }]}>
-            <Select placeholder="Selecione" options={EQUIPMENT_OPTIONS} showSearch optionFilterProp="label" />
+            <Select
+              placeholder="Selecione"
+              options={EQUIPMENT_OPTIONS}
+              showSearch
+              optionFilterProp="label"
+              style={{ width: '100%' }}
+            />
           </Form.Item>
           <Form.Item
             name="accessPassword"
@@ -380,12 +456,17 @@ export default function Registers() {
         title={`Operadores — ${selectedRegisterForOperators?.name || ''}`}
         open={operatorsDrawerOpen}
         onClose={() => setOperatorsDrawerOpen(false)}
-        width={440}
+        placement="right"
+        width={isCompact ? '100%' : 440}
         destroyOnHidden
+        rootClassName={drawerRootClass}
+        styles={{ body: drawerBodyStyle }}
         extra={
-          <Space>
-            <Button onClick={() => setOperatorsDrawerOpen(false)}>Cancelar</Button>
-            <Button type="primary" loading={savingOperators} onClick={() => operatorsForm.submit()}>
+          <Space wrap={isCompact} size={isCompact ? 'small' : 'middle'} style={{ justifyContent: isCompact ? 'flex-end' : undefined }}>
+            <Button onClick={() => setOperatorsDrawerOpen(false)} block={isCompact}>
+              Cancelar
+            </Button>
+            <Button type="primary" loading={savingOperators} onClick={() => operatorsForm.submit()} block={isCompact}>
               Salvar
             </Button>
           </Space>
@@ -403,6 +484,7 @@ export default function Registers() {
               showSearch
               optionFilterProp="label"
               allowClear
+              style={{ width: '100%' }}
             />
           </Form.Item>
         </Form>
@@ -412,15 +494,26 @@ export default function Registers() {
         title={`Histórico de sessões — ${registerForHistory?.name || ''}`}
         open={sessionHistoryOpen}
         onClose={() => { setSessionHistoryOpen(false); setSessionDetail(null) }}
-        width={Math.min(720, window.innerWidth * 0.9)}
+        placement="right"
+        width={isCompact ? '100%' : 720}
         destroyOnHidden
+        rootClassName={drawerRootClass}
+        styles={{ body: drawerBodyStyle }}
       >
         <Table
           rowKey="id"
           size="small"
           loading={loadingSessions}
           dataSource={sessions}
-          pagination={{ pageSize: 10, showTotal: (t) => `${t} sessão(ões)` }}
+          scroll={{ x: isCompact ? 720 : undefined }}
+          pagination={{
+            pageSize: 10,
+            showSizeChanger: !isCompact,
+            showTotal: isCompact ? undefined : (t) => `${t} sessão(ões)`,
+            simple: isCompact,
+            responsive: true,
+          }}
+          className={isCompact ? 'deliveries-data-table' : undefined}
           columns={[
             {
               title: 'Abertura',
@@ -434,24 +527,34 @@ export default function Registers() {
               dataIndex: 'closedAt',
               key: 'closedAt',
               width: 140,
+              responsive: ['md'],
               render: (v) => (v ? formatDateTime(v) : 'Em aberto'),
             },
             { title: 'Operador', dataIndex: 'userFullName', key: 'userFullName', ellipsis: true, render: (v) => v || '-' },
-            { title: 'Vendas', dataIndex: 'salesCount', key: 'salesCount', width: 80, align: 'right' },
+            {
+              title: 'Vendas',
+              dataIndex: 'salesCount',
+              key: 'salesCount',
+              width: 72,
+              align: 'right',
+              responsive: ['sm'],
+            },
             {
               title: 'Total',
               dataIndex: 'totalSales',
               key: 'totalSales',
               width: 110,
               align: 'right',
+              responsive: ['sm'],
               render: (v) => formatCurrency(v),
             },
             {
               title: '',
               key: 'detail',
-              width: 90,
+              width: isCompact ? 100 : 90,
+              ...(isCompact ? {} : { fixed: 'right' }),
               render: (_, row) => (
-                <Button type="link" size="small" onClick={() => loadSessionDetail(row.id)}>
+                <Button type="link" size="small" onClick={() => loadSessionDetail(row.id)} block={isCompact}>
                   Ver vendas
                 </Button>
               ),
@@ -460,7 +563,7 @@ export default function Registers() {
         />
         {sessionDetail && (
           <div style={{ marginTop: 24, paddingTop: 16, borderTop: '1px solid #f0f0f0' }}>
-            <h4 style={{ marginBottom: 12 }}>
+            <h4 style={{ marginBottom: 12, fontSize: isCompact ? 15 : undefined, lineHeight: 1.35 }}>
               Sessão: {formatDateTime(sessionDetail.openedAt)} — {sessionDetail.userFullName || sessionDetail.username || '-'}
             </h4>
             {loadingSessionDetail ? (
@@ -471,17 +574,27 @@ export default function Registers() {
                 size="small"
                 dataSource={sessionDetail.sales || []}
                 pagination={false}
+                scroll={{ x: isCompact ? 520 : undefined }}
+                className={isCompact ? 'deliveries-data-table' : undefined}
                 columns={[
-                  { title: 'Nº', dataIndex: 'saleNumber', key: 'saleNumber', width: 100 },
+                  { title: 'Nº', dataIndex: 'saleNumber', key: 'saleNumber', width: 88 },
                   {
                     title: 'Data',
                     dataIndex: 'saleDate',
                     key: 'saleDate',
                     width: 130,
+                    responsive: ['sm'],
                     render: (v) => (v ? new Date(v).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : '-'),
                   },
-                  { title: 'Status', dataIndex: 'status', key: 'status', width: 90 },
-                  { title: 'Total', dataIndex: 'total', key: 'total', width: 100, align: 'right', render: (v) => formatCurrency(v) },
+                  { title: 'Status', dataIndex: 'status', key: 'status', width: 86 },
+                  {
+                    title: 'Total',
+                    dataIndex: 'total',
+                    key: 'total',
+                    width: 100,
+                    align: 'right',
+                    render: (v) => formatCurrency(v),
+                  },
                 ]}
               />
             )}

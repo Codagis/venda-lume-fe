@@ -20,6 +20,7 @@ import {
   Modal,
   Alert,
   AutoComplete,
+  Grid,
 } from 'antd'
 import {
   DollarOutlined,
@@ -97,6 +98,14 @@ function formatDate(d) {
 const CHART_COLORS = ['#DC2626', '#F59E0B', '#10B981', '#3B82F6', '#6B7280']
 
 export default function CostControl() {
+  const screens = Grid.useBreakpoint()
+  const isCompact = screens.sm === false
+  const isNarrow = screens.md === false
+  const dashGutter = useMemo(
+    () => (isCompact ? [12, 12] : isNarrow ? [14, 14] : [16, 16]),
+    [isCompact, isNarrow]
+  )
+
   const { user } = useAuth()
   const isRoot = user?.isRoot === true
   const [formPayable] = Form.useForm()
@@ -647,24 +656,52 @@ export default function CostControl() {
 
   const payableColumns = [
     { title: 'Descrição', dataIndex: 'description', key: 'description', ellipsis: true },
-    { title: 'Fornecedor', dataIndex: 'supplierName', key: 'supplierName', width: 140, ellipsis: true },
-    { title: 'Funcionário', dataIndex: 'employeeName', key: 'employeeName', width: 140, ellipsis: true },
-    { title: 'Categoria', dataIndex: 'category', key: 'category', width: 100 },
-    { title: 'Vencimento', dataIndex: 'dueDate', key: 'dueDate', width: 110, render: (d) => formatDate(d) },
-    { title: 'Valor', dataIndex: 'amount', key: 'amount', width: 110, render: (v) => formatMoney(v) },
-    { title: 'Pago', dataIndex: 'paidAmount', key: 'paidAmount', width: 100, render: (v) => formatMoney(v) },
+    {
+      title: 'Fornecedor',
+      dataIndex: 'supplierName',
+      key: 'supplierName',
+      width: 140,
+      ellipsis: true,
+      responsive: ['sm'],
+    },
+    {
+      title: 'Funcionário',
+      dataIndex: 'employeeName',
+      key: 'employeeName',
+      width: 140,
+      ellipsis: true,
+      responsive: ['sm'],
+    },
+    {
+      title: 'Categoria',
+      dataIndex: 'category',
+      key: 'category',
+      width: 100,
+      responsive: ['md'],
+    },
+    { title: 'Vencimento', dataIndex: 'dueDate', key: 'dueDate', width: isCompact ? 100 : 110, render: (d) => formatDate(d) },
+    { title: 'Valor', dataIndex: 'amount', key: 'amount', width: isCompact ? 100 : 110, render: (v) => formatMoney(v) },
+    {
+      title: 'Pago',
+      dataIndex: 'paidAmount',
+      key: 'paidAmount',
+      width: 100,
+      responsive: ['md'],
+      render: (v) => formatMoney(v),
+    },
     {
       title: 'Status',
       dataIndex: 'status',
       key: 'status',
-      width: 110,
+      width: isCompact ? 100 : 110,
       render: (s) => <Tag color={STATUS_COLORS[s] || 'default'}>{STATUS_OPTIONS.find((o) => o.value === s)?.label ?? s}</Tag>,
     },
     {
       title: 'Ações',
       key: 'actions',
-      width: 72,
-      fixed: 'right',
+      width: isCompact ? 52 : 72,
+      align: 'center',
+      ...(isCompact ? {} : { fixed: 'right' }),
       render: (_, r) => (
         <Dropdown
           menu={{
@@ -712,23 +749,44 @@ export default function CostControl() {
 
   const receivableColumns = [
     { title: 'Descrição', dataIndex: 'description', key: 'description', ellipsis: true },
-    { title: 'Cliente', dataIndex: 'customerName', key: 'customerName', width: 160, ellipsis: true },
-    { title: 'Categoria', dataIndex: 'category', key: 'category', width: 100 },
-    { title: 'Vencimento', dataIndex: 'dueDate', key: 'dueDate', width: 110, render: (d) => formatDate(d) },
-    { title: 'Valor', dataIndex: 'amount', key: 'amount', width: 110, render: (v) => formatMoney(v) },
-    { title: 'Recebido', dataIndex: 'receivedAmount', key: 'receivedAmount', width: 100, render: (v) => formatMoney(v) },
+    {
+      title: 'Cliente',
+      dataIndex: 'customerName',
+      key: 'customerName',
+      width: 160,
+      ellipsis: true,
+      responsive: ['sm'],
+    },
+    {
+      title: 'Categoria',
+      dataIndex: 'category',
+      key: 'category',
+      width: 100,
+      responsive: ['md'],
+    },
+    { title: 'Vencimento', dataIndex: 'dueDate', key: 'dueDate', width: isCompact ? 100 : 110, render: (d) => formatDate(d) },
+    { title: 'Valor', dataIndex: 'amount', key: 'amount', width: isCompact ? 100 : 110, render: (v) => formatMoney(v) },
+    {
+      title: 'Recebido',
+      dataIndex: 'receivedAmount',
+      key: 'receivedAmount',
+      width: 100,
+      responsive: ['md'],
+      render: (v) => formatMoney(v),
+    },
     {
       title: 'Status',
       dataIndex: 'status',
       key: 'status',
-      width: 110,
+      width: isCompact ? 100 : 110,
       render: (s) => <Tag color={STATUS_COLORS[s] || 'default'}>{STATUS_OPTIONS.find((o) => o.value === s)?.label ?? s}</Tag>,
     },
     {
       title: 'Ações',
       key: 'actions',
-      width: 72,
-      fixed: 'right',
+      width: isCompact ? 52 : 72,
+      align: 'center',
+      ...(isCompact ? {} : { fixed: 'right' }),
       render: (_, r) => (
         <Dropdown
           menu={{
@@ -764,7 +822,7 @@ export default function CostControl() {
   ]
 
   return (
-    <div className="cost-control-page">
+    <div className={`cost-control-page${isCompact ? ' cost-control-page--compact' : ''}`}>
       <main className="cost-control-main">
         <div className="cost-control-container">
           <div className="cost-control-header-card">
@@ -787,7 +845,7 @@ export default function CostControl() {
                 options={tenants.map((t) => ({ value: t.id, label: t.name }))}
                 value={selectedTenantId}
                 onChange={setSelectedTenantId}
-                style={{ width: 280 }}
+                style={{ width: '100%', maxWidth: isCompact ? '100%' : 360 }}
                 showSearch
                 optionFilterProp="label"
               />
@@ -797,13 +855,15 @@ export default function CostControl() {
           <Tabs
             activeKey={activeTab}
             onChange={setActiveTab}
+            size={isCompact ? 'small' : 'middle'}
+            className="cost-control-tabs"
             items={[
               {
                 key: 'payables',
                 label: 'Contas a Pagar',
                 children: (
-                  <Card>
-                    <Row gutter={[16, 16]} className="cost-control-stats-row">
+                  <Card className="cost-control-tab-inner-card">
+                    <Row gutter={dashGutter} className="cost-control-stats-row">
                       <Col xs={24} sm={8}>
                         <Card className="cost-control-stat-card cost-control-stat-total">
                           <Statistic
@@ -835,8 +895,8 @@ export default function CostControl() {
                         </Card>
                       </Col>
                     </Row>
-                    <Card title="Folhas de pagamento geradas" className="cost-control-filters-card" style={{ marginBottom: 24 }}>
-                      <p style={{ marginBottom: 12, color: '#666', fontSize: 13 }}>
+                    <Card title="Folhas de pagamento geradas" className="cost-control-filters-card cost-control-payroll-card" style={{ marginBottom: 24 }}>
+                      <p className="cost-control-payroll-hint">
                         Competências que possuem contas a pagar de folha. Gere o PDF da folha completa quando quiser.
                       </p>
                       <Table
@@ -845,6 +905,8 @@ export default function CostControl() {
                         loading={loadingGeneratedPayrolls}
                         dataSource={generatedPayrolls}
                         pagination={false}
+                        scroll={{ x: isCompact ? 320 : undefined }}
+                        className="cost-control-payroll-table"
                         columns={[
                           { title: 'Competência', dataIndex: 'label', key: 'label' },
                           {
@@ -859,7 +921,8 @@ export default function CostControl() {
                                 loading={payrollPdfLoadingKey === `${row.year}-${row.month}`}
                                 onClick={() => handleDownloadPayrollPdf(row)}
                                 disabled={isRoot && !selectedTenantId}
-                                style={{ minWidth: 100 }}
+                                block={isCompact}
+                                className="cost-control-payroll-pdf-btn"
                               >
                                 Gerar PDF
                               </Button>
@@ -868,14 +931,14 @@ export default function CostControl() {
                         ]}
                       />
                       {generatedPayrolls.length === 0 && !loadingGeneratedPayrolls && (
-                        <div style={{ padding: '12px 0', color: '#999' }}>Nenhuma folha gerada ainda. Gere as contas do mês em Funcionários.</div>
+                        <div className="cost-control-payroll-empty">Nenhuma folha gerada ainda. Gere as contas do mês em Funcionários.</div>
                       )}
                     </Card>
                     {payablesByStatus.length > 0 && (
-                      <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+                      <Row gutter={dashGutter} style={{ marginBottom: 24 }}>
                         <Col xs={24} md={12}>
                           <Card title="Contas por status" className="cost-control-chart-card">
-                            <ResponsiveContainer width="100%" height={240}>
+                            <ResponsiveContainer width="100%" height={isCompact ? 200 : 240}>
                               <PieChart>
                                 <Pie
                                   data={payablesByStatus}
@@ -899,7 +962,9 @@ export default function CostControl() {
                       </Row>
                     )}
                     <Card className="cost-control-filters-card">
-                      <div className="vl-filters-toggle cost-control-filters-toggle">
+                      <div
+                        className={`cost-control-filters-head vl-filters-toggle cost-control-filters-toggle${isCompact ? ' cost-control-filters-head--stack' : ''}`}
+                      >
                         <Button
                           type="button"
                           className={`vl-filters-toggle-btn${filtersPayableExpanded ? ' vl-filters-toggle-btn--open' : ''}`}
@@ -912,12 +977,18 @@ export default function CostControl() {
                           </span>
                           <DownOutlined className="vl-filters-chevron" aria-hidden />
                         </Button>
-                        <Space>
+                        <Space
+                          direction={isCompact ? 'vertical' : 'horizontal'}
+                          size={isCompact ? 8 : 12}
+                          className="cost-control-export-actions"
+                          style={isCompact ? { width: '100%' } : { marginLeft: 'auto' }}
+                        >
                           <Button
                             icon={<FileExcelOutlined />}
                             onClick={handleExportPayablesExcel}
                             loading={reportLoading === 'payables-excel'}
                             disabled={isRoot && !selectedTenantId}
+                            block={isCompact}
                           >
                             Exportar Excel
                           </Button>
@@ -926,17 +997,28 @@ export default function CostControl() {
                             onClick={handleExportPayablesPdf}
                             loading={reportLoading === 'payables-pdf'}
                             disabled={isRoot && !selectedTenantId}
+                            block={isCompact}
                           >
                             Exportar PDF
                           </Button>
                         </Space>
+                        <Button
+                          type="primary"
+                          icon={<PlusOutlined />}
+                          onClick={() => openPayableDrawer()}
+                          className="cost-control-add-btn"
+                          block={isCompact}
+                          style={!isCompact ? { flexShrink: 0 } : undefined}
+                        >
+                          Nova conta a pagar
+                        </Button>
                       </div>
                       <div
                         className={`vl-filters-expand${filtersPayableExpanded ? ' vl-filters-expand--open' : ''}`}
                         aria-hidden={!filtersPayableExpanded}
                       >
                         <div className="vl-filters-expand-inner">
-                        <Row gutter={16} align="middle" className="vl-filters-row">
+                        <Row gutter={dashGutter} align="middle" className="vl-filters-row">
                           <Col xs={24} sm={12} md={6}>
                             <label className="cost-control-filter-label">Buscar</label>
                             <Input
@@ -995,7 +1077,7 @@ export default function CostControl() {
                               style={{ width: '100%' }}
                             />
                           </Col>
-                          <Col xs={24} md={4} style={{ marginTop: 24 }}>
+                          <Col xs={24} md={4} className="cost-control-filter-submit-col">
                             <Button type="primary" icon={<FilterOutlined />} onClick={loadPayables} loading={loadingPayables} block>
                               Filtrar
                             </Button>
@@ -1004,19 +1086,21 @@ export default function CostControl() {
                         </div>
                       </div>
                     </Card>
-                    <div style={{ marginTop: 16 }}>
-                      <Button type="primary" icon={<PlusOutlined />} onClick={() => openPayableDrawer()} className="cost-control-add-btn">
-                        Nova conta a pagar
-                      </Button>
-                    </div>
                     <Table
                       rowKey="id"
                       columns={payableColumns}
                       dataSource={payables}
                       loading={loadingPayables}
-                      scroll={{ x: 860 }}
-                      pagination={{ pageSize: 15, showSizeChanger: true, showTotal: (t) => `${t} conta(s)` }}
-                      className="cost-control-table"
+                      size={isCompact ? 'small' : 'middle'}
+                      scroll={{ x: isCompact ? 620 : 1000 }}
+                      pagination={{
+                        pageSize: 15,
+                        showSizeChanger: !isCompact,
+                        showTotal: isCompact ? undefined : (t) => `${t} conta(s)`,
+                        simple: isCompact,
+                        responsive: true,
+                      }}
+                      className="cost-control-table cost-control-data-table"
                     />
                   </Card>
                 ),
@@ -1025,8 +1109,8 @@ export default function CostControl() {
                 key: 'receivables',
                 label: 'Contas a Receber',
                 children: (
-                  <Card>
-                    <Row gutter={[16, 16]} className="cost-control-stats-row">
+                  <Card className="cost-control-tab-inner-card">
+                    <Row gutter={dashGutter} className="cost-control-stats-row">
                       <Col xs={24} sm={8}>
                         <Card className="cost-control-stat-card cost-control-stat-total">
                           <Statistic
@@ -1059,10 +1143,10 @@ export default function CostControl() {
                       </Col>
                     </Row>
                     {receivablesByStatus.length > 0 && (
-                      <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+                      <Row gutter={dashGutter} style={{ marginBottom: 24 }}>
                         <Col xs={24} md={12}>
                           <Card title="Contas por status" className="cost-control-chart-card">
-                            <ResponsiveContainer width="100%" height={240}>
+                            <ResponsiveContainer width="100%" height={isCompact ? 200 : 240}>
                               <PieChart>
                                 <Pie
                                   data={receivablesByStatus}
@@ -1086,7 +1170,9 @@ export default function CostControl() {
                       </Row>
                     )}
                     <Card className="cost-control-filters-card">
-                      <div className="vl-filters-toggle cost-control-filters-toggle">
+                      <div
+                        className={`cost-control-filters-head vl-filters-toggle cost-control-filters-toggle${isCompact ? ' cost-control-filters-head--stack' : ''}`}
+                      >
                         <Button
                           type="button"
                           className={`vl-filters-toggle-btn${filtersReceivableExpanded ? ' vl-filters-toggle-btn--open' : ''}`}
@@ -1099,12 +1185,18 @@ export default function CostControl() {
                           </span>
                           <DownOutlined className="vl-filters-chevron" aria-hidden />
                         </Button>
-                        <Space>
+                        <Space
+                          direction={isCompact ? 'vertical' : 'horizontal'}
+                          size={isCompact ? 8 : 12}
+                          className="cost-control-export-actions"
+                          style={isCompact ? { width: '100%' } : { marginLeft: 'auto' }}
+                        >
                           <Button
                             icon={<FileExcelOutlined />}
                             onClick={handleExportReceivablesExcel}
                             loading={reportLoading === 'receivables-excel'}
                             disabled={isRoot && !selectedTenantId}
+                            block={isCompact}
                           >
                             Exportar Excel
                           </Button>
@@ -1113,17 +1205,28 @@ export default function CostControl() {
                             onClick={handleExportReceivablesPdf}
                             loading={reportLoading === 'receivables-pdf'}
                             disabled={isRoot && !selectedTenantId}
+                            block={isCompact}
                           >
                             Exportar PDF
                           </Button>
                         </Space>
+                        <Button
+                          type="primary"
+                          icon={<PlusOutlined />}
+                          onClick={() => openReceivableDrawer()}
+                          className="cost-control-add-btn"
+                          block={isCompact}
+                          style={!isCompact ? { flexShrink: 0 } : undefined}
+                        >
+                          Nova conta a receber
+                        </Button>
                       </div>
                       <div
                         className={`vl-filters-expand${filtersReceivableExpanded ? ' vl-filters-expand--open' : ''}`}
                         aria-hidden={!filtersReceivableExpanded}
                       >
                         <div className="vl-filters-expand-inner">
-                        <Row gutter={16} align="middle" className="vl-filters-row">
+                        <Row gutter={dashGutter} align="middle" className="vl-filters-row">
                           <Col xs={24} sm={12} md={6}>
                             <label className="cost-control-filter-label">Buscar</label>
                             <Input
@@ -1169,7 +1272,7 @@ export default function CostControl() {
                               style={{ width: '100%' }}
                             />
                           </Col>
-                          <Col xs={24} md={4} style={{ marginTop: 24 }}>
+                          <Col xs={24} md={4} className="cost-control-filter-submit-col">
                             <Button type="primary" icon={<FilterOutlined />} onClick={loadReceivables} loading={loadingReceivables} block>
                               Filtrar
                             </Button>
@@ -1178,19 +1281,21 @@ export default function CostControl() {
                         </div>
                       </div>
                     </Card>
-                    <div style={{ marginTop: 16 }}>
-                      <Button type="primary" icon={<PlusOutlined />} onClick={() => openReceivableDrawer()} className="cost-control-add-btn">
-                        Nova conta a receber
-                      </Button>
-                    </div>
                     <Table
                       rowKey="id"
                       columns={receivableColumns}
                       dataSource={receivables}
                       loading={loadingReceivables}
-                      scroll={{ x: 860 }}
-                      pagination={{ pageSize: 15, showSizeChanger: true, showTotal: (t) => `${t} conta(s)` }}
-                      className="cost-control-table"
+                      size={isCompact ? 'small' : 'middle'}
+                      scroll={{ x: isCompact ? 580 : 960 }}
+                      pagination={{
+                        pageSize: 15,
+                        showSizeChanger: !isCompact,
+                        showTotal: isCompact ? undefined : (t) => `${t} conta(s)`,
+                        simple: isCompact,
+                        responsive: true,
+                      }}
+                      className="cost-control-table cost-control-data-table"
                     />
                   </Card>
                 ),
@@ -1202,6 +1307,7 @@ export default function CostControl() {
                   <CostAccountCategoriesPanel
                     tenantId={isRoot ? selectedTenantId : user?.tenantId}
                     isRoot={isRoot}
+                    compact={isCompact}
                   />
                 ),
               },
@@ -1215,8 +1321,14 @@ export default function CostControl() {
         open={drawerPayableOpen}
         onClose={() => setDrawerPayableOpen(false)}
         placement="right"
-        width={520}
+        width={isCompact ? '100%' : 520}
         destroyOnHidden
+        rootClassName={`cost-control-drawer-root${isCompact ? ' cost-control-drawer-root--compact' : ''}`}
+        styles={{
+          body: {
+            paddingBottom: isCompact ? 'max(20px, env(safe-area-inset-bottom, 0px))' : 24,
+          },
+        }}
         extra={
           <Space>
             <Button onClick={() => setDrawerPayableOpen(false)}>Cancelar</Button>
@@ -1280,8 +1392,14 @@ export default function CostControl() {
         open={drawerReceivableOpen}
         onClose={() => setDrawerReceivableOpen(false)}
         placement="right"
-        width={520}
+        width={isCompact ? '100%' : 520}
         destroyOnHidden
+        rootClassName={`cost-control-drawer-root${isCompact ? ' cost-control-drawer-root--compact' : ''}`}
+        styles={{
+          body: {
+            paddingBottom: isCompact ? 'max(20px, env(safe-area-inset-bottom, 0px))' : 24,
+          },
+        }}
         extra={
           <Space>
             <Button onClick={() => setDrawerReceivableOpen(false)}>Cancelar</Button>
@@ -1345,8 +1463,14 @@ export default function CostControl() {
         open={paymentDrawerOpen}
         onClose={() => { setPaymentDrawerOpen(false); setPaymentTarget(null) }}
         placement="right"
-        width={420}
+        width={isCompact ? '100%' : 420}
         destroyOnHidden
+        rootClassName={`cost-control-drawer-root${isCompact ? ' cost-control-drawer-root--compact' : ''}`}
+        styles={{
+          body: {
+            paddingBottom: isCompact ? 'max(20px, env(safe-area-inset-bottom, 0px))' : 24,
+          },
+        }}
         extra={
           <Space>
             <Button onClick={() => { setPaymentDrawerOpen(false); setPaymentTarget(null) }}>Cancelar</Button>

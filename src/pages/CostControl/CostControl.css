@@ -1,9 +1,193 @@
 .cost-control-page {
   min-height: 100vh;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
+  box-sizing: border-box;
 }
 
 .cost-control-main {
   padding: 0;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.cost-control-filters-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  margin-bottom: 0;
+}
+
+.cost-control-filters-head--stack {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.cost-control-filters-head--stack .vl-filters-toggle-btn.ant-btn {
+  width: 100%;
+  justify-content: center;
+  min-height: 48px;
+}
+
+.cost-control-filters-head--stack .cost-control-export-actions {
+  width: 100%;
+}
+
+.cost-control-filters-head--stack .cost-control-export-actions .ant-btn {
+  width: 100%;
+}
+
+.cost-control-filters-head--stack .cost-control-add-btn {
+  width: 100%;
+  min-height: 48px;
+}
+
+.cost-control-filter-submit-col {
+  margin-top: 24px;
+}
+
+.cost-control-page--compact .cost-control-filter-submit-col {
+  margin-top: 10px;
+}
+
+.cost-control-page--compact .cost-control-header-card {
+  padding: 18px 16px;
+  gap: 14px;
+  margin-bottom: 16px;
+  border-radius: 14px;
+}
+
+.cost-control-page--compact .cost-control-header-icon {
+  width: 46px;
+  height: 46px;
+  min-width: 46px;
+  font-size: 20px;
+}
+
+.cost-control-page--compact .cost-control-title {
+  font-size: 1.25rem;
+}
+
+.cost-control-page--compact .cost-control-subtitle {
+  font-size: 0.8125rem;
+}
+
+.cost-control-page--compact .cost-control-tenant-card.ant-card .ant-card-body {
+  padding: 14px 16px;
+}
+
+.cost-control-page--compact .cost-control-tab-inner-card.ant-card > .ant-card-body {
+  padding: 14px 12px 16px;
+}
+
+.cost-control-page--compact .cost-control-stats-row {
+  margin-bottom: 16px;
+}
+
+.cost-control-page--compact .cost-control-stat-card .ant-card-body {
+  padding: 14px 16px;
+}
+
+.cost-control-page--compact .cost-control-stat-card .ant-statistic-title {
+  font-size: 12px;
+}
+
+.cost-control-page--compact .cost-control-stat-card .ant-statistic-content {
+  font-size: 1rem;
+}
+
+.cost-control-page--compact .cost-control-filters-card.ant-card .ant-card-body {
+  padding: 14px 14px 16px;
+}
+
+.cost-control-page--compact .cost-control-payroll-card.ant-card .ant-card-head {
+  padding: 0 14px;
+  min-height: 44px;
+}
+
+.cost-control-page--compact .cost-control-payroll-hint {
+  margin-bottom: 10px;
+  font-size: 12px;
+  color: #667085;
+  line-height: 1.45;
+}
+
+.cost-control-payroll-hint {
+  margin-bottom: 12px;
+  color: #666;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.cost-control-payroll-empty {
+  padding: 12px 0;
+  color: #999;
+  font-size: 13px;
+}
+
+.cost-control-page--compact .cost-control-payroll-empty {
+  font-size: 12px;
+}
+
+.cost-control-page--compact .cost-control-payroll-table .ant-table {
+  font-size: 0.8125rem;
+}
+
+.cost-control-page--compact .cost-control-payroll-table .ant-table-tbody > tr > td,
+.cost-control-page--compact .cost-control-payroll-table .ant-table-thead > tr > th {
+  padding: 8px 10px;
+}
+
+.cost-control-page--compact .cost-control-chart-card .ant-card-head {
+  padding: 0 14px;
+  min-height: 44px;
+}
+
+.cost-control-page--compact .cost-control-chart-card .ant-card-body {
+  padding: 12px 10px 16px;
+}
+
+.cost-control-page--compact .cost-control-data-table .ant-table {
+  font-size: 0.8125rem;
+}
+
+.cost-control-page--compact .cost-control-data-table .ant-table-tbody > tr > td,
+.cost-control-page--compact .cost-control-data-table .ant-table-thead > tr > th {
+  padding: 8px 10px;
+}
+
+.cost-control-page--compact .cost-control-table .ant-table-wrapper .ant-pagination {
+  padding: 10px 12px 6px;
+}
+
+.cost-control-tabs .ant-tabs-nav {
+  margin-bottom: 12px;
+}
+
+.cost-control-page--compact .cost-control-tabs .ant-tabs-nav {
+  margin-bottom: 8px;
+}
+
+.cost-control-page--compact .cost-control-tabs .ant-tabs-tab {
+  padding: 8px 10px;
+  font-size: 13px;
+}
+
+.cost-control-page--compact .cost-control-tabs .ant-tabs-nav-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.cost-control-drawer-root--compact .ant-drawer-content-wrapper {
+  max-width: 100vw;
+}
+
+.cost-control-drawer-root--compact .ant-drawer-body {
+  padding-left: 16px !important;
+  padding-right: 16px !important;
 }
 
 .cost-control-container {
@@ -112,17 +296,32 @@
   color: #34495E;
 }
 
+.cost-control-add-btn.ant-btn-primary,
 .cost-control-add-btn {
   height: 36px;
-  font-weight: 500;
-  border-radius: 6px;
-  background-color: #34495E;
-  border-color: #34495E;
+  font-weight: 600;
+  border-radius: 10px;
+  color: #ffffff !important;
+  background: linear-gradient(180deg, #115e59 0%, #0d9488 100%) !important;
+  border-color: #0f766e !important;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
 }
 
+.cost-control-add-btn.ant-btn-primary .anticon,
+.cost-control-add-btn .anticon,
+.cost-control-add-btn span {
+  color: #ffffff !important;
+}
+
+.cost-control-add-btn.ant-btn-primary:hover,
 .cost-control-add-btn:hover {
-  background-color: #5D6D7E !important;
-  border-color: #5D6D7E !important;
+  color: #ffffff !important;
+  background: linear-gradient(180deg, #0f766e 0%, #14b8a6 100%) !important;
+  border-color: #0d9488 !important;
+}
+
+.cost-control-add-btn:active {
+  color: #ffffff !important;
 }
 
 .cost-control-table {

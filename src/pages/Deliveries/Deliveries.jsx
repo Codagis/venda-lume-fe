@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import {
   Form,
   Input,
@@ -17,6 +17,7 @@ import {
   Dropdown,
   Steps,
   Descriptions,
+  Grid,
 } from 'antd'
 import {
   CarOutlined,
@@ -26,9 +27,7 @@ import {
   DownOutlined,
   MoreOutlined,
   UserOutlined,
-  ClockCircleOutlined,
   CheckCircleOutlined,
-  CloseCircleOutlined,
   ReloadOutlined,
 } from '@ant-design/icons'
 import dayjs from 'dayjs'
@@ -88,6 +87,14 @@ function formatDate(d) {
 }
 
 export default function Deliveries() {
+  const screens = Grid.useBreakpoint()
+  const isCompact = screens.sm === false
+  const isNarrow = screens.md === false
+  const dashGutter = useMemo(
+    () => (isCompact ? [12, 12] : isNarrow ? [14, 14] : [16, 16]),
+    [isCompact, isNarrow]
+  )
+
   const { user } = useAuth()
   const isRoot = user?.isRoot === true
   const [formCreate] = Form.useForm()
@@ -101,7 +108,6 @@ export default function Deliveries() {
   const [activeDeliveries, setActiveDeliveries] = useState([])
   const [salesWithoutDelivery, setSalesWithoutDelivery] = useState([])
   const [deliveryPersons, setDeliveryPersons] = useState([])
-  const [allUsers, setAllUsers] = useState([])
   const [loading, setLoading] = useState(false)
   const [loadingCreate, setLoadingCreate] = useState(false)
   const [detailDrawerOpen, setDetailDrawerOpen] = useState(false)
@@ -188,15 +194,6 @@ export default function Deliveries() {
   useEffect(() => {
     if (effectiveTenantId !== undefined) loadDeliveryPersons()
   }, [effectiveTenantId, loadDeliveryPersons])
-
-  const loadAllUsers = useCallback(async () => {
-    try {
-      const data = await userService.listUsers()
-      setAllUsers(data || [])
-    } catch (e) {
-      setAllUsers([])
-    }
-  }, [])
 
   useEffect(() => {
     if (createDrawerOpen) {
@@ -394,14 +391,27 @@ export default function Deliveries() {
   }
 
   const columns = [
-    { title: 'Nº', dataIndex: 'deliveryNumber', key: 'deliveryNumber', width: 100 },
-    { title: 'Venda', dataIndex: 'saleNumber', key: 'saleNumber', width: 90 },
+    { title: 'Nº', dataIndex: 'deliveryNumber', key: 'deliveryNumber', width: isCompact ? 76 : 100 },
+    {
+      title: 'Venda',
+      dataIndex: 'saleNumber',
+      key: 'saleNumber',
+      width: 90,
+      responsive: ['sm'],
+    },
     { title: 'Destinatário', dataIndex: 'recipientName', key: 'recipientName', ellipsis: true },
-    { title: 'Telefone', dataIndex: 'recipientPhone', key: 'recipientPhone', width: 120 },
+    {
+      title: 'Telefone',
+      dataIndex: 'recipientPhone',
+      key: 'recipientPhone',
+      width: 120,
+      responsive: ['md'],
+    },
     {
       title: 'Endereço',
       key: 'address',
       ellipsis: true,
+      responsive: ['lg'],
       render: (_, r) => (
         <span title={r.address}>
           {r.address?.length > 40 ? r.address.slice(0, 40) + '...' : r.address || '-'}
@@ -412,21 +422,32 @@ export default function Deliveries() {
       title: 'Status',
       dataIndex: 'status',
       key: 'status',
-      width: 110,
+      width: isCompact ? 100 : 110,
       render: (v) => <Tag color={STATUS_COLORS[v] || 'default'}>{STATUS_OPTIONS.find((o) => o.value === v)?.label ?? v}</Tag>,
     },
-    { title: 'Entregador', dataIndex: 'deliveryPersonName', key: 'deliveryPersonName', width: 120, ellipsis: true },
+    {
+      title: 'Entregador',
+      dataIndex: 'deliveryPersonName',
+      key: 'deliveryPersonName',
+      width: 120,
+      ellipsis: true,
+      responsive: ['md'],
+    },
     {
       title: 'Valor',
       dataIndex: 'saleTotal',
       key: 'saleTotal',
       width: 100,
+      align: 'right',
+      responsive: ['sm'],
       render: (v) => formatMoney(v),
     },
     {
       title: '',
       key: 'actions',
-      width: 50,
+      width: isCompact ? 44 : 50,
+      align: 'center',
+      ...(isCompact ? {} : { fixed: 'right' }),
       render: (_, record) => (
         <Dropdown
           menu={{
@@ -440,6 +461,7 @@ export default function Deliveries() {
             ],
           }}
           trigger={['click']}
+          placement="bottomRight"
         >
           <Button type="text" size="small" icon={<MoreOutlined />} />
         </Dropdown>
@@ -447,8 +469,13 @@ export default function Deliveries() {
     },
   ]
 
+  const drawerRootClass = `deliveries-drawer-root${isCompact ? ' deliveries-drawer-root--compact' : ''}`
+  const drawerBodyStyle = {
+    paddingBottom: isCompact ? 'max(20px, env(safe-area-inset-bottom, 0px))' : 24,
+  }
+
   return (
-    <div className="deliveries-page">
+    <div className={`deliveries-page${isCompact ? ' deliveries-page--compact' : ''}`}>
       <main className="deliveries-main">
         <div className="deliveries-container">
           <div className="deliveries-header-card">
@@ -471,14 +498,16 @@ export default function Deliveries() {
                 options={tenants.map((t) => ({ value: t.id, label: t.name }))}
                 value={selectedTenantId}
                 onChange={setSelectedTenantId}
-                style={{ width: 280 }}
+                style={{ width: isCompact ? '100%' : 280 }}
                 allowClear={false}
+                showSearch
+                optionFilterProp="label"
               />
             </div>
           )}
 
           <div className="deliveries-stats-row">
-            <Row gutter={16}>
+            <Row gutter={dashGutter}>
               <Col xs={24} sm={12} md={6}>
                 <Card className="deliveries-stat-card">
                   <Statistic title="Pendentes" value={stats.pending} />
@@ -502,10 +531,10 @@ export default function Deliveries() {
             </Row>
           </div>
 
-          <div className="deliveries-toolbar deliveries-toolbar-stacked">
-            <Card className="deliveries-filters-card">
-              <Row gutter={16} align="middle">
-                <Col xs={24} sm={12} md={6}>
+          <div className="deliveries-toolbar">
+            <Card className="deliveries-filters-card" style={{ width: '100%' }}>
+              <Row gutter={dashGutter}>
+                <Col xs={24}>
                   <label>Todas / Ativas</label>
                   <Select
                     value={filters.listType}
@@ -517,86 +546,91 @@ export default function Deliveries() {
                     style={{ width: '100%' }}
                   />
                 </Col>
-                <Col xs={24} sm={12} md={6}>
-                  <div className="vl-filters-toggle deliveries-filters-toggle" style={{ marginTop: 24 }}>
-                    <Button
-                      type="button"
-                      className={`vl-filters-toggle-btn${filtersExpanded ? ' vl-filters-toggle-btn--open' : ''}`}
-                      icon={<FilterOutlined />}
-                      onClick={() => setFiltersExpanded((v) => !v)}
-                      aria-expanded={filtersExpanded}
-                    >
-                      <span className="vl-filters-toggle-label">
-                        {filtersExpanded ? 'Ocultar filtros' : 'Mostrar filtros'}
-                      </span>
-                      <DownOutlined className="vl-filters-chevron" aria-hidden />
-                    </Button>
-                  </div>
-                </Col>
               </Row>
+              <div
+                className={`deliveries-filters-head vl-filters-toggle${isCompact ? ' deliveries-filters-head--stack' : ''}`}
+              >
+                <Button
+                  type="button"
+                  className={`vl-filters-toggle-btn${filtersExpanded ? ' vl-filters-toggle-btn--open' : ''}`}
+                  icon={<FilterOutlined />}
+                  onClick={() => setFiltersExpanded((v) => !v)}
+                  aria-expanded={filtersExpanded}
+                >
+                  <span className="vl-filters-toggle-label">
+                    {filtersExpanded ? 'Ocultar filtros' : 'Mostrar filtros'}
+                  </span>
+                  <DownOutlined className="vl-filters-chevron" aria-hidden />
+                </Button>
+                <Button
+                  type="primary"
+                  icon={<PlusOutlined />}
+                  onClick={() => setCreateDrawerOpen(true)}
+                  className="deliveries-add-btn"
+                  block={isCompact}
+                >
+                  Nova entrega
+                </Button>
+              </div>
               <div
                 className={`vl-filters-expand${filtersExpanded ? ' vl-filters-expand--open' : ''}`}
                 aria-hidden={!filtersExpanded}
               >
                 <div className="vl-filters-expand-inner">
-                <Row gutter={16} align="bottom" className="vl-filters-row">
-                  <Col xs={24} sm={12} md={6}>
-                    <label>Buscar</label>
-                    <Input
-                      placeholder="Nº, destinatário, endereço"
-                      prefix={<SearchOutlined />}
-                      value={filters.search}
-                      onChange={(e) => setFilters((f) => ({ ...f, search: e.target.value }))}
-                      onPressEnter={loadDeliveries}
-                      allowClear
-                      style={{ width: '100%' }}
-                    />
-                  </Col>
-                  <Col xs={24} sm={12} md={6}>
-                    <label>Status</label>
-                    <Select
-                      placeholder="Todos"
-                      options={STATUS_OPTIONS}
-                      value={filters.status}
-                      onChange={(v) => setFilters((f) => ({ ...f, status: v }))}
-                      style={{ width: '100%' }}
-                      allowClear
-                    />
-                  </Col>
-                  <Col xs={24} sm={12} md={6}>
-                    <label>Entregador</label>
-                    <Select
-                      placeholder="Todos"
-                      options={deliveryPersons.map((p) => ({ value: p.id, label: p.fullName || p.username }))}
-                      value={filters.deliveryPersonId}
-                      onChange={(v) => setFilters((f) => ({ ...f, deliveryPersonId: v }))}
-                      style={{ width: '100%' }}
-                      allowClear
-                    />
-                  </Col>
-                  <Col xs={24} sm={12} md={6}>
-                    <label>Período</label>
-                    <RangePicker
-                      value={filters.dateRange}
-                      onChange={(v) => setFilters((f) => ({ ...f, dateRange: v }))}
-                      style={{ width: '100%' }}
-                    />
-                  </Col>
-                  <Col xs={24} md={6}>
-                    <label style={{ visibility: 'hidden' }}>.</label>
-                    <Button type="primary" icon={<SearchOutlined />} onClick={loadDeliveries} loading={loading} block>
-                      Filtrar
-                    </Button>
-                  </Col>
-                </Row>
+                  <Row gutter={dashGutter} align="bottom" className="vl-filters-row">
+                    <Col xs={24} sm={12} md={6}>
+                      <label>Buscar</label>
+                      <Input
+                        placeholder="Nº, destinatário, endereço"
+                        prefix={<SearchOutlined />}
+                        value={filters.search}
+                        onChange={(e) => setFilters((f) => ({ ...f, search: e.target.value }))}
+                        onPressEnter={loadDeliveries}
+                        allowClear
+                        style={{ width: '100%' }}
+                      />
+                    </Col>
+                    <Col xs={24} sm={12} md={6}>
+                      <label>Status</label>
+                      <Select
+                        placeholder="Todos"
+                        options={STATUS_OPTIONS}
+                        value={filters.status}
+                        onChange={(v) => setFilters((f) => ({ ...f, status: v }))}
+                        style={{ width: '100%' }}
+                        allowClear
+                      />
+                    </Col>
+                    <Col xs={24} sm={12} md={6}>
+                      <label>Entregador</label>
+                      <Select
+                        placeholder="Todos"
+                        options={deliveryPersons.map((p) => ({ value: p.id, label: p.fullName || p.username }))}
+                        value={filters.deliveryPersonId}
+                        onChange={(v) => setFilters((f) => ({ ...f, deliveryPersonId: v }))}
+                        style={{ width: '100%' }}
+                        allowClear
+                        showSearch
+                        optionFilterProp="label"
+                      />
+                    </Col>
+                    <Col xs={24} sm={12} md={6}>
+                      <label>Período</label>
+                      <RangePicker
+                        value={filters.dateRange}
+                        onChange={(v) => setFilters((f) => ({ ...f, dateRange: v }))}
+                        style={{ width: '100%' }}
+                      />
+                    </Col>
+                    <Col xs={24} md={6} className="deliveries-filter-submit-col">
+                      <Button type="primary" icon={<SearchOutlined />} onClick={loadDeliveries} loading={loading} block>
+                        Filtrar
+                      </Button>
+                    </Col>
+                  </Row>
                 </div>
               </div>
             </Card>
-            <div className="deliveries-toolbar-actions">
-              <Button type="primary" icon={<PlusOutlined />} onClick={() => setCreateDrawerOpen(true)} className="deliveries-add-btn">
-                Nova entrega
-              </Button>
-            </div>
           </div>
 
           <Table
@@ -604,8 +638,17 @@ export default function Deliveries() {
             columns={columns}
             dataSource={listToShow}
             loading={loading}
-            pagination={{ pageSize: 15, showSizeChanger: true, showTotal: (t) => `${t} entrega(s)` }}
-            className="deliveries-table"
+            size={isCompact ? 'small' : 'middle'}
+            scroll={{ x: isCompact ? 720 : 1100 }}
+            pagination={{
+              pageSize: 15,
+              showSizeChanger: !isCompact,
+              showTotal: isCompact ? undefined : (t) => `${t} entrega(s)`,
+              pageSizeOptions: ['10', '15', '30', '50'],
+              simple: isCompact,
+              responsive: true,
+            }}
+            className="deliveries-table deliveries-data-table"
           />
         </div>
       </main>
@@ -614,7 +657,10 @@ export default function Deliveries() {
         title={`Entrega ${selectedDelivery?.deliveryNumber || ''}`}
         open={detailDrawerOpen}
         onClose={() => setDetailDrawerOpen(false)}
-        width={520}
+        placement="right"
+        width={isCompact ? '100%' : 520}
+        rootClassName={drawerRootClass}
+        styles={{ body: drawerBodyStyle }}
         className="deliveries-detail-drawer"
       >
         {selectedDelivery && (
@@ -668,7 +714,16 @@ export default function Deliveries() {
         )}
       </Drawer>
 
-      <Drawer title="Atribuir entregador" open={assignDrawerOpen} onClose={() => setAssignDrawerOpen(false)} width={400}>
+      <Drawer
+        title="Atribuir entregador"
+        open={assignDrawerOpen}
+        onClose={() => setAssignDrawerOpen(false)}
+        placement="right"
+        width={isCompact ? '100%' : 400}
+        destroyOnHidden
+        rootClassName={drawerRootClass}
+        styles={{ body: drawerBodyStyle }}
+      >
         <Form form={formAssign} layout="vertical" onFinish={handleAssign}>
           <Form.Item
             name="deliveryPersonId"
@@ -690,7 +745,16 @@ export default function Deliveries() {
         </Form>
       </Drawer>
 
-      <Drawer title="Atualizar status" open={statusDrawerOpen} onClose={() => setStatusDrawerOpen(false)} width={420}>
+      <Drawer
+        title="Atualizar status"
+        open={statusDrawerOpen}
+        onClose={() => setStatusDrawerOpen(false)}
+        placement="right"
+        width={isCompact ? '100%' : 420}
+        destroyOnHidden
+        rootClassName={drawerRootClass}
+        styles={{ body: drawerBodyStyle }}
+      >
         <Form form={formStatus} layout="vertical" onFinish={handleUpdateStatus}>
           <Form.Item name="status" label="Novo status" rules={[{ required: true }]}>
             <Select options={STATUS_OPTIONS} placeholder="Selecione o status" />
@@ -739,8 +803,11 @@ export default function Deliveries() {
         title="Nova entrega"
         open={createDrawerOpen}
         onClose={() => setCreateDrawerOpen(false)}
-        width={480}
+        placement="right"
+        width={isCompact ? '100%' : 480}
         destroyOnHidden
+        rootClassName={drawerRootClass}
+        styles={{ body: drawerBodyStyle }}
         extra={
           <Space>
             <Button onClick={() => setCreateDrawerOpen(false)}>Cancelar</Button>
@@ -778,8 +845,11 @@ export default function Deliveries() {
         title={`Editar entrega ${selectedDelivery?.deliveryNumber || ''}`}
         open={editDrawerOpen}
         onClose={() => setEditDrawerOpen(false)}
-        width={520}
+        placement="right"
+        width={isCompact ? '100%' : 520}
         destroyOnHidden
+        rootClassName={drawerRootClass}
+        styles={{ body: drawerBodyStyle }}
         extra={
           <Space>
             <Button onClick={() => setEditDrawerOpen(false)}>Cancelar</Button>

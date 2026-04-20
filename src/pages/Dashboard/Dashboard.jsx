@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Card,
@@ -16,6 +16,7 @@ import {
   Empty,
   DatePicker,
   Button,
+  Grid,
 } from 'antd'
 import {
   DollarOutlined,
@@ -48,8 +49,6 @@ import {
 } from 'recharts'
 import dayjs from 'dayjs'
 import 'dayjs/locale/pt-br'
-
-dayjs.locale('pt-br')
 import { useAuth } from '../../contexts/AuthContext'
 import { useModules } from '../../contexts/ModulesContext'
 import { getIcon } from '../../config/iconRegistry'
@@ -58,6 +57,8 @@ import { getSalesAnalytics } from '../../services/salesAnalyticsService'
 import * as tenantService from '../../services/tenantService'
 import { RevealWhenReady, DelayedReveal } from '../../components/VlMotion'
 import './Dashboard.css'
+
+dayjs.locale('pt-br')
 
 const { Text } = Typography
 const COLORS = ['#22c55e', '#38bdf8', '#fbbf24', '#64748b', '#a78bfa', '#2dd4bf']
@@ -88,9 +89,44 @@ function formatCurrency(value) {
   }).format(value)
 }
 
-const DASH_GRID_GUTTER = [20, 20]
-
 export default function Dashboard() {
+  const screens = Grid.useBreakpoint()
+  const isCompact = screens.sm === false
+  const isNarrow = screens.md === false
+  const dashGutter = useMemo(
+    () => (isCompact ? [12, 12] : isNarrow ? [16, 16] : [20, 20]),
+    [isCompact, isNarrow]
+  )
+  const chartAreaHeight = isCompact ? 220 : isNarrow ? 280 : 320
+  const chartPieHeight = isCompact ? 240 : isNarrow ? 260 : 280
+  const chartBarFinanceHeight = isCompact ? 200 : 260
+  const chartTopProductsHeight = isCompact ? 240 : 280
+  const pieInnerR = isCompact ? 48 : 60
+  const pieOuterR = isCompact ? 78 : 100
+  const yAxisWidth = isCompact ? 40 : 50
+  const yAxisCatWidth = isCompact ? 88 : 120
+  const segmentBarYWidth = isCompact ? 72 : 90
+  const tableScrollX = isCompact ? 520 : undefined
+  const pieLegendProps = useMemo(
+    () =>
+      isCompact
+        ? {
+            layout: 'vertical',
+            align: 'center',
+            verticalAlign: 'bottom',
+            wrapperStyle: { fontSize: 11, lineHeight: 1.45, width: '100%', paddingTop: 4 },
+          }
+        : { wrapperStyle: { fontSize: 12 } },
+    [isCompact]
+  )
+  const barLegendProps = useMemo(
+    () =>
+      isCompact
+        ? { wrapperStyle: { fontSize: 10, lineHeight: 1.35 }, iconSize: 10 }
+        : { wrapperStyle: { fontSize: 12 } },
+    [isCompact]
+  )
+
   const { user } = useAuth()
   const { modules } = useModules()
   const navigate = useNavigate()
@@ -189,7 +225,7 @@ export default function Dashboard() {
 
   if (isRoot && tenants.length === 0 && !loading) {
     return (
-      <div className="dashboard">
+      <div className={`dashboard${isCompact ? ' dashboard--compact' : ''}`}>
         <main className="dashboard-main">
           <Alert
             type="info"
@@ -203,7 +239,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="dashboard">
+    <div className={`dashboard${isCompact ? ' dashboard--compact' : ''}`}>
       <main className="dashboard-main">
         <header className="dashboard-hero">
           <p className="dashboard-hero-date">{dayjs().format('dddd, D [de] MMMM [de] YYYY')}</p>
@@ -236,7 +272,7 @@ export default function Dashboard() {
             aria-hidden={!filtersExpanded}
           >
             <div className="dashboard-filters-expand-inner">
-              <Row gutter={DASH_GRID_GUTTER} align="middle" className="dashboard-filters-row">
+              <Row gutter={dashGutter} align="middle" className="dashboard-filters-row">
                 <Col xs={24} sm={12} md={4}>
                   <label className="dashboard-filter-label">Data início</label>
                   <DatePicker
@@ -300,7 +336,7 @@ export default function Dashboard() {
           <RevealWhenReady ready delayMs={110}>
             <>
             <div className="dashboard-kpis">
-              <Row gutter={DASH_GRID_GUTTER}>
+              <Row gutter={dashGutter}>
                 <Col xs={24} lg={12}>
                   <Card className="dashboard-kpi-card dashboard-kpi-spotlight">
                     <div className="dashboard-kpi-spotlight-head">
@@ -407,18 +443,29 @@ export default function Dashboard() {
               </div>
             )}
 
-            <Row gutter={DASH_GRID_GUTTER} className="dashboard-charts-row">
+            <Row gutter={dashGutter} className="dashboard-charts-row">
               <Col xs={24} lg={16}>
                 <Card
                   className="dashboard-chart-card"
-                  title={appliedStartDate && appliedEndDate ? `Vendas por dia (${appliedStartDate.format('DD/MM')} a ${appliedEndDate.format('DD/MM')})` : 'Vendas por dia'}
+                  title={
+                    appliedStartDate && appliedEndDate
+                      ? isCompact
+                        ? `Vendas (${appliedStartDate.format('DD/MM')}–${appliedEndDate.format('DD/MM')})`
+                        : `Vendas por dia (${appliedStartDate.format('DD/MM')} a ${appliedEndDate.format('DD/MM')})`
+                      : 'Vendas por dia'
+                  }
                   extra={<ArrowUpOutlined style={{ color: '#52c41a' }} />}
                 >
                   <div className="dashboard-chart-area">
-                    <ResponsiveContainer width="100%" height={320}>
+                    <ResponsiveContainer width="100%" height={chartAreaHeight}>
                       <AreaChart
                         data={analytics.salesByDay || []}
-                        margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
+                        margin={{
+                          top: 10,
+                          right: isCompact ? 4 : 10,
+                          left: 0,
+                          bottom: isCompact ? 20 : 4,
+                        }}
                       >
                         <defs>
                           <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
@@ -429,16 +476,20 @@ export default function Dashboard() {
                         <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
                         <XAxis
                           dataKey="date"
-                          tick={{ fontSize: 12 }}
+                          tick={{ fontSize: isCompact ? 10 : 12 }}
                           tickLine={false}
                           axisLine={{ stroke: '#e8e8e8' }}
+                          interval="preserveStartEnd"
+                          angle={isCompact ? -28 : 0}
+                          textAnchor={isCompact ? 'end' : 'middle'}
+                          height={isCompact ? 48 : 30}
                         />
                         <YAxis
                           tickFormatter={(v) => (v >= 1000 ? `R$ ${(v / 1000).toFixed(0)}k` : `R$ ${v}`)}
-                          tick={{ fontSize: 12 }}
+                          tick={{ fontSize: isCompact ? 10 : 12 }}
                           tickLine={false}
                           axisLine={false}
-                          width={50}
+                          width={yAxisWidth}
                         />
                         <Tooltip
                           formatter={(value) => [formatCurrency(value), 'Total']}
@@ -465,14 +516,14 @@ export default function Dashboard() {
                 >
                   {pieData.length > 0 ? (
                     <div className="dashboard-chart-pie">
-                      <ResponsiveContainer width="100%" height={280}>
+                      <ResponsiveContainer width="100%" height={chartPieHeight}>
                         <PieChart>
                           <Pie
                             data={pieData}
                             cx="50%"
                             cy="50%"
-                            innerRadius={60}
-                            outerRadius={100}
+                            innerRadius={pieInnerR}
+                            outerRadius={pieOuterR}
                             paddingAngle={2}
                             dataKey="value"
                           >
@@ -484,7 +535,7 @@ export default function Dashboard() {
                             formatter={(value) => formatCurrency(value)}
                             contentStyle={{ borderRadius: 8, border: '1px solid #e8e8e8' }}
                           />
-                          <Legend />
+                          <Legend {...pieLegendProps} />
                         </PieChart>
                       </ResponsiveContainer>
                     </div>
@@ -498,7 +549,7 @@ export default function Dashboard() {
             </Row>
 
             {(analytics?.accountsPayableSummary || analytics?.accountsReceivableSummary) && (
-              <Row gutter={DASH_GRID_GUTTER} className="dashboard-summary-finance-row">
+              <Row gutter={dashGutter} className="dashboard-summary-finance-row">
                 {analytics?.accountsPayableSummary && (
                   <Col
                     xs={24}
@@ -539,7 +590,7 @@ export default function Dashboard() {
                 )}
               </Row>
             )}
-            <Row gutter={DASH_GRID_GUTTER} className="dashboard-summary-period-row">
+            <Row gutter={dashGutter} className="dashboard-summary-period-row">
               <Col xs={24} md={8}>
                 <Card className="dashboard-summary-card">
                   <Statistic
@@ -579,31 +630,31 @@ export default function Dashboard() {
             </Row>
 
             {((analytics?.payableByMonth?.length > 0) || (analytics?.receivableByMonth?.length > 0)) && (
-            <Row gutter={DASH_GRID_GUTTER} className="dashboard-charts-row">
+            <Row gutter={dashGutter} className="dashboard-charts-row">
               {analytics?.payableByMonth?.length > 0 && (
               <Col xs={24} lg={12}>
                 <Card className="dashboard-chart-card" title="Contas a pagar (últimos 6 meses)">
                   <div className="dashboard-chart-area">
-                    <ResponsiveContainer width="100%" height={260}>
+                    <ResponsiveContainer width="100%" height={chartBarFinanceHeight}>
                       <BarChart
                         data={analytics.payableByMonth}
-                        margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
+                        margin={{ top: 10, right: isCompact ? 4 : 10, left: 0, bottom: 0 }}
                       >
                         <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                        <XAxis dataKey="month" tick={{ fontSize: 12 }} tickLine={false} axisLine={{ stroke: '#e8e8e8' }} />
+                        <XAxis dataKey="month" tick={{ fontSize: isCompact ? 10 : 12 }} tickLine={false} axisLine={{ stroke: '#e8e8e8' }} />
                         <YAxis
                           tickFormatter={(v) => (v >= 1000 ? `R$ ${(v / 1000).toFixed(0)}k` : `R$ ${v}`)}
-                          tick={{ fontSize: 12 }}
+                          tick={{ fontSize: isCompact ? 10 : 12 }}
                           tickLine={false}
                           axisLine={false}
-                          width={50}
+                          width={yAxisWidth}
                         />
                         <Tooltip
                           formatter={(value) => formatCurrency(value)}
                           labelFormatter={(label) => `Mês: ${label}`}
                           contentStyle={{ borderRadius: 8, border: '1px solid #e8e8e8' }}
                         />
-                        <Legend />
+                        <Legend {...barLegendProps} />
                         <Bar dataKey="pending" name="Pendente" fill="#e67e22" radius={[4, 4, 0, 0]} />
                         <Bar dataKey="settled" name="Pago" fill="#27ae60" radius={[4, 4, 0, 0]} />
                       </BarChart>
@@ -616,26 +667,26 @@ export default function Dashboard() {
               <Col xs={24} lg={12}>
                 <Card className="dashboard-chart-card" title="Contas a receber (últimos 6 meses)">
                   <div className="dashboard-chart-area">
-                    <ResponsiveContainer width="100%" height={260}>
+                    <ResponsiveContainer width="100%" height={chartBarFinanceHeight}>
                       <BarChart
                         data={analytics.receivableByMonth}
-                        margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
+                        margin={{ top: 10, right: isCompact ? 4 : 10, left: 0, bottom: 0 }}
                       >
                         <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                        <XAxis dataKey="month" tick={{ fontSize: 12 }} tickLine={false} axisLine={{ stroke: '#e8e8e8' }} />
+                        <XAxis dataKey="month" tick={{ fontSize: isCompact ? 10 : 12 }} tickLine={false} axisLine={{ stroke: '#e8e8e8' }} />
                         <YAxis
                           tickFormatter={(v) => (v >= 1000 ? `R$ ${(v / 1000).toFixed(0)}k` : `R$ ${v}`)}
-                          tick={{ fontSize: 12 }}
+                          tick={{ fontSize: isCompact ? 10 : 12 }}
                           tickLine={false}
                           axisLine={false}
-                          width={50}
+                          width={yAxisWidth}
                         />
                         <Tooltip
                           formatter={(value) => formatCurrency(value)}
                           labelFormatter={(label) => `Mês: ${label}`}
                           contentStyle={{ borderRadius: 8, border: '1px solid #e8e8e8' }}
                         />
-                        <Legend />
+                        <Legend {...barLegendProps} />
                         <Bar dataKey="pending" name="Pendente" fill="#3498db" radius={[4, 4, 0, 0]} />
                         <Bar dataKey="settled" name="Recebido" fill="#27ae60" radius={[4, 4, 0, 0]} />
                       </BarChart>
@@ -649,21 +700,29 @@ export default function Dashboard() {
 
             {salesAnalytics && (
             <>
-            <Row gutter={DASH_GRID_GUTTER} className="dashboard-charts-row">
+            <Row gutter={dashGutter} className="dashboard-charts-row">
               <Col xs={24} lg={12}>
                 <Card className="dashboard-chart-card" title="Top 8 produtos (quantidade)">
                   {(() => {
-                    const topData = (salesAnalytics.topProductsByQuantity || []).slice(0, 8).map((p) => ({
-                      name: (p.productName || '').length > 20 ? (p.productName || '').slice(0, 20) + '...' : p.productName,
-                      quantidade: Number(p.totalQuantity || 0),
-                    }))
+                    const nameMax = isCompact ? 12 : 20
+                    const topData = (salesAnalytics.topProductsByQuantity || []).slice(0, 8).map((p) => {
+                      const raw = p.productName || ''
+                      return {
+                        name: raw.length > nameMax ? `${raw.slice(0, nameMax)}…` : raw,
+                        quantidade: Number(p.totalQuantity || 0),
+                      }
+                    })
                     return topData.length > 0 ? (
                       <div className="dashboard-chart-area">
-                        <ResponsiveContainer width="100%" height={280}>
-                          <BarChart data={topData} layout="vertical" margin={{ left: 20 }}>
+                        <ResponsiveContainer width="100%" height={chartTopProductsHeight}>
+                          <BarChart
+                            data={topData}
+                            layout="vertical"
+                            margin={{ left: isCompact ? 4 : 20, right: isCompact ? 4 : 16 }}
+                          >
                             <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                             <XAxis type="number" tickFormatter={(v) => (v >= 1000 ? `${(v / 1000).toFixed(1)}k` : v)} />
-                            <YAxis type="category" dataKey="name" width={120} tick={{ fontSize: 11 }} />
+                            <YAxis type="category" dataKey="name" width={yAxisCatWidth} tick={{ fontSize: isCompact ? 10 : 11 }} />
                             <Tooltip formatter={(v) => [v, 'Unidades']} contentStyle={{ borderRadius: 8, border: '1px solid #e8e8e8' }} />
                             <Bar dataKey="quantidade" name="Unidades" fill="#34495E" radius={[0, 4, 4, 0]} />
                           </BarChart>
@@ -682,13 +741,22 @@ export default function Dashboard() {
                     const segData = segs.map((s, i) => ({ name: s.label, value: Number(s.totalRevenue || 0), fill: COLORS2[i % COLORS2.length] }))
                     return segData.length > 0 ? (
                       <div className="dashboard-chart-pie">
-                        <ResponsiveContainer width="100%" height={280}>
+                        <ResponsiveContainer width="100%" height={chartPieHeight}>
                           <PieChart>
-                            <Pie data={segData} cx="50%" cy="50%" innerRadius={60} outerRadius={100} paddingAngle={2} dataKey="value" nameKey="name">
+                            <Pie
+                              data={segData}
+                              cx="50%"
+                              cy="50%"
+                              innerRadius={pieInnerR}
+                              outerRadius={pieOuterR}
+                              paddingAngle={2}
+                              dataKey="value"
+                              nameKey="name"
+                            >
                               {segData.map((e, i) => <Cell key={e.name} fill={e.fill} />)}
                             </Pie>
                             <Tooltip formatter={(v) => formatCurrency(v)} contentStyle={{ borderRadius: 8, border: '1px solid #e8e8e8' }} />
-                            <Legend />
+                            <Legend {...pieLegendProps} />
                           </PieChart>
                         </ResponsiveContainer>
                       </div>
@@ -700,16 +768,17 @@ export default function Dashboard() {
               </Col>
             </Row>
 
-            <Row gutter={DASH_GRID_GUTTER} className="dashboard-charts-row">
+            <Row gutter={dashGutter} className="dashboard-charts-row">
               <Col xs={24} lg={12}>
                 <Card className="dashboard-chart-card" title="Produtos mais vendidos">
                   {(salesAnalytics.topProductsByQuantity || []).length > 0 ? (
                     <Table
+                      className="dashboard-data-table"
                       size="small"
                       dataSource={salesAnalytics.topProductsByQuantity}
                       rowKey={(r) => r.productId || r.productName}
                       pagination={false}
-                      scroll={{ y: 200 }}
+                      scroll={{ y: isCompact ? 240 : 200, ...(tableScrollX ? { x: tableScrollX } : {}) }}
                       columns={[
                         { title: 'Produto', dataIndex: 'productName', ellipsis: true, render: (v) => v || '-' },
                         { title: 'Qtd', dataIndex: 'totalQuantity', width: 80, align: 'right', render: (v) => Number(v || 0).toLocaleString('pt-BR') },
@@ -726,11 +795,12 @@ export default function Dashboard() {
                 <Card className="dashboard-chart-card" title="Produtos com maior faturamento">
                   {(salesAnalytics.topProductsByRevenue || []).length > 0 ? (
                     <Table
+                      className="dashboard-data-table"
                       size="small"
                       dataSource={salesAnalytics.topProductsByRevenue}
                       rowKey={(r) => r.productId || r.productName}
                       pagination={false}
-                      scroll={{ y: 200 }}
+                      scroll={{ y: isCompact ? 240 : 200, ...(tableScrollX ? { x: tableScrollX } : {}) }}
                       columns={[
                         { title: 'Produto', dataIndex: 'productName', ellipsis: true, render: (v) => v || '-' },
                         { title: 'Faturamento', dataIndex: 'totalRevenue', width: 100, align: 'right', render: (v) => formatCurrency(v) },
@@ -746,10 +816,10 @@ export default function Dashboard() {
             </Row>
 
             {(salesAnalytics.recommendations || []).length > 0 && (
-            <Row gutter={DASH_GRID_GUTTER} className="dashboard-charts-row">
+            <Row gutter={dashGutter} className="dashboard-charts-row">
               <Col xs={24}>
                 <Card className="dashboard-chart-card" title={<span><BulbOutlined style={{ marginRight: 8, color: '#faad14' }} />Recomendações estratégicas</span>} extra={<Text type="secondary">Últimos 30 dias</Text>}>
-                  <Row gutter={DASH_GRID_GUTTER}>
+                  <Row gutter={dashGutter}>
                     {salesAnalytics.recommendations.map((rec, i) => {
                       const Icon = RECOMMENDATION_ICONS[rec.type] || BulbOutlined
                       return (
@@ -771,18 +841,37 @@ export default function Dashboard() {
             </Row>
             )}
 
-            <Row gutter={DASH_GRID_GUTTER} className="dashboard-charts-row">
+            <Row gutter={dashGutter} className="dashboard-charts-row">
               <Col xs={24}>
                 <Card className="dashboard-chart-card" title="Resumo por canal (últimos 30 dias)">
                   {(() => {
                     const segs = (salesAnalytics.salesBySegment || []).filter((s) => (s.saleCount || 0) > 0 || (s.totalRevenue || 0) > 0)
                     return segs.length > 0 ? (
                       <div className="dashboard-chart-area">
-                        <ResponsiveContainer width="100%" height={260}>
-                          <BarChart data={segs} margin={{ top: 10, right: 30, left: 20, bottom: 5 }}>
+                        <ResponsiveContainer width="100%" height={isCompact ? 220 : 260}>
+                          <BarChart
+                            data={segs}
+                            margin={{
+                              top: 10,
+                              right: isCompact ? 6 : 30,
+                              left: isCompact ? 4 : 20,
+                              bottom: isCompact ? 28 : 5,
+                            }}
+                          >
                             <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                            <XAxis dataKey="label" tick={{ fontSize: 12 }} />
-                            <YAxis tickFormatter={(v) => formatCurrency(v)} tick={{ fontSize: 11 }} width={90} />
+                            <XAxis
+                              dataKey="label"
+                              tick={{ fontSize: isCompact ? 10 : 12 }}
+                              interval={0}
+                              angle={isCompact ? -20 : 0}
+                              textAnchor={isCompact ? 'end' : 'middle'}
+                              height={isCompact ? 56 : 36}
+                            />
+                            <YAxis
+                              tickFormatter={(v) => formatCurrency(v)}
+                              tick={{ fontSize: isCompact ? 9 : 11 }}
+                              width={segmentBarYWidth}
+                            />
                             <Tooltip formatter={(v) => formatCurrency(v)} contentStyle={{ borderRadius: 8, border: '1px solid #e8e8e8' }} />
                             <Bar dataKey="totalRevenue" name="Faturamento" fill="#34495E" radius={[4, 4, 0, 0]} />
                           </BarChart>
@@ -802,12 +891,12 @@ export default function Dashboard() {
               <DelayedReveal delayMs={200}>
                 <div className="dashboard-quick-actions">
                   <h3 className="dashboard-section-title">Acesso rápido</h3>
-                  <Row gutter={DASH_GRID_GUTTER}>
+                  <Row gutter={dashGutter}>
                     {quickActionModules.map((m) => {
                       const Icon = getIcon(m.icon, m.code)
                       const path = m.route === '/' ? '/' : m.route
                       return (
-                        <Col key={m.code} xs={24} sm={12} md={6}>
+                        <Col key={m.code} xs={12} sm={12} md={6}>
                           <Card
                             className="dashboard-action-card"
                             hoverable

@@ -9,6 +9,8 @@ import {
   Switch,
   message,
   Space,
+  Grid,
+  Tag,
 } from 'antd'
 import { TeamOutlined, PlusOutlined, EditOutlined } from '@ant-design/icons'
 import { useAuth } from '../../contexts/AuthContext'
@@ -30,6 +32,9 @@ const USER_ROLES = [
 ]
 
 export default function Users() {
+  const screens = Grid.useBreakpoint()
+  const isCompact = screens.md === false
+
   const { user } = useAuth()
   const isRoot = user?.isRoot === true
   const [users, setUsers] = useState([])
@@ -161,66 +166,109 @@ export default function Users() {
       label: p.tenantId ? `${p.name ?? ''}` : `${p.name ?? ''} (Sistema)`,
     }))
 
-  const columns = [
-    { title: 'Usuário', dataIndex: 'username', key: 'username', width: 120 },
-    { title: 'Nome', dataIndex: 'fullName', key: 'fullName' },
-    { title: 'E-mail', dataIndex: 'email', key: 'email' },
-    {
-      title: 'Papel',
-      dataIndex: 'role',
-      key: 'role',
-      width: 120,
-      render: (r) => USER_ROLES.find((x) => x.value === r)?.label || r,
-    },
-    ...(isRoot ? [{
-      title: 'Empresa',
-      dataIndex: 'tenantId',
-      key: 'tenantId',
-      width: 140,
-      render: (id) => (id ? (tenants || []).find((t) => t.id === id)?.name || id : '-'),
-    }] : []),
-    {
-      title: 'Perfil',
-      dataIndex: 'profileName',
-      key: 'profileId',
-      width: 120,
-      render: (name) => name || '-',
-    },
-    {
-      title: 'Root',
-      dataIndex: 'isRoot',
-      key: 'isRoot',
-      width: 80,
-      render: (v) => (v ? 'Sim' : 'Não'),
-    },
-    {
-      title: 'Ativo',
-      dataIndex: 'active',
-      key: 'active',
-      width: 80,
-      render: (v) => (v ? 'Sim' : 'Não'),
-    },
-    {
-      title: '',
-      key: 'actions',
-      width: 70,
-      render: (_, record) => (
-        <Button
-          type="link"
-          size="small"
-          icon={<EditOutlined />}
-          onClick={(e) => {
-            e.stopPropagation()
-            openModal(record)
-          }}
-          title="Editar"
-        />
-      ),
-    },
-  ]
+  const roleLabel = (r) => USER_ROLES.find((x) => x.value === r)?.label || r
+
+  const actionColumn = {
+    title: '',
+    key: 'actions',
+    width: isCompact ? 52 : 70,
+    align: 'center',
+    render: (_, record) => (
+      <Button
+        type="link"
+        size="small"
+        icon={<EditOutlined />}
+        onClick={(e) => {
+          e.stopPropagation()
+          openModal(record)
+        }}
+        title="Editar"
+      />
+    ),
+  }
+
+  const columns = isCompact
+    ? [
+        {
+          title: 'Usuário',
+          key: 'summary',
+          render: (_, r) => {
+            const tenantName = isRoot ? (tenants || []).find((t) => t.id === r.tenantId)?.name : null
+            return (
+              <div className="settings-users-mobile-cell">
+                <div className="settings-users-mobile-cell__name">{r.fullName || r.username || '—'}</div>
+                <div className="settings-users-mobile-cell__meta">
+                  <span>@{r.username}</span>
+                  <Tag color="blue" className="settings-users-mobile-cell__tag">
+                    {roleLabel(r.role)}
+                  </Tag>
+                  {r.isRoot ? <Tag color="purple">Root</Tag> : null}
+                  <Tag color={r.active !== false ? 'success' : 'default'}>{r.active !== false ? 'Ativo' : 'Inativo'}</Tag>
+                </div>
+                <div className="settings-users-mobile-cell__sub">{r.email || '—'}</div>
+                {tenantName ? <div className="settings-users-mobile-cell__sub">Empresa: {tenantName}</div> : null}
+                {r.profileName ? <div className="settings-users-mobile-cell__sub">Perfil: {r.profileName}</div> : null}
+              </div>
+            )
+          },
+        },
+        actionColumn,
+      ]
+    : [
+        { title: 'Usuário', dataIndex: 'username', key: 'username', width: 120, ellipsis: true },
+        { title: 'Nome', dataIndex: 'fullName', key: 'fullName', ellipsis: true },
+        { title: 'E-mail', dataIndex: 'email', key: 'email', ellipsis: true },
+        {
+          title: 'Papel',
+          dataIndex: 'role',
+          key: 'role',
+          width: 120,
+          render: (r) => roleLabel(r),
+        },
+        ...(isRoot
+          ? [
+              {
+                title: 'Empresa',
+                dataIndex: 'tenantId',
+                key: 'tenantId',
+                width: 140,
+                ellipsis: true,
+                render: (id) => (id ? (tenants || []).find((t) => t.id === id)?.name || id : '-'),
+              },
+            ]
+          : []),
+        {
+          title: 'Perfil',
+          dataIndex: 'profileName',
+          key: 'profileId',
+          width: 120,
+          ellipsis: true,
+          render: (name) => name || '-',
+        },
+        {
+          title: 'Root',
+          dataIndex: 'isRoot',
+          key: 'isRoot',
+          width: 80,
+          render: (v) => (v ? 'Sim' : 'Não'),
+        },
+        {
+          title: 'Ativo',
+          dataIndex: 'active',
+          key: 'active',
+          width: 80,
+          render: (v) => (v ? 'Sim' : 'Não'),
+        },
+        actionColumn,
+      ]
+
+  const drawerRootClass = `settings-drawer-root${isCompact ? ' settings-drawer-root--compact' : ''}`
+  const drawerBodyStyle = {
+    paddingBottom: isCompact ? 'max(20px, env(safe-area-inset-bottom, 0px))' : 24,
+  }
 
   return (
-    <div className="settings-page">
+    <div className={`settings-page${isCompact ? ' settings-page--compact' : ''}`}>
       <main className="settings-main">
         <div className="settings-container">
           <div className="settings-header-card">
@@ -235,15 +283,26 @@ export default function Users() {
             </div>
           </div>
 
-          <Button type="primary" icon={<PlusOutlined />} onClick={openModal} className="settings-add-btn">
-            Novo usuário
-          </Button>
+          <div className="settings-toolbar">
+            <Button type="primary" icon={<PlusOutlined />} onClick={() => openModal()} className="settings-add-btn" block={isCompact}>
+              Novo usuário
+            </Button>
+          </div>
           <Table
             rowKey="id"
             columns={columns}
             dataSource={users}
             loading={loading}
-            pagination={{ pageSize: 10 }}
+            size={isCompact ? 'small' : 'middle'}
+            scroll={isCompact ? undefined : { x: 1100 }}
+            tableLayout={isCompact ? 'fixed' : undefined}
+            pagination={{
+              pageSize: 10,
+              simple: isCompact,
+              showSizeChanger: !isCompact,
+              showTotal: isCompact ? undefined : (t) => `${t} usuário(s)`,
+            }}
+            className={isCompact ? 'settings-table-wrap settings-data-table' : 'settings-table-wrap'}
           />
 
           <Drawer
@@ -251,12 +310,16 @@ export default function Users() {
             open={modal.open}
             onClose={closeModal}
             placement="right"
-            width={420}
+            width={isCompact ? '100%' : 420}
             destroyOnHidden
+            rootClassName={drawerRootClass}
+            styles={{ body: drawerBodyStyle }}
             extra={
-              <Space>
-                <Button onClick={closeModal} disabled={saving}>Cancelar</Button>
-                <Button type="primary" loading={saving} onClick={() => form.submit()}>
+              <Space wrap={isCompact} size={isCompact ? 'small' : 'middle'}>
+                <Button onClick={closeModal} disabled={saving} block={isCompact}>
+                  Cancelar
+                </Button>
+                <Button type="primary" loading={saving} onClick={() => form.submit()} block={isCompact}>
                   {editingId ? 'Salvar' : 'Cadastrar'}
                 </Button>
               </Space>
@@ -282,10 +345,10 @@ export default function Users() {
                 <Input placeholder="Nome do usuário" />
               </Form.Item>
               <Form.Item name="email" label="E-mail" rules={[{ required: true }, antdRuleEmail({ required: true })]}>
-                <Input placeholder="E-mail" />
+                <Input placeholder="E-mail" type="email" />
               </Form.Item>
               <Form.Item name="role" label="Papel" rules={[{ required: true }]}>
-                <Select options={USER_ROLES} placeholder="Selecione" />
+                <Select options={USER_ROLES} placeholder="Selecione" style={{ width: '100%' }} />
               </Form.Item>
               {isRoot && (
                 <Form.Item
@@ -297,6 +360,9 @@ export default function Users() {
                     options={tenantOptions}
                     placeholder="Selecione a empresa"
                     allowClear
+                    style={{ width: '100%' }}
+                    showSearch
+                    optionFilterProp="label"
                     onChange={(val) => {
                       loadProfiles(val || undefined)
                       form.setFieldValue('profileId', undefined)
@@ -305,7 +371,14 @@ export default function Users() {
                 </Form.Item>
               )}
               <Form.Item name="profileId" label="Perfil">
-                <Select options={profileSelectOptions} placeholder="Selecione o perfil (opcional)" allowClear />
+                <Select
+                  options={profileSelectOptions}
+                  placeholder="Selecione o perfil (opcional)"
+                  allowClear
+                  style={{ width: '100%' }}
+                  showSearch
+                  optionFilterProp="label"
+                />
               </Form.Item>
               {editingId && (
                 <Form.Item name="active" valuePropName="checked" label="Ativo">

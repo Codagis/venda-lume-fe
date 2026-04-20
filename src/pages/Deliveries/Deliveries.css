@@ -1,9 +1,15 @@
 .deliveries-page {
   min-height: 100vh;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
+  box-sizing: border-box;
 }
 
 .deliveries-main {
   padding: 0;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 .deliveries-container {
@@ -91,30 +97,50 @@
 }
 
 .deliveries-toolbar {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16px;
-  align-items: flex-start;
   margin-bottom: 20px;
 }
 
-.deliveries-toolbar-stacked {
+.deliveries-filters-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  margin-top: 14px;
+}
+
+.deliveries-filters-head:not(.deliveries-filters-head--stack) .deliveries-add-btn {
+  margin-left: auto;
+}
+
+.deliveries-filters-head--stack {
   flex-direction: column;
   align-items: stretch;
 }
 
-.deliveries-toolbar-stacked .deliveries-filters-card {
-  flex: none;
+.deliveries-filters-head--stack .vl-filters-toggle-btn.ant-btn {
   width: 100%;
+  justify-content: center;
+  min-height: 48px;
 }
 
-.deliveries-toolbar-stacked .deliveries-toolbar-actions {
-  margin-top: 0;
+.deliveries-filters-head--stack .deliveries-add-btn {
+  width: 100%;
+  min-height: 48px;
+}
+
+.deliveries-filter-submit-col {
+  margin-top: 24px;
+}
+
+.deliveries-page--compact .deliveries-filter-submit-col {
+  margin-top: 10px;
 }
 
 .deliveries-filters-card {
   flex: 1;
-  min-width: 300px;
+  min-width: 0;
   border-radius: 8px;
   border: 1px solid #e4e7ec;
 }
@@ -138,21 +164,45 @@
   color: #34495e;
 }
 
-.deliveries-toolbar-actions {
-  flex-shrink: 0;
-}
-
+/* Mesma identidade teal do layout (Produtos / Clientes). */
+.deliveries-add-btn.ant-btn-primary,
 .deliveries-add-btn {
   height: 36px;
-  font-weight: 500;
-  border-radius: 6px;
-  background-color: #34495e;
-  border-color: #34495e;
+  font-weight: 600;
+  border-radius: 10px;
+  flex-shrink: 0;
+  color: #ffffff !important;
+  background: linear-gradient(180deg, #115e59 0%, #0d9488 100%) !important;
+  border-color: #0f766e !important;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
 }
 
+.deliveries-add-btn.ant-btn-primary .anticon,
+.deliveries-add-btn .anticon,
+.deliveries-add-btn.ant-btn-primary .ant-btn-icon,
+.deliveries-add-btn .ant-btn-icon,
+.deliveries-add-btn.ant-btn-primary span,
+.deliveries-add-btn span {
+  color: #ffffff !important;
+}
+
+.deliveries-add-btn.ant-btn-primary:hover,
 .deliveries-add-btn:hover {
-  background-color: #5d6d7e !important;
-  border-color: #5d6d7e !important;
+  color: #ffffff !important;
+  background: linear-gradient(180deg, #0f766e 0%, #14b8a6 100%) !important;
+  border-color: #0d9488 !important;
+}
+
+.deliveries-add-btn.ant-btn-primary:hover .anticon,
+.deliveries-add-btn:hover .anticon,
+.deliveries-add-btn.ant-btn-primary:hover span,
+.deliveries-add-btn:hover span {
+  color: #ffffff !important;
+}
+
+.deliveries-add-btn.ant-btn-primary:focus-visible {
+  outline: 2px solid #0d9488;
+  outline-offset: 2px;
 }
 
 .deliveries-tabs {
@@ -169,8 +219,121 @@
   box-sizing: border-box;
 }
 
+.deliveries-page--compact .deliveries-header-card {
+  padding: 18px 16px;
+  gap: 14px;
+  margin-bottom: 16px;
+  border-radius: 14px;
+}
+
+.deliveries-page--compact .deliveries-header-icon {
+  width: 46px;
+  height: 46px;
+  min-width: 46px;
+  font-size: 20px;
+}
+
+.deliveries-page--compact .deliveries-title {
+  font-size: 1.25rem;
+}
+
+.deliveries-page--compact .deliveries-subtitle {
+  font-size: 0.8125rem;
+}
+
+.deliveries-page--compact .deliveries-stats-row {
+  margin-bottom: 16px;
+}
+
+.deliveries-page--compact .deliveries-filters-card .ant-card-body {
+  padding: 14px 14px 16px;
+}
+
+.deliveries-page--compact .deliveries-data-table .ant-table {
+  font-size: 0.8125rem;
+}
+
+.deliveries-page--compact .deliveries-data-table .ant-table-tbody > tr > td,
+.deliveries-page--compact .deliveries-data-table .ant-table-thead > tr > th {
+  padding: 8px 10px;
+}
+
+.deliveries-page--compact .deliveries-table {
+  border-radius: 14px;
+  overflow-x: auto;
+  overflow-y: visible;
+  -webkit-overflow-scrolling: touch;
+  max-width: 100%;
+}
+
+.deliveries-page--compact .deliveries-table .ant-table-wrapper {
+  min-width: 0;
+}
+
+.deliveries-page--compact .deliveries-toolbar .deliveries-add-btn.ant-btn {
+  min-height: 48px;
+}
+
+.cashiers-mobile-cell__name {
+  font-weight: 600;
+  color: #1d2939;
+  line-height: 1.35;
+  margin-bottom: 6px;
+}
+
+.cashiers-mobile-cell__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.cashiers-mobile-cell__tag {
+  margin: 0 !important;
+}
+
+.cashiers-mobile-cell__user {
+  font-size: 0.8125rem;
+  color: #667085;
+  word-break: break-all;
+}
+
+.registers-mobile-cell__name {
+  font-weight: 600;
+  color: #1d2939;
+  line-height: 1.35;
+  margin-bottom: 6px;
+}
+
+.registers-mobile-cell__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  font-size: 0.8125rem;
+  color: #667085;
+}
+
+.registers-mobile-cell__meta .ant-tag {
+  margin: 0 !important;
+}
+
+.registers-mobile-cell__code {
+  color: #475467;
+}
+
+.registers-mobile-cell__ops {
+  flex-basis: 100%;
+  margin-top: 2px;
+  color: #667085;
+}
+
 .my-deliveries-actions-col.ant-table-cell {
   padding: 16px 40px 16px 32px !important;
+}
+
+.deliveries-page--compact .my-deliveries-actions-col.ant-table-cell {
+  padding: 8px 10px !important;
 }
 
 .deliveries-detail-drawer .ant-drawer-body {
@@ -185,4 +348,31 @@
 
 .deliveries-detail-drawer-actions .ant-space {
   width: 100%;
+}
+
+.deliveries-drawer-root--compact .ant-drawer-content-wrapper {
+  max-width: 100vw;
+}
+
+.deliveries-drawer-root--compact .ant-drawer-body {
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+
+.deliveries-page--compact .deliveries-detail-drawer-actions .ant-space {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.deliveries-page--compact .deliveries-detail-drawer-actions .ant-space .ant-btn {
+  width: 100%;
+}
+
+.my-deliveries-proof-wrap {
+  margin-top: 8px;
+}
+
+.my-deliveries-proof-wrap .ant-image-img {
+  max-width: 100%;
+  height: auto;
 }

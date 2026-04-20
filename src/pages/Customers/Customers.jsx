@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import {
   Form,
   Input,
@@ -12,6 +12,7 @@ import {
   Table,
   message,
   Space,
+  Grid,
 } from 'antd'
 import {
   UserOutlined,
@@ -34,7 +35,34 @@ const { TextArea } = Input
 const FILTER_ALL = '__all__'
 const initialFormValues = { active: true }
 
+function mapCustomerToFormValues(customer) {
+  return {
+    name: customer.name,
+    document: customer.document,
+    email: customer.email,
+    phone: customer.phone,
+    phoneAlt: customer.phoneAlt,
+    addressStreet: customer.addressStreet,
+    addressNumber: customer.addressNumber,
+    addressComplement: customer.addressComplement,
+    addressNeighborhood: customer.addressNeighborhood,
+    addressCity: customer.addressCity,
+    addressState: customer.addressState,
+    addressZip: customer.addressZip,
+    notes: customer.notes,
+    active: customer.active ?? true,
+  }
+}
+
 export default function Customers() {
+  const screens = Grid.useBreakpoint()
+  const isCompact = screens.sm === false
+  const isNarrow = screens.md === false
+  const dashGutter = useMemo(
+    () => (isCompact ? [12, 12] : isNarrow ? [14, 14] : [16, 16]),
+    [isCompact, isNarrow]
+  )
+
   const { user } = useAuth()
   const isRoot = user?.isRoot === true
   const [form] = Form.useForm()
@@ -42,6 +70,7 @@ export default function Customers() {
   const [loading, setLoading] = useState(false)
   const [loadingList, setLoadingList] = useState(false)
   const [drawerOpen, setDrawerOpen] = useState(false)
+  const [drawerRecord, setDrawerRecord] = useState(null)
   const [editingId, setEditingId] = useState(null)
   const [tenants, setTenants] = useState([])
   const [selectedTenantId, setSelectedTenantId] = useState(null)
@@ -93,50 +122,46 @@ export default function Customers() {
     if (isRoot) loadTenants()
   }, [isRoot, loadTenants])
 
-
+  useEffect(() => {
+    if (!drawerOpen) return
+    const t = window.setTimeout(() => {
+      form.resetFields()
+      if (drawerRecord) {
+        form.setFieldsValue({ ...initialFormValues, ...mapCustomerToFormValues(drawerRecord) })
+      } else {
+        const next = { ...initialFormValues }
+        if (isRoot) next.tenantId = selectedTenantId ?? undefined
+        form.setFieldsValue(next)
+      }
+    }, 0)
+    return () => window.clearTimeout(t)
+  }, [drawerOpen, drawerRecord, isRoot, selectedTenantId, form])
 
   const openDrawer = (customer = null) => {
     setEditingId(customer?.id ?? null)
-    form.resetFields()
-    form.setFieldsValue(initialFormValues)
-    if (customer) {
-      form.setFieldsValue({
-        name: customer.name,
-        document: customer.document,
-        email: customer.email,
-        phone: customer.phone,
-        phoneAlt: customer.phoneAlt,
-        addressStreet: customer.addressStreet,
-        addressNumber: customer.addressNumber,
-        addressComplement: customer.addressComplement,
-        addressNeighborhood: customer.addressNeighborhood,
-        addressCity: customer.addressCity,
-        addressState: customer.addressState,
-        addressZip: customer.addressZip,
-        notes: customer.notes,
-        active: customer.active ?? true,
-      })
-    } else if (isRoot) {
-      form.setFieldsValue({ tenantId: selectedTenantId ?? undefined })
-    }
+    setDrawerRecord(customer ?? null)
     setDrawerOpen(true)
   }
 
   const closeDrawer = () => {
     setDrawerOpen(false)
     setEditingId(null)
+    setDrawerRecord(null)
     form.resetFields()
   }
 
-  const handleDelete = async (id) => {
-    try {
-      await customerService.deleteCustomer(id)
-      message.success('Cliente excluído.')
-      handleFilter()
-    } catch (e) {
-      message.error(e?.message || 'Erro ao excluir cliente.')
-    }
-  }
+  const handleDelete = useCallback(
+    async (id) => {
+      try {
+        await customerService.deleteCustomer(id)
+        message.success('Cliente excluído.')
+        handleFilter()
+      } catch (e) {
+        message.error(e?.message || 'Erro ao excluir cliente.')
+      }
+    },
+    [handleFilter]
+  )
 
   const onFinish = async (values) => {
     setLoading(true)
@@ -184,55 +209,79 @@ export default function Customers() {
     return parts.length ? parts.join(', ') : '—'
   }
 
-  const columns = [
-    { title: 'Nome', dataIndex: 'name', key: 'name', ellipsis: true },
-    { title: 'Documento', dataIndex: 'document', key: 'document', width: 130, ellipsis: true },
-    { title: 'E-mail', dataIndex: 'email', key: 'email', width: 180, ellipsis: true },
-    { title: 'Telefone', dataIndex: 'phone', key: 'phone', width: 120 },
-    {
-      title: 'Endereço',
-      key: 'address',
-      ellipsis: true,
-      render: (_, r) => formatAddress(r),
-    },
-    {
-      title: 'Status',
-      key: 'status',
-      width: 90,
-      render: (_, r) => (
-        <Space size={4}>
-          {r.active ? (
-            <span className="customers-badge customers-badge-active">Ativo</span>
-          ) : (
-            <span className="customers-badge customers-badge-inactive">Inativo</span>
-          )}
-        </Space>
-      ),
-    },
-    {
-      title: '',
-      key: 'actions',
-      width: 50,
-      render: (_, record) => (
-        <Button
-          type="text"
-          size="small"
-          danger
-          icon={<DeleteOutlined />}
-          onClick={(e) => {
-            e.stopPropagation()
-            confirmDeleteModal({
-              title: 'Excluir este cliente?',
-              onOk: () => handleDelete(record.id),
-            })
-          }}
-        />
-      ),
-    },
-  ]
+  const columns = useMemo(
+    () => [
+      { title: 'Nome', dataIndex: 'name', key: 'name', ellipsis: true },
+      {
+        title: 'Documento',
+        dataIndex: 'document',
+        key: 'document',
+        width: isCompact ? 112 : 130,
+        ellipsis: true,
+      },
+      {
+        title: 'E-mail',
+        dataIndex: 'email',
+        key: 'email',
+        width: 180,
+        ellipsis: true,
+        responsive: ['sm'],
+      },
+      {
+        title: 'Telefone',
+        dataIndex: 'phone',
+        key: 'phone',
+        width: 120,
+        responsive: ['sm'],
+      },
+      {
+        title: 'Endereço',
+        key: 'address',
+        ellipsis: true,
+        responsive: ['md'],
+        render: (_, r) => formatAddress(r),
+      },
+      {
+        title: 'Status',
+        key: 'status',
+        width: isCompact ? 76 : 90,
+        render: (_, r) => (
+          <Space size={4}>
+            {r.active ? (
+              <span className="customers-badge customers-badge-active">Ativo</span>
+            ) : (
+              <span className="customers-badge customers-badge-inactive">Inativo</span>
+            )}
+          </Space>
+        ),
+      },
+      {
+        title: '',
+        key: 'actions',
+        width: isCompact ? 44 : 50,
+        align: 'center',
+        render: (_, record) => (
+          <Button
+            type="text"
+            size="small"
+            danger
+            icon={<DeleteOutlined />}
+            onClick={(e) => {
+              e.stopPropagation()
+              confirmDeleteModal({
+                title: 'Excluir este cliente?',
+                onOk: () => handleDelete(record.id),
+              })
+            }}
+          />
+        ),
+      },
+    ],
+    [isCompact, handleDelete]
+  )
 
   return (
-    <div className="customers-page">
+    <div className={`customers-page${isCompact ? ' customers-page--compact' : ''}`}>
       <main className="customers-main">
         <div className="customers-container">
           <div className="customers-header-card">
@@ -249,7 +298,9 @@ export default function Customers() {
 
           <div className="customers-toolbar">
             <Card className="customers-filters-card sales-consult-filters-card" style={{ width: '100%' }}>
-              <div className="vl-filters-toggle sales-consult-filters-toggle">
+              <div
+                className={`customers-filters-head vl-filters-toggle sales-consult-filters-toggle${isCompact ? ' customers-filters-head--stack' : ''}`}
+              >
                 <Button
                   type="button"
                   className={`vl-filters-toggle-btn${filtersExpanded ? ' vl-filters-toggle-btn--open' : ''}`}
@@ -262,13 +313,22 @@ export default function Customers() {
                   </span>
                   <DownOutlined className="vl-filters-chevron" aria-hidden />
                 </Button>
+                <Button
+                  type="primary"
+                  icon={<PlusOutlined />}
+                  onClick={() => openDrawer()}
+                  className="customers-add-btn"
+                  block={isCompact}
+                >
+                  Novo cliente
+                </Button>
               </div>
               <div
                 className={`vl-filters-expand${filtersExpanded ? ' vl-filters-expand--open' : ''}`}
                 aria-hidden={!filtersExpanded}
               >
                 <div className="vl-filters-expand-inner">
-                <Row gutter={16} align="middle" className="vl-filters-row">
+                <Row gutter={dashGutter} align="middle" className="vl-filters-row">
                   <Col xs={24} sm={12} md={6}>
                     <label>Buscar</label>
                     <Input
@@ -305,7 +365,7 @@ export default function Customers() {
                       />
                     </Col>
                   )}
-                  <Col xs={24} md={6} style={{ marginTop: 24 }}>
+                  <Col xs={24} md={6} className="customers-filter-submit-col">
                     <Button type="primary" icon={<FilterOutlined />} onClick={handleFilter} loading={loadingList} block>
                       Filtrar
                     </Button>
@@ -314,16 +374,6 @@ export default function Customers() {
                 </div>
               </div>
             </Card>
-            <div className="customers-toolbar-actions">
-              <Button
-                type="primary"
-                icon={<PlusOutlined />}
-                onClick={() => openDrawer()}
-                className="customers-add-btn"
-              >
-                Novo cliente
-              </Button>
-            </div>
           </div>
 
           <Table
@@ -331,8 +381,16 @@ export default function Customers() {
             columns={columns}
             dataSource={customers}
             loading={loadingList}
-            pagination={{ pageSize: 15, showSizeChanger: true, showTotal: (t) => `${t} cliente(s)` }}
-            className="customers-table"
+            size={isCompact ? 'small' : 'middle'}
+            scroll={{ x: isCompact ? 520 : 1100 }}
+            pagination={{
+              pageSize: 15,
+              showSizeChanger: !isCompact,
+              showTotal: isCompact ? undefined : (t) => `${t} cliente(s)`,
+              simple: isCompact,
+              responsive: true,
+            }}
+            className="customers-table customers-data-table"
             onRow={(record) => ({
               onClick: () => openDrawer(record),
               style: { cursor: 'pointer' },
@@ -346,8 +404,14 @@ export default function Customers() {
         open={drawerOpen}
         onClose={closeDrawer}
         placement="right"
-        width={520}
+        width={isCompact ? '100%' : 520}
         destroyOnHidden
+        rootClassName={`customers-drawer-root${isCompact ? ' customers-drawer-root--compact' : ''}`}
+        styles={{
+          body: {
+            paddingBottom: isCompact ? 'max(20px, env(safe-area-inset-bottom, 0px))' : 24,
+          },
+        }}
         extra={
           <Space>
             <Button onClick={closeDrawer}>Cancelar</Button>
@@ -361,7 +425,7 @@ export default function Customers() {
           form={form}
           layout="vertical"
           onFinish={onFinish}
-          initialValues={initialFormValues}
+          preserve={false}
           className="customers-form customers-drawer-form"
         >
           {isRoot && !editingId && (

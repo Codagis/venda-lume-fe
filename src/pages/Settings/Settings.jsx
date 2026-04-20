@@ -15,6 +15,7 @@ import {
   Upload,
   Avatar,
   Divider,
+  Grid,
 } from 'antd'
 import {
   SettingOutlined,
@@ -72,6 +73,9 @@ function userHasPermission(user, code) {
 }
 
 export default function Settings() {
+  const screens = Grid.useBreakpoint()
+  const isCompact = screens.md === false
+
   const { user, refreshUser } = useAuth()
   const isRoot = user?.isRoot === true
   const canViewOwnCompanyTab =
@@ -633,7 +637,13 @@ export default function Settings() {
     ),
     children: (
       <div className="settings-tab">
-        <Button type="primary" icon={<PlusOutlined />} onClick={() => openModal('profile')} className="settings-add-btn">
+        <Button
+          type="primary"
+          icon={<PlusOutlined />}
+          onClick={() => openModal('profile')}
+          className="settings-add-btn"
+          block={isCompact}
+        >
           Novo perfil
         </Button>
         <Table
@@ -641,7 +651,10 @@ export default function Settings() {
           columns={profileColumns}
           dataSource={profiles}
           loading={loading.profiles}
-          pagination={{ pageSize: 10 }}
+          size={isCompact ? 'small' : 'middle'}
+          scroll={isCompact ? { x: 640 } : undefined}
+          pagination={{ pageSize: 10, simple: isCompact, showSizeChanger: !isCompact }}
+          className={isCompact ? 'settings-data-table' : undefined}
         />
       </div>
     ),
@@ -658,7 +671,13 @@ export default function Settings() {
           ),
           children: (
             <div className="settings-tab">
-              <Button type="primary" icon={<PlusOutlined />} onClick={() => openModal('tenant')} className="settings-add-btn">
+              <Button
+                type="primary"
+                icon={<PlusOutlined />}
+                onClick={() => openModal('tenant')}
+                className="settings-add-btn"
+                block={isCompact}
+              >
                 Nova empresa
               </Button>
               <Table
@@ -666,7 +685,10 @@ export default function Settings() {
                 columns={tenantColumns}
                 dataSource={tenants}
                 loading={loading.tenants}
-                pagination={{ pageSize: 10 }}
+                size={isCompact ? 'small' : 'middle'}
+                scroll={isCompact ? { x: 900 } : undefined}
+                pagination={{ pageSize: 10, simple: isCompact, showSizeChanger: !isCompact }}
+                className={isCompact ? 'settings-data-table' : undefined}
               />
             </div>
           ),
@@ -681,7 +703,13 @@ export default function Settings() {
           ),
           children: (
             <div className="settings-tab">
-              <Button type="primary" icon={<PlusOutlined />} onClick={() => openModal('permission')} className="settings-add-btn">
+              <Button
+                type="primary"
+                icon={<PlusOutlined />}
+                onClick={() => openModal('permission')}
+                className="settings-add-btn"
+                block={isCompact}
+              >
                 Nova permissão
               </Button>
               <Table
@@ -689,7 +717,10 @@ export default function Settings() {
                 columns={permissionColumns}
                 dataSource={permissions}
                 loading={loading.permissions}
-                pagination={{ pageSize: 10 }}
+                size={isCompact ? 'small' : 'middle'}
+                scroll={isCompact ? { x: 720 } : undefined}
+                pagination={{ pageSize: 10, simple: isCompact, showSizeChanger: !isCompact }}
+                className={isCompact ? 'settings-data-table' : undefined}
               />
             </div>
           ),
@@ -713,6 +744,7 @@ export default function Settings() {
                         icon={<EditOutlined />}
                         onClick={() => openModal('tenant', user.tenantId)}
                         className="settings-add-btn"
+                        block={isCompact}
                       >
                         Editar dados da empresa
                       </Button>
@@ -723,7 +755,10 @@ export default function Settings() {
                       dataSource={myTenant ? [myTenant] : []}
                       loading={loadingMyTenant}
                       pagination={false}
+                      size={isCompact ? 'small' : 'middle'}
+                      scroll={isCompact ? { x: 720 } : undefined}
                       locale={{ emptyText: loadingMyTenant ? 'Carregando…' : 'Nenhum dado da empresa.' }}
+                      className={isCompact ? 'settings-data-table' : undefined}
                     />
                   </div>
                 ),
@@ -733,8 +768,15 @@ export default function Settings() {
         ...(canViewProfiles ? [profilesTabItem] : []),
       ]
 
+  const drawerRootClass = `settings-drawer-root${isCompact ? ' settings-drawer-root--compact' : ''}`
+  const drawerBodyStyle = {
+    paddingBottom: isCompact ? 'max(20px, env(safe-area-inset-bottom, 0px))' : 24,
+  }
+  const drawerWidth =
+    modal.type === 'profile' ? (isCompact ? '100%' : 480) : modal.type === 'tenant' ? (isCompact ? '100%' : 520) : isCompact ? '100%' : 400
+
   return (
-    <div className="settings-page">
+    <div className={`settings-page${isCompact ? ' settings-page--compact' : ''}`}>
       <main className="settings-main">
         <div className="settings-container">
           <div className="settings-header-card">
@@ -758,12 +800,18 @@ export default function Settings() {
             open={modal.open}
             onClose={closeModal}
             placement="right"
-            width={modal.type === 'profile' ? 480 : modal.type === 'tenant' ? 520 : 400}
+            width={drawerWidth}
             destroyOnHidden
+            rootClassName={drawerRootClass}
+            styles={{ body: drawerBodyStyle }}
             extra={
-              <Space>
-                <Button onClick={closeModal} disabled={saving}>Cancelar</Button>
-                <Button type="primary" loading={saving} onClick={() => form.submit()}>Salvar</Button>
+              <Space wrap={isCompact} size={isCompact ? 'small' : 'middle'}>
+                <Button onClick={closeModal} disabled={saving} block={isCompact}>
+                  Cancelar
+                </Button>
+                <Button type="primary" loading={saving} onClick={() => form.submit()} block={isCompact}>
+                  Salvar
+                </Button>
               </Space>
             }
           >
@@ -892,7 +940,7 @@ export default function Settings() {
 
                         <Card size="small" title="NFC-e — Cupom fiscal" style={{ marginBottom: 20 }}>
                           <Form.Item name="crt" label="CRT — Regime Tributário">
-                            <Select placeholder="Selecione o CRT" options={CRT_OPTIONS} allowClear />
+                            <Select placeholder="Selecione o CRT" options={CRT_OPTIONS} allowClear style={{ width: '100%' }} />
                           </Form.Item>
                           <Form.Item name="idCsc" label="ID do CSC" initialValue={0}>
                             <Input type="number" min={0} placeholder="Geralmente 0" />
@@ -901,7 +949,7 @@ export default function Settings() {
                             <Input.Password placeholder="Código obtido na SEFAZ do estado" allowClear />
                           </Form.Item>
                           <Form.Item name="ambienteFiscal" label="Ambiente" initialValue="homologacao">
-                            <Select placeholder="Homologação ou Produção" options={AMBIENTE_OPTIONS} />
+                            <Select placeholder="Homologação ou Produção" options={AMBIENTE_OPTIONS} style={{ width: '100%' }} />
                           </Form.Item>
                         </Card>
 
@@ -910,10 +958,10 @@ export default function Settings() {
                             Informe CRT e Ambiente para a NF-e na Nuvem Fiscal. Ao salvar a empresa, esta configuração é enviada para a Nuvem Fiscal. Se não preencher, serão usados os mesmos da NFC-e.
                           </div>
                           <Form.Item name="crtNfe" label="CRT — Regime Tributário (NF-e)">
-                            <Select placeholder="Mesmo da NFC-e ou selecione" options={CRT_OPTIONS} allowClear />
+                            <Select placeholder="Mesmo da NFC-e ou selecione" options={CRT_OPTIONS} allowClear style={{ width: '100%' }} />
                           </Form.Item>
                           <Form.Item name="ambienteNfe" label="Ambiente (NF-e)">
-                            <Select placeholder="Mesmo da NFC-e ou selecione" options={AMBIENTE_OPTIONS} allowClear />
+                            <Select placeholder="Mesmo da NFC-e ou selecione" options={AMBIENTE_OPTIONS} allowClear style={{ width: '100%' }} />
                           </Form.Item>
                         </Card>
 
@@ -956,7 +1004,13 @@ export default function Settings() {
                   <div style={{ fontSize: 12, color: 'var(--ant-color-text-secondary)', marginBottom: 12 }}>
                     Cadastre quantas maquininhas precisar. No PDV o atendente escolhe qual usar. Cada uma com nome e taxa própria.
                   </div>
-                  <Button type="primary" icon={<PlusOutlined />} onClick={() => openCardMachineModal()} style={{ marginBottom: 12 }}>
+                  <Button
+                    type="primary"
+                    icon={<PlusOutlined />}
+                    onClick={() => openCardMachineModal()}
+                    style={{ marginBottom: 12 }}
+                    block={isCompact}
+                  >
                     Adicionar maquininha
                   </Button>
                   <Table
@@ -964,6 +1018,7 @@ export default function Settings() {
                     dataSource={displayCardMachines}
                     rowKey="id"
                     pagination={false}
+                    scroll={isCompact ? { x: 560 } : undefined}
                     locale={{ emptyText: 'Nenhuma maquininha cadastrada. Clique em Adicionar maquininha.' }}
                     columns={[
                       { title: 'Nome', dataIndex: 'name', key: 'name' },
@@ -1042,7 +1097,13 @@ export default function Settings() {
                 </Form.Item>
                 {isRoot && (
                   <Form.Item name="tenantId" label="Empresa" rules={[{ required: true, message: 'Selecione a empresa' }]}>
-                    <Select placeholder="Selecione a empresa" options={tenantOptions} />
+                    <Select
+                      placeholder="Selecione a empresa"
+                      options={tenantOptions}
+                      style={{ width: '100%' }}
+                      showSearch
+                      optionFilterProp="label"
+                    />
                   </Form.Item>
                 )}
                 <Form.Item name="description" label="Descrição">
@@ -1067,6 +1128,10 @@ export default function Settings() {
             onCancel={closeCardMachineModal}
             footer={null}
             destroyOnHidden
+            centered
+            width={isCompact ? '100%' : 520}
+            styles={isCompact ? { body: { maxHeight: 'calc(100dvh - 120px)', overflowY: 'auto' } } : undefined}
+            wrapClassName={isCompact ? 'settings-modal-wrap--mobile' : undefined}
           >
             <Form form={cardMachineForm} layout="vertical" onFinish={onFinishCardMachine}>
               <Form.Item name="name" label="Nome" rules={[{ required: true, message: 'Informe o nome' }]}>
@@ -1079,6 +1144,7 @@ export default function Settings() {
                     { value: 'FIXED_AMOUNT', label: 'Valor fixo (R$)' },
                   ]}
                   placeholder="Selecione"
+                  style={{ width: '100%' }}
                 />
               </Form.Item>
               <Form.Item
@@ -1116,9 +1182,11 @@ export default function Settings() {
                 <Switch />
               </Form.Item>
               <Form.Item>
-                <Space>
-                  <Button onClick={closeCardMachineModal}>Cancelar</Button>
-                  <Button type="primary" htmlType="submit" loading={saving}>
+                <Space direction={isCompact ? 'vertical' : 'horizontal'} style={{ width: isCompact ? '100%' : undefined }}>
+                  <Button onClick={closeCardMachineModal} block={isCompact}>
+                    Cancelar
+                  </Button>
+                  <Button type="primary" htmlType="submit" loading={saving} block={isCompact}>
                     Salvar
                   </Button>
                 </Space>

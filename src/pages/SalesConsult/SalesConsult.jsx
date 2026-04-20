@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import {
   Input,
   InputNumber,
@@ -22,6 +22,7 @@ import {
   Spin,
   Timeline,
   Form,
+  Grid,
 } from 'antd'
 import {
   FileSearchOutlined,
@@ -72,6 +73,17 @@ function getPaymentLabel(value) {
   return opt ? opt.label : value
 }
 
+function formatSaleListDateShort(iso) {
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return '—'
+  const day = String(d.getDate()).padStart(2, '0')
+  const mon = String(d.getMonth() + 1).padStart(2, '0')
+  const yr = d.getFullYear()
+  const h = String(d.getHours()).padStart(2, '0')
+  const min = String(d.getMinutes()).padStart(2, '0')
+  return `${day}/${mon}/${yr} ${h}:${min}`
+}
+
 const STATUS_LABELS = {
   DRAFT: 'Rascunho',
   OPEN: 'Pendente',
@@ -90,6 +102,14 @@ const CARD_BRAND_OPTIONS = [
 ]
 
 export default function SalesConsult() {
+  const screens = Grid.useBreakpoint()
+  const isCompact = screens.sm === false
+  const isNarrow = screens.md === false
+  const dashGutter = useMemo(
+    () => (isCompact ? [12, 12] : isNarrow ? [14, 14] : [16, 16]),
+    [isCompact, isNarrow]
+  )
+
   const { user } = useAuth()
   const isRoot = user?.isRoot === true
 
@@ -309,82 +329,91 @@ export default function SalesConsult() {
       title: 'Nº',
       dataIndex: 'saleNumber',
       key: 'saleNumber',
-      width: 80,
-      fixed: 'left',
+      width: 72,
       render: (v, record) => (
-        <a onClick={(e) => { e.stopPropagation(); openDetail(record) }} style={{ fontWeight: 600 }}>
+        <a
+          className="sales-consult-link-num"
+          onClick={(e) => {
+            e.stopPropagation()
+            openDetail(record)
+          }}
+        >
           {v}
         </a>
       ),
     },
     {
-      title: 'Data / Hora',
+      title: 'Data',
       key: 'saleDate',
-      width: 140,
-      render: (_, r) => new Date(r.saleDate).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }),
+      width: isCompact ? 96 : 118,
+      render: (_, r) => {
+        const full = new Date(r.saleDate).toLocaleString('pt-BR', {
+          dateStyle: 'full',
+          timeStyle: 'short',
+        })
+        const short = formatSaleListDateShort(r.saleDate)
+        return (
+          <Tooltip title={full}>
+            <span className="sales-consult-col-date">{short}</span>
+          </Tooltip>
+        )
+      },
     },
     {
       title: 'Cliente',
       dataIndex: 'customerName',
       key: 'customerName',
-      width: 160,
+      width: isCompact ? 120 : 200,
       ellipsis: { showTitle: false },
       render: (v) =>
         v ? (
           <Tooltip title={v} placement="topLeft">
-            <span style={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {v}
-            </span>
+            <span className="sales-consult-col-client">{v}</span>
           </Tooltip>
         ) : (
           '—'
         ),
     },
     {
-      title: 'Tipo',
-      dataIndex: 'saleType',
-      key: 'saleType',
-      width: 100,
-      render: (v) => getSaleTypeLabel(v),
-    },
-    {
-      title: 'Pagamento',
-      dataIndex: 'paymentMethod',
-      key: 'paymentMethod',
-      width: 120,
-      render: (v) => getPaymentLabel(v),
-    },
-    {
-      title: 'Subtotal',
-      dataIndex: 'subtotal',
-      key: 'subtotal',
-      width: 100,
-      align: 'right',
-      render: (v) => formatPrice(v),
-    },
-    {
-      title: 'Desconto',
-      dataIndex: 'discountAmount',
-      key: 'discountAmount',
-      width: 90,
-      align: 'right',
-      render: (v) => (v != null && Number(v) !== 0 ? formatPrice(v) : '—'),
+      title: 'Canal',
+      key: 'channel',
+      width: isCompact ? 108 : 132,
+      ellipsis: { showTitle: false },
+      render: (_, r) => {
+        const type = getSaleTypeLabel(r.saleType)
+        const pay = getPaymentLabel(r.paymentMethod)
+        const tip = `${type}\n${pay}`
+        const line = [type, pay === '—' ? null : pay].filter(Boolean).join(' · ')
+        return (
+          <Tooltip title={<span style={{ whiteSpace: 'pre-line' }}>{tip}</span>}>
+            <span className="sales-consult-col-channel">{line}</span>
+          </Tooltip>
+        )
+      },
     },
     {
       title: 'Total',
       dataIndex: 'total',
       key: 'total',
-      width: 100,
+      width: isCompact ? 86 : 96,
       align: 'right',
-      render: (v) => <strong>{formatPrice(v)}</strong>,
+      render: (v) => <strong className="sales-consult-col-total">{formatPrice(v)}</strong>,
     },
     {
       title: 'Status',
       dataIndex: 'status',
       key: 'status',
-      width: 95,
+      width: isCompact ? 88 : 100,
       render: (v) => (
-        <span className={v === 'CANCELLED' ? 'sales-consult-status-cancelled' : v === 'OPEN' ? 'sales-consult-status-pending' : 'sales-consult-status'}>
+        <span
+          className={
+            v === 'CANCELLED'
+              ? 'sales-consult-status-cancelled'
+              : v === 'OPEN'
+                ? 'sales-consult-status-pending'
+                : 'sales-consult-status'
+          }
+        >
           {STATUS_LABELS[v] || v}
         </span>
       ),
@@ -392,7 +421,7 @@ export default function SalesConsult() {
   ]
 
   return (
-    <div className="sales-consult-page">
+    <div className={`sales-consult-page${isCompact ? ' sales-consult-page--compact' : ''}`}>
       <main className="sales-consult-main">
         <div className="sales-consult-container">
           <div className="sales-consult-header-card">
@@ -408,19 +437,24 @@ export default function SalesConsult() {
           </div>
 
           {isRoot && (
-            <div className="sales-consult-toolbar" style={{ marginBottom: 16 }}>
+            <div className="sales-consult-toolbar">
               <Select
                 placeholder="Empresa"
                 options={tenants.map((t) => ({ value: t.id, label: t.name }))}
                 value={selectedTenantId}
                 onChange={setSelectedTenantId}
-                style={{ minWidth: 200 }}
+                className="sales-consult-tenant-select"
+                style={{ width: '100%', maxWidth: isCompact ? 'none' : 420 }}
+                showSearch
+                optionFilterProp="label"
               />
             </div>
           )}
 
           <Card className="sales-consult-filters-card">
-            <div className="vl-filters-toggle sales-consult-filters-toggle">
+            <div
+              className={`vl-filters-toggle sales-consult-filters-toggle${isCompact ? ' sales-consult-filters-toggle--stack' : ''}`}
+            >
               <Button
                 type="button"
                 className={`vl-filters-toggle-btn${filtersExpanded ? ' vl-filters-toggle-btn--open' : ''}`}
@@ -433,12 +467,13 @@ export default function SalesConsult() {
                 </span>
                 <DownOutlined className="vl-filters-chevron" aria-hidden />
               </Button>
-              <Space>
+              <Space direction={isCompact ? 'vertical' : 'horizontal'} size={isCompact ? 10 : 8} className="sales-consult-export-actions">
                 <Button
                   icon={<FileExcelOutlined />}
                   onClick={handleExportExcel}
                   loading={exportingExcel}
                   disabled={!effectiveTenantId && isRoot}
+                  block={isCompact}
                 >
                   Exportar Excel
                 </Button>
@@ -447,6 +482,7 @@ export default function SalesConsult() {
                   onClick={handleExportPdf}
                   loading={exportingPdf}
                   disabled={!effectiveTenantId && isRoot}
+                  block={isCompact}
                 >
                   Exportar PDF
                 </Button>
@@ -457,7 +493,7 @@ export default function SalesConsult() {
               aria-hidden={!filtersExpanded}
             >
               <div className="vl-filters-expand-inner">
-            <Row gutter={16} align="middle" className="vl-filters-row">
+            <Row gutter={dashGutter} align="middle" className="vl-filters-row">
               <Col xs={24} sm={12} md={4}>
                 <label>Data início</label>
                 <DatePicker
@@ -516,7 +552,7 @@ export default function SalesConsult() {
                   onPressEnter={handleFilter}
                 />
               </Col>
-              <Col xs={24} md={4} style={{ marginTop: 24 }}>
+              <Col xs={24} md={4} className="sales-consult-filter-submit-col">
                 <Button type="primary" icon={<FilterOutlined />} onClick={handleFilter} loading={loading} block>
                   Filtrar
                 </Button>
@@ -527,7 +563,7 @@ export default function SalesConsult() {
           </Card>
 
           {summary != null && (
-            <Row gutter={16} className="sales-consult-summary-row">
+            <Row gutter={dashGutter} className="sales-consult-summary-row">
               <Col xs={24} sm={12} md={6}>
                 <Card>
                   <Statistic title="Quantidade de vendas" value={summary.count} prefix={<ShoppingOutlined />} />
@@ -557,8 +593,16 @@ export default function SalesConsult() {
               columns={columns}
               dataSource={sales}
               loading={loading}
-              scroll={{ x: 1100 }}
-              pagination={{ pageSize: 15, showSizeChanger: true, showTotal: (t) => `${t} venda(s)` }}
+              size={isCompact ? 'small' : 'middle'}
+              className="sales-consult-data-table"
+              scroll={{ x: isCompact ? 580 : 720 }}
+              pagination={{
+                pageSize: 15,
+                showSizeChanger: !isCompact,
+                showTotal: isCompact ? undefined : (t) => `${t} venda(s)`,
+                simple: isCompact,
+                responsive: true,
+              }}
               onRow={(record) => ({
                 onClick: () => openDetail(record),
                 style: { cursor: 'pointer' },
@@ -571,8 +615,14 @@ export default function SalesConsult() {
       <Drawer
         title={`Venda ${selectedSale?.saleNumber || ''}`}
         placement="right"
-        width={560}
+        width={isCompact ? '100%' : 560}
         open={detailDrawerOpen}
+        rootClassName={`sales-consult-detail-drawer${isCompact ? ' sales-consult-detail-drawer--compact' : ''}`}
+        styles={{
+          body: {
+            paddingBottom: isCompact ? 'max(20px, env(safe-area-inset-bottom, 0px))' : 24,
+          },
+        }}
         onClose={() => { setDetailDrawerOpen(false); setSelectedSale(null); setAuditList([]); setAddPaymentModalOpen(false) }}
       >
         {selectedSale && (
@@ -700,7 +750,9 @@ export default function SalesConsult() {
               open={addPaymentModalOpen}
               onCancel={() => setAddPaymentModalOpen(false)}
               footer={null}
-              width={460}
+              width={isCompact ? 'calc(100vw - 24px)' : 460}
+              centered={!isCompact}
+              styles={{ body: { maxHeight: isCompact ? '75vh' : '70vh', overflowY: 'auto' } }}
               destroyOnHidden
             >
               {selectedSale && (() => {
@@ -926,7 +978,7 @@ export default function SalesConsult() {
 
             {(selectedSale.paymentMethod === 'CREDIT_CARD' || selectedSale.paymentMethod === 'DEBIT_CARD') && selectedSale.status !== 'CANCELLED' && (
               <Card size="small" className="sale-detail-section" title="Código de autorização do cartão">
-                <Space.Compact style={{ width: '100%' }}>
+                <Space.Compact className="sales-consult-card-auth-compact" style={{ width: '100%' }}>
                   <Input
                     value={cardAuthValue}
                     onChange={(e) => setCardAuthValue(e.target.value)}
@@ -969,11 +1021,12 @@ export default function SalesConsult() {
                   rowKey="id"
                   size="small"
                   pagination={false}
+                  scroll={{ x: isCompact ? 320 : undefined }}
                   columns={[
                     { title: 'Produto', dataIndex: 'productName', ellipsis: true },
-                    { title: 'Qtd', dataIndex: 'quantity', width: 64 },
-                    { title: 'Unit.', dataIndex: 'unitPrice', width: 80, render: formatPrice },
-                    { title: 'Total', dataIndex: 'total', width: 80, render: formatPrice },
+                    { title: 'Qtd', dataIndex: 'quantity', width: 56 },
+                    { title: 'Unit.', dataIndex: 'unitPrice', width: 72, render: formatPrice },
+                    { title: 'Total', dataIndex: 'total', width: 72, render: formatPrice },
                   ]}
                 />
               </Card>

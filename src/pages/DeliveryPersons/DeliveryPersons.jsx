@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { Form, Input, Select, Button, Card, Table, Drawer, Space, message } from 'antd'
+import { Form, Input, Select, Button, Table, Drawer, Space, message, Grid } from 'antd'
 import { UserOutlined, PlusOutlined } from '@ant-design/icons'
 import { useAuth } from '../../contexts/AuthContext'
 import * as tenantService from '../../services/tenantService'
@@ -9,6 +9,9 @@ import { antdRuleEmail } from '../../utils/validators'
 import '../Deliveries/Deliveries.css'
 
 export default function DeliveryPersons() {
+  const screens = Grid.useBreakpoint()
+  const isCompact = screens.sm === false
+
   const { user } = useAuth()
   const isRoot = user?.isRoot === true
   const [formDeliveryPerson] = Form.useForm()
@@ -89,8 +92,13 @@ export default function DeliveryPersons() {
     }
   }
 
+  const drawerRootClass = `deliveries-drawer-root${isCompact ? ' deliveries-drawer-root--compact' : ''}`
+  const drawerBodyStyle = {
+    paddingBottom: isCompact ? 'max(20px, env(safe-area-inset-bottom, 0px))' : 24,
+  }
+
   return (
-    <div className="deliveries-page">
+    <div className={`deliveries-page${isCompact ? ' deliveries-page--compact' : ''}`}>
       <main className="deliveries-main">
         <div className="deliveries-container">
           <div className="deliveries-header-card">
@@ -113,18 +121,21 @@ export default function DeliveryPersons() {
                 options={tenants.map((t) => ({ value: t.id, label: t.name }))}
                 value={selectedTenantId}
                 onChange={setSelectedTenantId}
-                style={{ width: 280 }}
+                style={{ width: isCompact ? '100%' : 280 }}
                 allowClear={false}
+                showSearch
+                optionFilterProp="label"
               />
             </div>
           )}
 
-          <div style={{ marginBottom: 16 }}>
+          <div className="deliveries-toolbar" style={{ marginBottom: 16 }}>
             <Button
               type="primary"
               icon={<PlusOutlined />}
               onClick={openDeliveryPersonDrawer}
               className="deliveries-add-btn"
+              block={isCompact}
             >
               Novo entregador
             </Button>
@@ -133,16 +144,44 @@ export default function DeliveryPersons() {
           <Table
             rowKey="id"
             columns={[
-              { title: 'Nome', dataIndex: 'fullName', key: 'fullName' },
-              { title: 'Usuário', dataIndex: 'username', key: 'username' },
-              { title: 'E-mail', dataIndex: 'email', key: 'email' },
-              { title: 'Telefone', dataIndex: 'phone', key: 'phone' },
-              { title: 'Ativo', dataIndex: 'active', key: 'active', render: (v) => (v ? 'Sim' : 'Não') },
+              { title: 'Nome', dataIndex: 'fullName', key: 'fullName', ellipsis: true },
+              { title: 'Usuário', dataIndex: 'username', key: 'username', width: isCompact ? 100 : undefined, ellipsis: true },
+              {
+                title: 'E-mail',
+                dataIndex: 'email',
+                key: 'email',
+                ellipsis: true,
+                responsive: ['md'],
+              },
+              {
+                title: 'Telefone',
+                dataIndex: 'phone',
+                key: 'phone',
+                width: 130,
+                responsive: ['sm'],
+              },
+              {
+                title: 'Ativo',
+                dataIndex: 'active',
+                key: 'active',
+                width: 72,
+                align: 'center',
+                render: (v) => (v ? 'Sim' : 'Não'),
+              },
             ]}
             dataSource={deliveryPersonsList}
             loading={loading}
-            pagination={{ pageSize: 15, showSizeChanger: true }}
-            className="deliveries-table"
+            size={isCompact ? 'small' : 'middle'}
+            scroll={{ x: isCompact ? 520 : 900 }}
+            pagination={{
+              pageSize: 15,
+              showSizeChanger: !isCompact,
+              showTotal: isCompact ? undefined : (t) => `${t} entregador(es)`,
+              pageSizeOptions: ['10', '15', '30', '50'],
+              simple: isCompact,
+              responsive: true,
+            }}
+            className="deliveries-table deliveries-data-table"
           />
         </div>
       </main>
@@ -151,8 +190,11 @@ export default function DeliveryPersons() {
         title="Novo entregador"
         open={deliveryPersonDrawerOpen}
         onClose={() => setDeliveryPersonDrawerOpen(false)}
-        width={460}
+        placement="right"
+        width={isCompact ? '100%' : 460}
         destroyOnHidden
+        rootClassName={drawerRootClass}
+        styles={{ body: drawerBodyStyle }}
         extra={
           <Space>
             <Button onClick={() => setDeliveryPersonDrawerOpen(false)}>Cancelar</Button>

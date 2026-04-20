@@ -1,6 +1,6 @@
 import { useState, useEffect, useLayoutEffect, useMemo, useRef, useCallback } from 'react'
 import { flushSync } from 'react-dom'
-import { Layout, Menu, Button, Spin, Input, message } from 'antd'
+import { Layout, Menu, Button, Spin, Input, message, Grid } from 'antd'
 import { LogoutOutlined, MenuUnfoldOutlined, MenuFoldOutlined, SearchOutlined } from '@ant-design/icons'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
@@ -86,6 +86,9 @@ function SidebarBrand({ tenantLogo }) {
 }
 
 export default function MainLayout() {
+  const screens = Grid.useBreakpoint()
+  const isMobileDrawer = screens.md === false
+
   const { user, logout } = useAuth()
   const { modules, loading } = useModules()
   const navigate = useNavigate()
@@ -298,7 +301,19 @@ export default function MainLayout() {
 
   return (
     <>
-    <Layout className="main-layout">
+    {sidebarOpen && isMobileDrawer && (
+      <button
+        type="button"
+        className="main-layout-sider-backdrop"
+        aria-label="Fechar menu lateral"
+        onClick={() => setSidebarOpen(false)}
+      />
+    )}
+    <Layout
+      className={`main-layout${isMobileDrawer ? ' main-layout--mobile-drawer' : ''}${
+        isMobileDrawer && sidebarOpen ? ' main-layout--mobile-drawer-open' : ''
+      }`}
+    >
       <Sider
         theme="light"
         width={SIDER_WIDTH}

@@ -26,7 +26,7 @@
   left: 0;
   top: 0;
   bottom: 0;
-  z-index: 200;
+  z-index: 201;
   height: 100vh !important;
   min-height: 100vh;
   max-height: 100vh !important;
@@ -36,6 +36,19 @@
   overflow: visible;
 }
 
+/* Mobile: 100vh costuma “faltar” barra inferior (Safari/Chrome); 100dvh + stretch top/bottom. */
+.main-layout--mobile-drawer .main-layout-sider.ant-layout-sider {
+  display: flex !important;
+  flex-direction: column !important;
+  top: 0 !important;
+  bottom: 0 !important;
+  height: auto !important;
+  min-height: 100vh !important;
+  min-height: 100dvh !important;
+  max-height: none !important;
+}
+
+/* Desktop: menu ocupa coluna ao lado do conteúdo (comportamento original). */
 .main-layout-sider-open.ant-layout-sider {
   flex: 0 0 var(--sider-w) !important;
   width: var(--sider-w) !important;
@@ -84,6 +97,7 @@
   backface-visibility: hidden;
   will-change: transform;
   transition: transform var(--layout-motion-duration) var(--layout-motion-ease);
+  pointer-events: auto;
 }
 
 .main-layout-sider-closed .main-layout-sider-inner {
@@ -101,10 +115,12 @@
   min-height: 0;
   overflow-x: hidden;
   overflow-y: auto;
+  overscroll-behavior: contain;
   scrollbar-gutter: stable;
   scrollbar-width: thin;
   scrollbar-color: rgba(100, 116, 139, 0.4) transparent;
   -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
 }
 
 .main-layout-sider-menu-scroll::-webkit-scrollbar {
@@ -209,6 +225,8 @@
   min-height: 100vh;
   flex: 1 1 auto;
   min-width: 0;
+  width: 100%;
+  max-width: 100%;
   display: flex;
   flex-direction: column;
 }
@@ -217,6 +235,61 @@
   padding-left: 0 !important;
   flex: 1 1 100%;
   width: 100%;
+}
+
+/* Mobile (< md): gaveta sobre o conteúdo + sem padding lateral reservado */
+.main-layout--mobile-drawer .main-layout-main,
+.main-layout--mobile-drawer .main-layout-main-expanded {
+  padding-left: 0 !important;
+}
+
+/*
+ * O Sider é position:fixed (fora do fluxo), mas com width:0 o box de pintura
+ * zera e o painel branco some — só resta o backdrop (“mancha”). Precisamos da
+ * largura real do drawer; max 100vw evita estourar em telas estreitas.
+ */
+.main-layout--mobile-drawer .main-layout-sider-open.ant-layout-sider {
+  flex: 0 0 0 !important;
+  width: min(var(--sider-w), 100vw) !important;
+  min-width: min(var(--sider-w), 100vw) !important;
+  max-width: min(var(--sider-w), 100vw) !important;
+  pointer-events: none;
+}
+
+.main-layout--mobile-drawer .main-layout-sider-open .main-layout-sider-inner {
+  pointer-events: auto;
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  flex: 1 1 0 !important;
+  min-height: 0 !important;
+  height: auto !important;
+  max-height: none !important;
+  border-radius: 0 var(--sider-radius) var(--sider-radius) 0;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  box-sizing: border-box;
+}
+
+/* Área útil do menu: cabeçalho fixo + lista com scroll (submenus abertos). */
+.main-layout--mobile-drawer .main-layout-sider-open .ant-layout-sider-children {
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 1 0 !important;
+  min-height: 0 !important;
+  height: auto !important;
+  max-height: none !important;
+}
+
+.main-layout--mobile-drawer .main-layout-sider-open .main-layout-sider-menu-scroll {
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+}
+
+/* Só com drawer aberto: evita clip do flex pai em alguns navegadores. */
+.main-layout--mobile-drawer.main-layout--mobile-drawer-open {
+  overflow-x: visible;
 }
 
 .main-layout-header {
@@ -573,6 +646,32 @@
   }
 }
 
+.main-layout-sider-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  min-height: 100vh;
+  border: none;
+  cursor: pointer;
+  background: rgba(15, 23, 42, 0.38);
+  -webkit-backdrop-filter: blur(3px);
+  backdrop-filter: blur(3px);
+  animation: main-layout-backdrop-in 0.22s var(--layout-motion-ease) both;
+}
+
+@keyframes main-layout-backdrop-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 @keyframes main-layout-edge-in {
   from {
     opacity: 0;
@@ -657,6 +756,10 @@
   }
 
   .main-layout-menu-edge {
+    animation: none !important;
+  }
+
+  .main-layout-sider-backdrop {
     animation: none !important;
   }
 }

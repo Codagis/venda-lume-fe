@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import {
   Form,
   Input,
@@ -16,6 +16,7 @@ import {
   Tag,
   Checkbox,
   DatePicker,
+  Grid,
 } from 'antd'
 import {
   TeamOutlined,
@@ -52,7 +53,52 @@ const MONTHS = [
   { value: 10, label: 'Outubro' }, { value: 11, label: 'Novembro' }, { value: 12, label: 'Dezembro' },
 ]
 
+function mapEmployeeToFormValues(employee) {
+  return {
+    name: employee.name,
+    document: employee.document,
+    email: employee.email,
+    phone: employee.phone,
+    phoneAlt: employee.phoneAlt,
+    addressStreet: employee.addressStreet,
+    addressNumber: employee.addressNumber,
+    addressComplement: employee.addressComplement,
+    addressNeighborhood: employee.addressNeighborhood,
+    addressCity: employee.addressCity,
+    addressState: employee.addressState,
+    addressZip: employee.addressZip,
+    role: employee.role,
+    cbo: employee.cbo,
+    salary: employee.salary != null ? Number(employee.salary) : 0,
+    paymentDay: employee.paymentDay ?? 5,
+    hazardousPayPercent: employee.hazardousPayPercent != null ? Number(employee.hazardousPayPercent) : undefined,
+    overtimeHours: employee.overtimeHours != null ? Number(employee.overtimeHours) : undefined,
+    overtimeValue: employee.overtimeValue != null ? Number(employee.overtimeValue) : undefined,
+    dsrValue: employee.dsrValue != null ? Number(employee.dsrValue) : undefined,
+    healthPlanDeduction: employee.healthPlanDeduction != null ? Number(employee.healthPlanDeduction) : undefined,
+    inssPercent: employee.inssPercent != null ? Number(employee.inssPercent) : undefined,
+    irrfValue: employee.irrfValue != null ? Number(employee.irrfValue) : undefined,
+    dependentes: employee.dependentes != null ? employee.dependentes : 0,
+    bankName: employee.bankName,
+    bankAgency: employee.bankAgency,
+    bankAccount: employee.bankAccount,
+    bankPix: employee.bankPix,
+    hireDate: employee.hireDate || undefined,
+    notes: employee.notes,
+    active: employee.active ?? true,
+    contractType: employee.contractType ?? 'CLT',
+  }
+}
+
 export default function Employees() {
+  const screens = Grid.useBreakpoint()
+  const isCompact = screens.sm === false
+  const isNarrow = screens.md === false
+  const dashGutter = useMemo(
+    () => (isCompact ? [12, 12] : isNarrow ? [14, 14] : [16, 16]),
+    [isCompact, isNarrow]
+  )
+
   const { user } = useAuth()
   const isRoot = user?.isRoot === true
   const [form] = Form.useForm()
@@ -60,6 +106,7 @@ export default function Employees() {
   const [loading, setLoading] = useState(false)
   const [loadingList, setLoadingList] = useState(false)
   const [drawerOpen, setDrawerOpen] = useState(false)
+  const [drawerRecord, setDrawerRecord] = useState(null)
   const [editingId, setEditingId] = useState(null)
   const [tenants, setTenants] = useState([])
   const [selectedTenantId, setSelectedTenantId] = useState(null)
@@ -123,66 +170,46 @@ export default function Employees() {
     if (generateDrawerOpen && employees.length === 0) handleFilter()
   }, [generateDrawerOpen, employees.length, handleFilter])
 
+  useEffect(() => {
+    if (!drawerOpen) return
+    const t = window.setTimeout(() => {
+      form.resetFields()
+      if (drawerRecord) {
+        form.setFieldsValue({ ...initialFormValues, ...mapEmployeeToFormValues(drawerRecord) })
+      } else {
+        const next = { ...initialFormValues }
+        if (isRoot) next.tenantId = selectedTenantId ?? undefined
+        form.setFieldsValue(next)
+      }
+    }, 0)
+    return () => window.clearTimeout(t)
+  }, [drawerOpen, drawerRecord, isRoot, selectedTenantId, form])
+
   const openDrawer = (employee = null) => {
     setEditingId(employee?.id ?? null)
-    form.resetFields()
-    form.setFieldsValue(initialFormValues)
-    if (employee) {
-      form.setFieldsValue({
-        name: employee.name,
-        document: employee.document,
-        email: employee.email,
-        phone: employee.phone,
-        phoneAlt: employee.phoneAlt,
-        addressStreet: employee.addressStreet,
-        addressNumber: employee.addressNumber,
-        addressComplement: employee.addressComplement,
-        addressNeighborhood: employee.addressNeighborhood,
-        addressCity: employee.addressCity,
-        addressState: employee.addressState,
-        addressZip: employee.addressZip,
-        role: employee.role,
-        cbo: employee.cbo,
-        salary: employee.salary != null ? Number(employee.salary) : 0,
-        paymentDay: employee.paymentDay ?? 5,
-        hazardousPayPercent: employee.hazardousPayPercent != null ? Number(employee.hazardousPayPercent) : undefined,
-        overtimeHours: employee.overtimeHours != null ? Number(employee.overtimeHours) : undefined,
-        overtimeValue: employee.overtimeValue != null ? Number(employee.overtimeValue) : undefined,
-        dsrValue: employee.dsrValue != null ? Number(employee.dsrValue) : undefined,
-        healthPlanDeduction: employee.healthPlanDeduction != null ? Number(employee.healthPlanDeduction) : undefined,
-        inssPercent: employee.inssPercent != null ? Number(employee.inssPercent) : undefined,
-        irrfValue: employee.irrfValue != null ? Number(employee.irrfValue) : undefined,
-        dependentes: employee.dependentes != null ? employee.dependentes : 0,
-        bankName: employee.bankName,
-        bankAgency: employee.bankAgency,
-        bankAccount: employee.bankAccount,
-        bankPix: employee.bankPix,
-        hireDate: employee.hireDate || undefined,
-        notes: employee.notes,
-        active: employee.active ?? true,
-        contractType: employee.contractType ?? 'CLT',
-      })
-    } else if (isRoot) {
-      form.setFieldsValue({ tenantId: selectedTenantId ?? undefined })
-    }
+    setDrawerRecord(employee ?? null)
     setDrawerOpen(true)
   }
 
   const closeDrawer = () => {
     setDrawerOpen(false)
     setEditingId(null)
+    setDrawerRecord(null)
     form.resetFields()
   }
 
-  const handleDelete = async (id) => {
-    try {
-      await employeeService.deleteEmployee(id)
-      message.success('Funcionário excluído.')
-      handleFilter()
-    } catch (e) {
-      message.error(e?.message || 'Erro ao excluir funcionário.')
-    }
-  }
+  const handleDelete = useCallback(
+    async (id) => {
+      try {
+        await employeeService.deleteEmployee(id)
+        message.success('Funcionário excluído.')
+        handleFilter()
+      } catch (e) {
+        message.error(e?.message || 'Erro ao excluir funcionário.')
+      }
+    },
+    [handleFilter]
+  )
 
   const onFinish = async (values) => {
     setLoading(true)
@@ -371,64 +398,91 @@ export default function Employees() {
     }
   }
 
-  const columns = [
-    { title: 'Nome', dataIndex: 'name', key: 'name', ellipsis: true },
-    { title: 'CPF/CNPJ', dataIndex: 'document', key: 'document', width: 130, ellipsis: true },
-    { title: 'Modalidade', dataIndex: 'contractType', key: 'contractType', width: 90, render: (v) => (v === 'PJ' ? 'PJ' : 'CLT') },
-    { title: 'Função', dataIndex: 'role', key: 'role', width: 140, ellipsis: true },
-    {
-      title: 'Salário',
-      dataIndex: 'salary',
-      key: 'salary',
-      width: 120,
-      align: 'right',
-      render: (v) => formatCurrency(v),
-    },
-    {
-      title: 'Dia pag.',
-      dataIndex: 'paymentDay',
-      key: 'paymentDay',
-      width: 90,
-      align: 'center',
-    },
-    {
-      title: 'Endereço',
-      key: 'address',
-      ellipsis: true,
-      render: (_, r) => formatAddress(r),
-    },
-    {
-      title: 'Status',
-      key: 'status',
-      width: 90,
-      render: (_, r) => (
-        <Tag color={r.active ? 'green' : 'default'}>{r.active ? 'Ativo' : 'Inativo'}</Tag>
-      ),
-    },
-    {
-      title: '',
-      key: 'actions',
-      width: 50,
-      render: (_, record) => (
-        <Button
-          type="text"
-          size="small"
-          danger
-          icon={<DeleteOutlined />}
-          onClick={(e) => {
-            e.stopPropagation()
-            confirmDeleteModal({
-              title: 'Excluir este funcionário?',
-              onOk: () => handleDelete(record.id),
-            })
-          }}
-        />
-      ),
-    },
-  ]
+  const columns = useMemo(
+    () => [
+      { title: 'Nome', dataIndex: 'name', key: 'name', ellipsis: true },
+      {
+        title: 'CPF/CNPJ',
+        dataIndex: 'document',
+        key: 'document',
+        width: isCompact ? 112 : 130,
+        ellipsis: true,
+        responsive: ['sm'],
+      },
+      {
+        title: 'Modalidade',
+        dataIndex: 'contractType',
+        key: 'contractType',
+        width: 90,
+        responsive: ['sm'],
+        render: (v) => (v === 'PJ' ? 'PJ' : 'CLT'),
+      },
+      {
+        title: 'Função',
+        dataIndex: 'role',
+        key: 'role',
+        width: 140,
+        ellipsis: true,
+        responsive: ['md'],
+      },
+      {
+        title: 'Salário',
+        dataIndex: 'salary',
+        key: 'salary',
+        width: isCompact ? 104 : 120,
+        align: 'right',
+        render: (v) => formatCurrency(v),
+      },
+      {
+        title: 'Dia pag.',
+        dataIndex: 'paymentDay',
+        key: 'paymentDay',
+        width: isCompact ? 78 : 90,
+        align: 'center',
+        responsive: ['sm'],
+      },
+      {
+        title: 'Endereço',
+        key: 'address',
+        ellipsis: true,
+        responsive: ['md'],
+        render: (_, r) => formatAddress(r),
+      },
+      {
+        title: 'Status',
+        key: 'status',
+        width: isCompact ? 80 : 90,
+        render: (_, r) => (
+          <Tag color={r.active ? 'green' : 'default'}>{r.active ? 'Ativo' : 'Inativo'}</Tag>
+        ),
+      },
+      {
+        title: '',
+        key: 'actions',
+        width: isCompact ? 44 : 50,
+        align: 'center',
+        render: (_, record) => (
+          <Button
+            type="text"
+            size="small"
+            danger
+            icon={<DeleteOutlined />}
+            onClick={(e) => {
+              e.stopPropagation()
+              confirmDeleteModal({
+                title: 'Excluir este funcionário?',
+                onOk: () => handleDelete(record.id),
+              })
+            }}
+          />
+        ),
+      },
+    ],
+    [isCompact, handleDelete]
+  )
 
   return (
-    <div className="employees-page">
+    <div className={`employees-page${isCompact ? ' employees-page--compact' : ''}`}>
       <main className="employees-main">
         <div className="employees-container">
           <div className="employees-header-card">
@@ -445,7 +499,7 @@ export default function Employees() {
 
           <Card className="employees-payroll-card employees-payroll-card-generate" title={<><CalendarOutlined /> Gerar contas a pagar do mês</>}>
             <p className="employees-payroll-desc">Cria uma conta a pagar para cada funcionário ativo (com salário &gt; 0) no mês selecionado. A descrição será &quot;Pagamento [Nome]&quot; e o vencimento no dia configurado de cada um. Não gera duplicatas para o mesmo mês.</p>
-            <Row gutter={16} align="bottom" className="employees-payroll-row">
+            <Row gutter={dashGutter} align="bottom" className="employees-payroll-row">
               {isRoot && (
                 <Col xs={24} sm={12} md={6}>
                   <label className="employees-payroll-label">Empresa</label>
@@ -487,6 +541,7 @@ export default function Employees() {
                     loading={payrollLoading === 'generate'}
                     onClick={handleGeneratePayroll}
                     className="employees-payroll-btn-generate"
+                    block={isCompact}
                   >
                     Gerar contas do mês
                   </Button>
@@ -494,6 +549,7 @@ export default function Employees() {
                     type="default"
                     size="large"
                     icon={<AccountBookOutlined />}
+                    block={isCompact}
                     onClick={() => {
                       setSelectedEmployeeIds([])
                       setGenerateMonthRange(null)
@@ -509,7 +565,7 @@ export default function Employees() {
 
           <Card className="employees-payroll-card employees-payroll-card-receipt" title="Recibo de Pagamento de Salário (folha profissional)">
             <p className="employees-payroll-desc">Exporte a folha em PDF/Excel ou gere o recibo de pagamento de salário (modelo profissional) por funcionário para o mês/ano selecionado.</p>
-            <Row gutter={16} align="bottom" className="employees-payroll-row" style={{ marginBottom: 16 }}>
+            <Row gutter={dashGutter} align="bottom" className="employees-payroll-row" style={{ marginBottom: 16 }}>
               {isRoot && (
                 <Col xs={24} sm={12} md={6}>
                   <label className="employees-payroll-label">Empresa</label>
@@ -545,8 +601,12 @@ export default function Employees() {
               <Col xs={24} sm={24} md={10}>
                 <label className="employees-payroll-label employees-payroll-label-invisible">Exportar</label>
                 <div className="employees-payroll-export-actions">
-                  <Button icon={<FilePdfOutlined />} loading={payrollLoading === 'pdf'} onClick={handleDownloadPayrollPdf}>Folha PDF</Button>
-                  <Button icon={<FileExcelOutlined />} loading={payrollLoading === 'excel'} onClick={handleDownloadPayrollExcel}>Folha Excel</Button>
+                  <Button icon={<FilePdfOutlined />} loading={payrollLoading === 'pdf'} onClick={handleDownloadPayrollPdf} block={isCompact}>
+                    Folha PDF
+                  </Button>
+                  <Button icon={<FileExcelOutlined />} loading={payrollLoading === 'excel'} onClick={handleDownloadPayrollExcel} block={isCompact}>
+                    Folha Excel
+                  </Button>
                 </div>
               </Col>
             </Row>
@@ -557,7 +617,7 @@ export default function Employees() {
               ) : (
                 <div className="employees-receipt-grid">
                   {employees.filter((e) => e.active).map((emp) => (
-                    <div key={emp.id} className="employees-receipt-item">
+                    <div key={emp.id} className={`employees-receipt-item${isCompact ? ' employees-receipt-item--compact' : ''}`}>
                       <span className="employees-receipt-item-name">{emp.name}</span>
                       <span className="employees-receipt-item-salary">{formatCurrency(emp.salary)}</span>
                       <Button
@@ -566,6 +626,7 @@ export default function Employees() {
                         size="small"
                         icon={<FilePdfOutlined />}
                         loading={receiptLoadingId === emp.id}
+                        block={isCompact}
                         onClick={(ev) => { ev.stopPropagation(); handleDownloadReceipt(emp) }}
                       >
                         Recibo
@@ -579,7 +640,9 @@ export default function Employees() {
 
           <div className="employees-toolbar">
             <Card className="employees-filters-card sales-consult-filters-card" style={{ width: '100%' }}>
-              <div className="vl-filters-toggle sales-consult-filters-toggle">
+              <div
+                className={`employees-filters-head vl-filters-toggle sales-consult-filters-toggle${isCompact ? ' employees-filters-head--stack' : ''}`}
+              >
                 <Button
                   type="button"
                   className={`vl-filters-toggle-btn${filtersExpanded ? ' vl-filters-toggle-btn--open' : ''}`}
@@ -592,13 +655,23 @@ export default function Employees() {
                   </span>
                   <DownOutlined className="vl-filters-chevron" aria-hidden />
                 </Button>
+                <Button
+                  type="primary"
+                  icon={<PlusOutlined />}
+                  onClick={() => openDrawer()}
+                  className="employees-add-btn"
+                  block={isCompact}
+                  style={!isCompact ? { marginLeft: 'auto', flexShrink: 0 } : undefined}
+                >
+                  Novo funcionário
+                </Button>
               </div>
               <div
                 className={`vl-filters-expand${filtersExpanded ? ' vl-filters-expand--open' : ''}`}
                 aria-hidden={!filtersExpanded}
               >
                 <div className="vl-filters-expand-inner">
-                <Row gutter={16} align="middle" className="vl-filters-row">
+                <Row gutter={dashGutter} align="middle" className="vl-filters-row">
                   <Col xs={24} sm={12} md={6}>
                     <label>Buscar</label>
                     <Input
@@ -635,7 +708,7 @@ export default function Employees() {
                       />
                     </Col>
                   )}
-                  <Col xs={24} md={6} style={{ marginTop: 24 }}>
+                  <Col xs={24} md={6} className="employees-filter-submit-col">
                     <Button type="primary" icon={<FilterOutlined />} onClick={handleFilter} loading={loadingList} block>
                       Filtrar
                     </Button>
@@ -644,11 +717,6 @@ export default function Employees() {
                 </div>
               </div>
             </Card>
-            <div className="employees-toolbar-actions">
-              <Button type="primary" icon={<PlusOutlined />} onClick={() => openDrawer()} className="employees-add-btn">
-                Novo funcionário
-              </Button>
-            </div>
           </div>
 
           <Table
@@ -656,8 +724,16 @@ export default function Employees() {
             columns={columns}
             dataSource={employees}
             loading={loadingList}
-            pagination={{ pageSize: 15, showSizeChanger: true, showTotal: (t) => `${t} funcionário(s)` }}
-            className="employees-table"
+            size={isCompact ? 'small' : 'middle'}
+            scroll={{ x: isCompact ? 540 : 1180 }}
+            pagination={{
+              pageSize: 15,
+              showSizeChanger: !isCompact,
+              showTotal: isCompact ? undefined : (t) => `${t} funcionário(s)`,
+              simple: isCompact,
+              responsive: true,
+            }}
+            className="employees-table employees-data-table"
             onRow={(record) => ({
               onClick: () => openDrawer(record),
               style: { cursor: 'pointer' },
@@ -671,8 +747,14 @@ export default function Employees() {
         open={drawerOpen}
         onClose={closeDrawer}
         placement="right"
-        width={540}
+        width={isCompact ? '100%' : 540}
         destroyOnHidden
+        rootClassName={`employees-drawer-root${isCompact ? ' employees-drawer-root--compact' : ''}`}
+        styles={{
+          body: {
+            paddingBottom: isCompact ? 'max(20px, env(safe-area-inset-bottom, 0px))' : 24,
+          },
+        }}
         extra={
           <Space>
             <Button onClick={closeDrawer}>Cancelar</Button>
@@ -686,7 +768,7 @@ export default function Employees() {
           form={form}
           layout="vertical"
           onFinish={onFinish}
-          initialValues={initialFormValues}
+          preserve={false}
           className="employees-form employees-drawer-form"
         >
           {isRoot && !editingId && (
@@ -734,13 +816,13 @@ export default function Employees() {
             <Form.Item name="cbo" label="CBO" rules={[{ max: 20 }]} tooltip="Classificação Brasileira de Ocupações">
               <Input placeholder="Ex: 1234-56" />
             </Form.Item>
-            <Row gutter={16}>
-              <Col span={12}>
+            <Row gutter={dashGutter}>
+              <Col xs={24} md={12}>
                 <Form.Item name="salary" label="Salário base (R$)" rules={[{ required: true, message: 'Informe o salário' }]}>
                   <InputNumber min={0} step={0.01} precision={2} style={{ width: '100%' }} placeholder="0,00" />
                 </Form.Item>
               </Col>
-              <Col span={12}>
+              <Col xs={24} md={12}>
                 <Form.Item name="paymentDay" label="Dia do vencimento" rules={[{ required: true }]} tooltip="Dia do mês (1 a 28) em que vence a conta a pagar do salário">
                   <InputNumber min={1} max={28} integer style={{ width: '100%' }} placeholder="5" />
                 </Form.Item>
@@ -750,49 +832,49 @@ export default function Employees() {
 
           <div className="employees-drawer-section">
             <h3 className="employees-section-title">Proventos e descontos (folha)</h3>
-            <Row gutter={16}>
-              <Col span={12}>
+            <Row gutter={dashGutter}>
+              <Col xs={24} md={12}>
                 <Form.Item name="hazardousPayPercent" label="Adicional periculosidade (%)">
                   <InputNumber min={0} max={100} step={0.5} style={{ width: '100%' }} placeholder="Ex: 30" />
                 </Form.Item>
               </Col>
-              <Col span={12}>
+              <Col xs={24} md={12}>
                 <Form.Item name="overtimeHours" label="Horas extras (50%)">
                   <InputNumber min={0} step={0.5} style={{ width: '100%' }} placeholder="Quantidade" />
                 </Form.Item>
               </Col>
             </Row>
-            <Row gutter={16}>
-              <Col span={12}>
+            <Row gutter={dashGutter}>
+              <Col xs={24} md={12}>
                 <Form.Item name="overtimeValue" label="Valor horas extras (R$)">
                   <InputNumber min={0} step={0.01} precision={2} style={{ width: '100%' }} placeholder="0,00" />
                 </Form.Item>
               </Col>
-              <Col span={12}>
+              <Col xs={24} md={12}>
                 <Form.Item name="dsrValue" label="DSR (R$)">
                   <InputNumber min={0} step={0.01} precision={2} style={{ width: '100%' }} placeholder="Descanso semanal remunerado" />
                 </Form.Item>
               </Col>
             </Row>
-            <Row gutter={16}>
-              <Col span={12}>
+            <Row gutter={dashGutter}>
+              <Col xs={24} md={12}>
                 <Form.Item name="healthPlanDeduction" label="Desconto plano de saúde (R$)">
                   <InputNumber min={0} step={0.01} precision={2} style={{ width: '100%' }} placeholder="0,00" />
                 </Form.Item>
               </Col>
-              <Col span={12}>
+              <Col xs={24} md={12}>
                 <Form.Item name="inssPercent" label="Alíquota INSS (%)">
                   <InputNumber min={0} max={100} step={0.01} style={{ width: '100%' }} placeholder="Ex: 11,68" />
                 </Form.Item>
               </Col>
             </Row>
-            <Row gutter={16}>
-              <Col span={12}>
+            <Row gutter={dashGutter}>
+              <Col xs={24} md={12}>
                 <Form.Item name="dependentes" label="Dependentes (IRRF)" tooltip="Número de dependentes para dedução na base do IRRF (R$ 189,59/dependente). O IRRF é calculado automaticamente pela tabela vigente.">
                   <InputNumber min={0} integer style={{ width: '100%' }} placeholder="0" />
                 </Form.Item>
               </Col>
-              <Col span={12}>
+              <Col xs={24} md={12}>
                 <Form.Item name="irrfValue" label="IRRF manual (R$)" tooltip="Deixe em branco para usar o cálculo automático pela lei. Preencha apenas para valor informado manualmente.">
                   <InputNumber min={0} step={0.01} precision={2} style={{ width: '100%' }} placeholder="Cálculo automático" />
                 </Form.Item>
@@ -804,27 +886,28 @@ export default function Employees() {
             <div className="employees-drawer-section employees-drawer-receipt">
               <h3 className="employees-section-title">Folha de pagamento</h3>
               <p className="employees-receipt-hint">Gerar recibo de pagamento de salário deste funcionário (PDF com dados reais).</p>
-              <Row gutter={12} align="middle">
-                <Col flex="none">
+              <Row gutter={dashGutter} align="middle" className="employees-drawer-receipt-row">
+                <Col xs={24} sm={8}>
                   <Select
                     value={drawerReceiptMonth}
                     onChange={setDrawerReceiptMonth}
                     options={MONTHS}
-                    style={{ width: 120 }}
+                    style={{ width: '100%' }}
                   />
                 </Col>
-                <Col flex="none">
+                <Col xs={24} sm={8}>
                   <Select
                     value={drawerReceiptYear}
                     onChange={setDrawerReceiptYear}
                     options={Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - i).map((y) => ({ value: y, label: String(y) }))}
-                    style={{ width: 90 }}
+                    style={{ width: '100%' }}
                   />
                 </Col>
-                <Col flex="auto">
+                <Col xs={24} sm={24}>
                   <Button
                     type="primary"
                     icon={<FilePdfOutlined />}
+                    block={isCompact}
                     loading={receiptLoadingId === editingId}
                     onClick={async () => {
                       const emp = employees.find((e) => e.id === editingId)
@@ -911,12 +994,20 @@ export default function Employees() {
         open={generateDrawerOpen}
         onClose={() => setGenerateDrawerOpen(false)}
         placement="right"
-        width={480}
+        width={isCompact ? '100%' : 480}
         destroyOnHidden
+        rootClassName={`employees-drawer-root${isCompact ? ' employees-drawer-root--compact' : ''}`}
+        styles={{
+          body: {
+            paddingBottom: isCompact ? 'max(20px, env(safe-area-inset-bottom, 0px))' : 24,
+          },
+        }}
         footer={
-          <Space style={{ width: '100%', justifyContent: 'flex-end' }}>
-            <Button htmlType="button" onClick={() => setGenerateDrawerOpen(false)}>Cancelar</Button>
-            <Button htmlType="button" type="primary" loading={generateBatchLoading} onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleGenerateBatch(); }}>
+          <Space style={{ width: '100%', justifyContent: 'flex-end' }} wrap direction={isCompact ? 'vertical' : 'horizontal'} size={isCompact ? 8 : 12}>
+            <Button htmlType="button" onClick={() => setGenerateDrawerOpen(false)} block={isCompact}>
+              Cancelar
+            </Button>
+            <Button htmlType="button" type="primary" loading={generateBatchLoading} block={isCompact} onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleGenerateBatch(); }}>
               Gerar
             </Button>
           </Space>
