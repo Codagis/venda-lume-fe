@@ -59,8 +59,20 @@ import {
 import * as tenantService from '../../services/tenantService'
 import * as cardMachineService from '../../services/cardMachineService'
 import { confirmDeleteModal } from '../../utils/confirmModal'
+import { maskCpfCnpj, isValidCpfCnpj } from '../../utils/masks'
 import dayjs from 'dayjs'
 import './SalesConsult.css'
+
+function effectiveSaleCustomerDocument(sale, editDoc) {
+  const doc = (editDoc != null && String(editDoc).trim() !== ''
+    ? String(editDoc).trim()
+    : sale?.customerDocument) || ''
+  return doc.trim()
+}
+
+function saleHasValidCustomerDocument(sale, editDoc) {
+  return isValidCpfCnpj(effectiveSaleCustomerDocument(sale, editDoc))
+}
 
 function formatPrice(value) {
   if (value == null) return 'R$ 0,00'
@@ -285,7 +297,7 @@ export default function SalesConsult() {
       setSelectedSale(sale)
       setCardAuthValue((sale.paymentMethod === 'CREDIT_CARD' || sale.paymentMethod === 'DEBIT_CARD') ? (sale.cardAuthorization || '') : '')
       setCustomerEditName(sale.customerName || '')
-      setCustomerEditDoc(sale.customerDocument || '')
+      setCustomerEditDoc(sale.customerDocument ? maskCpfCnpj(sale.customerDocument) : '')
       setDetailDrawerOpen(true)
       setAuditList([])
       setLoadingAudit(true)
@@ -648,7 +660,7 @@ export default function SalesConsult() {
               <Descriptions column={1} bordered size="small">
                 <Descriptions.Item label="Nome">{selectedSale.customerName || '—'}</Descriptions.Item>
                 {(selectedSale.customerDocument != null && selectedSale.customerDocument !== '') && (
-                  <Descriptions.Item label="CPF/CNPJ">{selectedSale.customerDocument}</Descriptions.Item>
+                  <Descriptions.Item label="CPF/CNPJ">{maskCpfCnpj(selectedSale.customerDocument)}</Descriptions.Item>
                 )}
                 {selectedSale.customerPhone && (
                   <Descriptions.Item label="Telefone">{selectedSale.customerPhone}</Descriptions.Item>
@@ -669,16 +681,22 @@ export default function SalesConsult() {
                   />
                   <Input
                     value={customerEditDoc}
-                    onChange={(e) => setCustomerEditDoc(e.target.value)}
-                    placeholder={`CPF/CNPJ atual: ${selectedSale.customerDocument || 'não informado'}`}
+                    onChange={(e) => setCustomerEditDoc(maskCpfCnpj(e.target.value))}
+                    placeholder={`CPF/CNPJ atual: ${selectedSale.customerDocument ? maskCpfCnpj(selectedSale.customerDocument) : 'não informado'}`}
                     maxLength={18}
+                    inputMode="numeric"
                   />
                   <Button
                     type="primary"
                     loading={savingCustomer}
                     onClick={async () => {
                       const name = customerEditName?.trim() || selectedSale.customerName || undefined
-                      const doc = customerEditDoc?.trim() || undefined
+                      const docRaw = customerEditDoc?.trim()
+                      const doc = docRaw ? docRaw.replace(/\D/g, '') : undefined
+                      if (docRaw && doc && doc.length !== 11 && doc.length !== 14) {
+                        message.warning('Informe um CPF (11 dígitos) ou CNPJ (14 dígitos) válido.')
+                        return
+                      }
                       setSavingCustomer(true)
                       try {
                         const updated = await updateSaleCustomer(selectedSale.id, {
@@ -686,8 +704,8 @@ export default function SalesConsult() {
                           customerDocument: doc,
                         })
                         setSelectedSale(updated)
-                        setCustomerEditName('')
-                        setCustomerEditDoc('')
+                        setCustomerEditName(updated.customerName ? updated.customerName : '')
+                        setCustomerEditDoc(updated.customerDocument ? maskCpfCnpj(updated.customerDocument) : '')
                         const audit = await getSaleAudit(selectedSale.id)
                         setAuditList(Array.isArray(audit) ? audit : [])
                         message.success('Cliente da venda atualizado. Alteração registrada na auditoria.')
@@ -926,7 +944,7 @@ export default function SalesConsult() {
                         />
                       </Form.Item>
                       {paymentFormPaymentMethod === 'CASH' && paymentFormAmountReceived != null && paymentFormAmountReceived > totalAPagar && (
-                        <div style={{ marginBottom: 12, color: '#52c41a', fontWeight: 600 }}>Troco: {formatPrice(paymentFormAmountReceived - totalAPagar)}</div>
+                        <div style={{ marginBottom: 12, color: '#1a4a2f', fontWeight: 600 }}>Troco: {formatPrice(paymentFormAmountReceived - totalAPagar)}</div>
                       )}
                       <Button
                         type="primary"
@@ -1049,7 +1067,8 @@ export default function SalesConsult() {
               </Card>
             )}
 
-            {selectedSale.nfeRequiresCustomerDocument && (
+            {(selectedSale.canEmitNfe || selectedSale.nfeRequiresCustomerDocument)
+              && !saleHasValidCustomerDocument(selectedSale, customerEditDoc) && (
               <Alert
                 type="warning"
                 showIcon
@@ -1126,14 +1145,27 @@ export default function SalesConsult() {
                     Cupom fiscal (NFC-e)
                   </Button>
                 )}
-                {selectedSale.canEmitNfe && (
+                {(selectedSale.canEmitNfe
+                  || (selectedSale.nfeRequiresCustomerDocument && saleHasValidCustomerDocument(selectedSale, customerEditDoc))) && (
                   <Button
                     icon={<FilePdfOutlined />}
                     onClick={async () => {
+                      if (!saleHasValidCustomerDocument(selectedSale, customerEditDoc)) {
+                        message.warning('Informe e salve o CPF ou CNPJ do cliente antes de gerar a NF-e.')
+                        return
+                      }
+                      const editDigits = (customerEditDoc || '').replace(/\D/g, '')
+                      const savedDigits = (selectedSale.customerDocument || '').replace(/\D/g, '')
+                      if (editDigits && editDigits !== savedDigits) {
+                        message.warning('Salve o CPF/CNPJ na seção "Alterar cliente da venda" antes de gerar a NF-e.')
+                        return
+                      }
                       setLoadingNfe(true)
                       try {
                         await downloadNfePdf(selectedSale.id)
                         message.success('NF-e baixada com sucesso!')
+                        const refreshed = await getSaleById(selectedSale.id)
+                        setSelectedSale(refreshed)
                       } catch (e) {
                         message.error(e?.message || 'Erro ao gerar NF-e.')
                       } finally {

@@ -51,6 +51,17 @@ export function normalizeCpfCnpj(v) {
   return maskCpfCnpj(v)
 }
 
+export function isValidCpfCnpj(doc) {
+  const digits = onlyDigits(doc)
+  return digits.length === 11 || digits.length === 14
+}
+
+export function digitsOnlyCpfCnpj(doc) {
+  const digits = onlyDigits(doc)
+  if (!digits) return ''
+  return digits.length <= 11 ? digits.slice(0, 11) : digits.slice(0, 14)
+}
+
 export function normalizePhone(v) {
   return maskPhoneBr(v)
 }

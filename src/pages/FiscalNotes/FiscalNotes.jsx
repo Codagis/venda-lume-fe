@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
+import dayjs from 'dayjs'
 import {
   Card,
-  Tabs,
   Table,
   Space,
   Input,
@@ -17,6 +17,10 @@ import {
   Col,
   Dropdown,
   Tooltip,
+  Alert,
+  Descriptions,
+  Collapse,
+  Divider,
 } from 'antd'
 import {
   ReloadOutlined,
@@ -27,12 +31,16 @@ import {
   FileTextOutlined,
   FilterOutlined,
   DownOutlined,
+  CloudUploadOutlined,
+  ExportOutlined,
+  InboxOutlined,
+  ShoppingCartOutlined,
 } from '@ant-design/icons'
 import './FiscalNotes.css'
 import {
-  listNfeAll,
   listNfeIssued,
   listNfeReceived,
+  syncNfeReceived,
   listNfceIssued,
   getNfeReceivedById,
   downloadNfeReceivedPdf,
@@ -48,7 +56,38 @@ import { useAuth } from '../../contexts/AuthContext'
 import RootTenantSelect from '../../components/RootTenantSelect'
 import { importSaleFromInvoice } from '../../services/saleImportService'
 
-const { Text } = Typography
+const { Text, Title } = Typography
+
+const FISCAL_VIEWS = [
+  {
+    key: 'nfe-issued',
+    label: 'NF-e emitidas',
+    badge: 'Emitente',
+    description: 'Notas que sua empresa emitiu (você é o fornecedor).',
+    icon: ExportOutlined,
+  },
+  {
+    key: 'nfe-received',
+    label: 'NF-e recebidas',
+    badge: 'Destinatário',
+    description: 'Notas que outros emitiram para o CNPJ da sua empresa (você paga). Vindas da SEFAZ via distribuição DF-e.',
+    icon: InboxOutlined,
+  },
+  {
+    key: 'nfce-issued',
+    label: 'NFC-e emitidas',
+    badge: 'Cupom',
+    description: 'Notas fiscais de consumidor emitidas no PDV ou vendas.',
+    icon: ShoppingCartOutlined,
+  },
+]
+
+function pickAntdFile(file) {
+  if (!file) return null
+  const raw = file instanceof File ? file : file.originFileObj
+  if (raw instanceof Blob && raw.size > 0) return raw
+  return null
+}
 
 function safeArray(v) {
   if (Array.isArray(v)) return v
@@ -71,8 +110,196 @@ function fmtValue(v) {
   return String(v)
 }
 
+function emissionFromChave(row) {
+  const chave = row?.chave || row?.chave_acesso || row?.chaveAcesso
+  const digits = (chave ?? '').toString().replace(/\D/g, '')
+  if (digits.length < 6) return null
+  const yy = Number(digits.slice(2, 4))
+  const mm = Number(digits.slice(4, 6))
+  if (!Number.isFinite(yy) || !Number.isFinite(mm) || mm < 1 || mm > 12) return null
+  return dayjs(`${2000 + yy}-${String(mm).padStart(2, '0')}-01`)
+}
+
+function getEmissionResult(data) {
+  if (!data) return null
+  if (data.emissionResult && typeof data.emissionResult === 'object') return data.emissionResult
+  if (data.nfeEmission?.emissionResult) return data.nfeEmission.emissionResult
+  if (data.status || data.autorizacao) return data
+  return null
+}
+
+function describeFiscalStatus(data) {
+  const doc = getEmissionResult(data) || data
+  if (!doc) return null
+  const auth = doc.autorizacao || {}
+  const status = String(doc.status || auth.status || '').trim()
+  const codigo = auth.codigo_status ?? doc.codigo_status
+  const motivo = auth.motivo_status || doc.motivo_status || doc.mensagem
+  const chave = doc.chave || auth.chave_acesso || doc.chave_acesso
+  const isRejected = /rejeit/i.test(status)
+  const isOk = /autoriz|aprov|registrad/i.test(status)
+  return { status, codigo, motivo, chave, auth, doc, isRejected, isOk }
+}
+
+function formatEmissionDate(row, compact) {
+  const iso =
+    row?.data_emissao ||
+    row?.dataEmissao ||
+    row?.dhEmi ||
+    row?.autorizacao?.data_evento ||
+    row?.data_evento
+  if (iso) {
+    const d = dayjs(iso)
+    if (d.isValid()) {
+      return compact ? d.format('DD/MM/YY HH:mm') : d.format('DD/MM/YYYY HH:mm')
+    }
+  }
+  const fromChave = emissionFromChave(row)
+  if (fromChave?.isValid()) {
+    return fromChave.format(compact ? 'MM/YY' : 'MM/YYYY')
+  }
+  return '-'
+}
+
 function onlyDigits(v) {
   return (v ?? '').toString().replace(/\D/g, '')
+}
+
+function formatMoney(v) {
+  if (v == null || v === '') return '-'
+  const n = Number(v)
+  if (!Number.isFinite(n)) return fmtValue(v)
+  return n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+}
+
+function formatDoc(doc) {
+  const d = onlyDigits(doc)
+  if (d.length === 14) return d.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5')
+  if (d.length === 11) return d.replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/, '$1.$2.$3-$4')
+  return doc ? String(doc) : '-'
+}
+
+function getEmitenteLabel(row) {
+  const name = row?.emitente_nome_razao_social || row?.emitenteNome || row?.xNomeEmitente
+  const doc = row?.emitente_cpf_cnpj || row?.emitenteCpfCnpj
+  if (!name && !doc) return '-'
+  return (
+    <span className="fiscal-notes-emit-cell">
+      <span className="fiscal-notes-emit-name">{fmtValue(name)}</span>
+      {doc && <span className="fiscal-notes-emit-doc">{formatDoc(doc)}</span>}
+    </span>
+  )
+}
+
+function FiscalNoteDetailPanel({ data }) {
+  const info = describeFiscalStatus(data)
+  const mensagens = data?.mensagens || info?.auth?.mensagens || info?.doc?.mensagens
+  const msgList = Array.isArray(mensagens) ? mensagens : []
+
+  return (
+    <Space direction="vertical" size={16} style={{ width: '100%' }}>
+      {info?.status && (
+        <Alert
+          type={info.isRejected ? 'error' : info.isOk ? 'success' : 'warning'}
+          showIcon
+          message={
+            info.isRejected
+              ? 'Nota rejeitada pela SEFAZ'
+              : info.isOk
+                ? 'Nota autorizada'
+                : `Situação: ${info.status}`
+          }
+          description={
+            <>
+              {info.codigo != null && (
+                <p className="fiscal-notes-detail-alert-body">
+                  <strong>Código SEFAZ:</strong> {info.codigo}
+                </p>
+              )}
+              {info.motivo && (
+                <p className="fiscal-notes-detail-alert-body">
+                  <strong>Motivo:</strong> {info.motivo}
+                </p>
+              )}
+              {!info.motivo && info.isRejected && (
+                <p className="fiscal-notes-detail-alert-body">
+                  Consulte o JSON completo abaixo ou a Nuvem Fiscal para o motivo detalhado.
+                </p>
+              )}
+            </>
+          }
+        />
+      )}
+
+      {info && (
+        <Descriptions bordered size="small" column={1} className="fiscal-notes-detail-desc">
+          <Descriptions.Item label="Status">{fmtValue(info.status)}</Descriptions.Item>
+          {info.chave && (
+            <Descriptions.Item label="Chave de acesso">
+              <Text code copyable={{ text: info.chave }}>
+                {info.chave}
+              </Text>
+            </Descriptions.Item>
+          )}
+          {info.doc?.numero != null && (
+            <Descriptions.Item label="Número">{fmtValue(info.doc.numero)}</Descriptions.Item>
+          )}
+          {info.doc?.serie != null && (
+            <Descriptions.Item label="Série">{fmtValue(info.doc.serie)}</Descriptions.Item>
+          )}
+          {info.doc?.data_emissao && (
+            <Descriptions.Item label="Data emissão">
+              {formatEmissionDate({ data_emissao: info.doc.data_emissao }, false)}
+            </Descriptions.Item>
+          )}
+          {info.doc?.ambiente && (
+            <Descriptions.Item label="Ambiente">{fmtValue(info.doc.ambiente)}</Descriptions.Item>
+          )}
+          {info.doc?.id && <Descriptions.Item label="ID Nuvem Fiscal">{fmtValue(info.doc.id)}</Descriptions.Item>}
+          {info.auth?.data_recebimento && (
+            <Descriptions.Item label="Recebimento SEFAZ">
+              {formatEmissionDate({ data_emissao: info.auth.data_recebimento }, false)}
+            </Descriptions.Item>
+          )}
+          {info.auth?.numero_protocolo && (
+            <Descriptions.Item label="Protocolo">{fmtValue(info.auth.numero_protocolo)}</Descriptions.Item>
+          )}
+          {info.auth?.digest_value && (
+            <Descriptions.Item label="Digest">{fmtValue(info.auth.digest_value)}</Descriptions.Item>
+          )}
+        </Descriptions>
+      )}
+
+      {msgList.length > 0 && (
+        <>
+          <Divider orientation="left" plain>
+            Mensagens da API
+          </Divider>
+          <ul className="fiscal-notes-detail-messages">
+            {msgList.map((m, i) => (
+              <li key={i}>
+                {m?.codigo != null && <Tag>{m.codigo}</Tag>}{' '}
+                {m?.descricao || m?.mensagem || m?.correcao || JSON.stringify(m)}
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+
+      <Collapse
+        className="fiscal-notes-detail-json-collapse"
+        items={[
+          {
+            key: 'json',
+            label: 'JSON completo (logs técnicos)',
+            children: (
+              <pre className="fiscal-notes-detail-pre">{JSON.stringify(data ?? {}, null, 2)}</pre>
+            ),
+          },
+        ]}
+      />
+    </Space>
+  )
 }
 
 function getDocNumberDigits(row) {
@@ -96,7 +323,7 @@ export default function FiscalNotes() {
   const filterGutter = isCompact ? [12, 12] : isNarrow ? [14, 14] : [16, 16]
 
   const { user } = useAuth()
-  const [activeTab, setActiveTab] = useState('nfe-all')
+  const [activeView, setActiveView] = useState('nfe-issued')
   const [loading, setLoading] = useState(false)
   const [data, setData] = useState(null)
   const [detailOpen, setDetailOpen] = useState(false)
@@ -106,9 +333,10 @@ export default function FiscalNotes() {
 
   const [importOpen, setImportOpen] = useState(false)
   const [importLoading, setImportLoading] = useState(false)
-  const [importPdf, setImportPdf] = useState(null)
-  const [importXml, setImportXml] = useState(null)
-  const [importJson, setImportJson] = useState(null)
+  const [importXmlList, setImportXmlList] = useState([])
+  const [importJsonList, setImportJsonList] = useState([])
+  const [importXmlFile, setImportXmlFile] = useState(null)
+  const [importJsonFile, setImportJsonFile] = useState(null)
   const [importNotes, setImportNotes] = useState('')
 
   const [tenantId, setTenantId] = useState('')
@@ -125,6 +353,12 @@ export default function FiscalNotes() {
   const [formaDistribuicao, setFormaDistribuicao] = useState('completa')
   const [chaveAcesso, setChaveAcesso] = useState('')
   const [filtersExpanded, setFiltersExpanded] = useState(false)
+  const [syncLoading, setSyncLoading] = useState(false)
+
+  const listWarning = useMemo(() => {
+    if (!data?.warning) return null
+    return String(data.warning)
+  }, [data])
 
   const rows = useMemo(() => safeArray(data), [data])
   const total = useMemo(() => getCount(data), [data])
@@ -148,28 +382,50 @@ export default function FiscalNotes() {
   }
 
   const openImportModal = () => {
-    setImportPdf(null)
-    setImportXml(null)
-    setImportJson(null)
+    setImportXmlList([])
+    setImportJsonList([])
+    setImportXmlFile(null)
+    setImportJsonFile(null)
     setImportNotes('')
     setImportOpen(true)
   }
 
   const handleImport = async () => {
+    if (user?.isRoot && !tenantId.trim()) {
+      message.warning('Selecione a empresa nos filtros antes de importar.')
+      return
+    }
+    const xmlFile = importXmlFile
+    const jsonFile = importJsonFile
+    if (!xmlFile && !jsonFile) {
+      message.warning('Selecione um arquivo XML ou JSON da NF-e.')
+      return
+    }
     try {
       setImportLoading(true)
       const res = await importSaleFromInvoice({
         tenantId: effectiveTenantId,
         saleType: 'PDV',
-        pdf: importPdf,
-        xml: importXml,
-        json: importJson,
+        xml: xmlFile,
+        json: jsonFile,
         notes: importNotes,
       })
       if (res?.createdType === 'PAYABLE') {
         message.success(`Conta a pagar criada: ${res?.payable?.description || res?.payable?.id || 'OK'}`)
       } else {
-        message.success(`Venda cadastrada: ${res?.sale?.saleNumber || res?.sale?.id || 'OK'}`)
+        const emission = getEmissionResult(res?.nfeEmission)
+        const fiscal = describeFiscalStatus(emission)
+        const saleLabel = res?.sale?.saleNumber || res?.sale?.id || 'OK'
+        if (fiscal?.isRejected) {
+          message.error(
+            `NF-e rejeitada${fiscal.codigo != null ? ` (cód. ${fiscal.codigo})` : ''}: ${fiscal.motivo || 'Consulte os detalhes da nota na lista.'}`
+          )
+          message.warning(`Venda ${saleLabel} foi criada, mas a nota não foi autorizada na SEFAZ.`)
+        } else if (fiscal?.isOk) {
+          message.success(`Venda ${saleLabel} cadastrada e NF-e autorizada.`)
+        } else {
+          message.success(`Venda cadastrada: ${saleLabel}`)
+        }
       }
       setImportOpen(false)
     } catch (e) {
@@ -186,16 +442,16 @@ export default function FiscalNotes() {
       setDetailJson(null)
       const id = row?.id
       const direction = row?.direction
-      const isNfce = activeTab === 'nfce-issued'
+      const isNfce = activeView === 'nfce-issued'
       setDetailTitle(`Detalhes da nota${id ? ` (${id})` : ''}`)
 
-      if (direction === 'RECEIVED' && id) {
+      if ((direction === 'RECEIVED' || activeView === 'nfe-received') && id) {
         const json = await getNfeReceivedById(id, { tenantId: effectiveTenantId })
         setDetailJson(json)
         return
       }
 
-      if (id && isNfce) {
+      if (id && (isNfce || activeView === 'nfce-issued')) {
         const json = await getNfceIssuedById(id, { tenantId: effectiveTenantId })
         setDetailJson(json)
         return
@@ -218,18 +474,18 @@ export default function FiscalNotes() {
   const handleDownloadPdf = async (row) => {
     const id = row?.id
     const direction = row?.direction
-    const isNfce = activeTab === 'nfce-issued'
+    const isNfce = activeView === 'nfce-issued'
     if (!id) {
       message.warning('ID não disponível para download.')
       return
     }
     try {
-      if (direction === 'RECEIVED') {
+      if (direction === 'RECEIVED' || activeView === 'nfe-received') {
         const blob = await downloadNfeReceivedPdf(id, { tenantId: effectiveTenantId })
         await saveBlob(blob, `nfe-recebida-${id}.pdf`)
         return
       }
-      if (isNfce) {
+      if (isNfce || activeView === 'nfce-issued') {
         const blob = await downloadNfceIssuedPdf(id, { tenantId: effectiveTenantId })
         await saveBlob(blob, `nfce-${id}.pdf`)
         return
@@ -244,18 +500,18 @@ export default function FiscalNotes() {
   const handleDownloadXml = async (row) => {
     const id = row?.id
     const direction = row?.direction
-    const isNfce = activeTab === 'nfce-issued'
+    const isNfce = activeView === 'nfce-issued'
     if (!id) {
       message.warning('ID não disponível para download.')
       return
     }
     try {
-      if (direction === 'RECEIVED') {
+      if (direction === 'RECEIVED' || activeView === 'nfe-received') {
         const blob = await downloadNfeReceivedXml(id, { tenantId: effectiveTenantId })
         await saveBlob(blob, `nfe-recebida-${id}.xml`)
         return
       }
-      if (isNfce) {
+      if (isNfce || activeView === 'nfce-issued') {
         const blob = await downloadNfceIssuedXml(id, { tenantId: effectiveTenantId })
         await saveBlob(blob, `nfce-${id}.xml`)
         return
@@ -267,24 +523,32 @@ export default function FiscalNotes() {
     }
   }
 
+  const handleSyncReceived = async () => {
+    try {
+      setSyncLoading(true)
+      const syncRes = await syncNfeReceived({
+        tenantId: effectiveTenantId,
+        distNsu: distNsu ? Number(distNsu) : undefined,
+      })
+      const motivo = syncRes?.motivo_status || syncRes?.status
+      if (motivo) {
+        message.info(typeof motivo === 'string' ? motivo : 'Consulta à SEFAZ concluída.')
+      } else {
+        message.success('Busca na SEFAZ concluída. Atualizando a lista…')
+      }
+      await fetchData()
+    } catch (e) {
+      message.error(e?.message || 'Erro ao buscar notas na SEFAZ.')
+    } finally {
+      setSyncLoading(false)
+    }
+  }
+
   const fetchData = async () => {
     setLoading(true)
     try {
       let res
-      if (activeTab === 'nfe-all') {
-        res = await listNfeAll({
-          tenantId: effectiveTenantId,
-          top,
-          skip,
-          inlinecount,
-          referencia: ref,
-          chave,
-          serie,
-          distNsu: distNsu ? Number(distNsu) : undefined,
-          formaDistribuicao,
-          chaveAcesso,
-        })
-      } else if (activeTab === 'nfe-issued') {
+      if (activeView === 'nfe-issued') {
         res = await listNfeIssued({
           tenantId: effectiveTenantId,
           top,
@@ -294,7 +558,7 @@ export default function FiscalNotes() {
           chave,
           serie,
         })
-      } else if (activeTab === 'nfe-received') {
+      } else if (activeView === 'nfe-received') {
         res = await listNfeReceived({
           tenantId: effectiveTenantId,
           top,
@@ -326,6 +590,21 @@ export default function FiscalNotes() {
   const columns = useMemo(() => {
     const receivedExtraColumns = [
       {
+        title: 'Fornecedor',
+        key: 'emitente',
+        width: isCompact ? 160 : 220,
+        ellipsis: true,
+        render: (_, row) => getEmitenteLabel(row),
+      },
+      {
+        title: 'Valor',
+        dataIndex: 'valor_nfe',
+        key: 'valor_nfe',
+        width: isCompact ? 100 : 120,
+        responsive: isCompact ? ['sm'] : undefined,
+        render: (v) => formatMoney(v),
+      },
+      {
         title: 'NSU',
         dataIndex: 'nsu',
         key: 'nsu',
@@ -353,30 +632,6 @@ export default function FiscalNotes() {
 
     const baseColumns = [
       {
-        title: 'Direção',
-        dataIndex: 'direction',
-        key: 'direction',
-        width: isCompact ? 88 : 120,
-        render: (v) => {
-          const raw = fmtValue(v)
-          if (raw === 'ISSUED') {
-            return (
-              <Tag color="blue" className="fiscal-notes-dir-tag">
-                {isCompact ? 'Emit.' : 'EMITIDA'}
-              </Tag>
-            )
-          }
-          if (raw === 'RECEIVED') {
-            return (
-              <Tag color="gold" className="fiscal-notes-dir-tag">
-                {isCompact ? 'Rec.' : 'RECEBIDA'}
-              </Tag>
-            )
-          }
-          return <Tag className="fiscal-notes-dir-tag">{raw}</Tag>
-        },
-      },
-      {
         title: 'Chave',
         dataIndex: 'chave',
         key: 'chave',
@@ -393,6 +648,25 @@ export default function FiscalNotes() {
         render: (v, row) => fmtValue(v || row?.nfe_numero || row?.nfce_numero || row?.numero_nf || row?.numero_documento),
       },
       {
+        title: 'Emissão',
+        dataIndex: 'data_emissao',
+        key: 'data_emissao',
+        width: isCompact ? 112 : 140,
+        responsive: isCompact ? ['sm'] : undefined,
+        render: (_, row) => {
+          const label = formatEmissionDate(row, isCompact)
+          const iso =
+            row?.data_emissao ||
+            row?.dataEmissao ||
+            row?.dhEmi ||
+            row?.autorizacao?.data_evento ||
+            row?.data_evento
+          if (label === '-' || !iso) return label
+          const full = formatEmissionDate(row, false)
+          return full !== label ? <Tooltip title={full}>{label}</Tooltip> : label
+        },
+      },
+      {
         title: 'Série',
         dataIndex: 'serie',
         key: 'serie',
@@ -405,13 +679,19 @@ export default function FiscalNotes() {
         dataIndex: 'status',
         key: 'status',
         width: isCompact ? 108 : 140,
-        render: (v) => {
+        render: (v, row) => {
           const raw = fmtValue(v)
-          const isOk = /autoriz|aprov|sucesso/i.test(raw)
-          const isBad = /rejeit|erro|cancel/i.test(raw)
-          const tag = <Tag color={isOk ? 'green' : isBad ? 'red' : 'default'} className="fiscal-notes-status-tag">{raw}</Tag>
-          if (isCompact && raw.length > 14) {
-            return <Tooltip title={raw}>{tag}</Tooltip>
+          const fiscal = describeFiscalStatus(row)
+          const isOk = fiscal?.isOk || /autoriz|aprov|sucesso/i.test(raw)
+          const isBad = fiscal?.isRejected || /rejeit|erro|cancel/i.test(raw)
+          const tip = fiscal?.motivo && fiscal.motivo !== raw ? fiscal.motivo : null
+          const tag = (
+            <Tag color={isOk ? 'green' : isBad ? 'red' : 'default'} className="fiscal-notes-status-tag">
+              {raw}
+            </Tag>
+          )
+          if (tip || (isCompact && raw.length > 14)) {
+            return <Tooltip title={tip || raw}>{tag}</Tooltip>
           }
           return tag
         },
@@ -477,23 +757,24 @@ export default function FiscalNotes() {
       },
     ]
 
-    if (activeTab === 'nfe-received') return [...receivedExtraColumns, ...baseColumns]
+    if (activeView === 'nfe-received') return [...receivedExtraColumns, ...baseColumns]
     return baseColumns
-  }, [activeTab, isCompact, effectiveTenantId])
+  }, [activeView, isCompact, effectiveTenantId])
+
+  const activeViewMeta = useMemo(
+    () => FISCAL_VIEWS.find((v) => v.key === activeView) || FISCAL_VIEWS[0],
+    [activeView]
+  )
 
   const detailModalWidth = isCompact ? 'min(100%, calc(100vw - 24px))' : 980
   const importModalWidth = isCompact ? '100%' : 720
   const showAdvancedFilters = !isCompact || filtersExpanded
 
-  const tabItems = useMemo(
-    () => [
-      { key: 'nfe-all', label: isCompact ? 'Todas' : 'Todas NF-e (emitidas + recebidas)' },
-      { key: 'nfe-issued', label: isCompact ? 'NF-e em.' : 'NF-e emitidas (beneficiária)' },
-      { key: 'nfe-received', label: isCompact ? 'NF-e rec.' : 'NF-e recebidas (a pagar)' },
-      { key: 'nfce-issued', label: isCompact ? 'NFC-e' : 'NFC-e emitidas' },
-    ],
-    [isCompact]
-  )
+  const switchView = (key) => {
+    setSkip(0)
+    setData(null)
+    setActiveView(key)
+  }
 
   return (
     <div className={`fiscal-notes-page${isCompact ? ' fiscal-notes-page--compact' : ''}`}>
@@ -504,7 +785,7 @@ export default function FiscalNotes() {
           extra={
             <Space direction={isCompact ? 'vertical' : 'horizontal'} size={isCompact ? 8 : 12} className="fiscal-notes-card-extra">
               <Button onClick={openImportModal} block={isCompact} className={isCompact ? 'fiscal-notes-header-btn' : undefined}>
-                {isCompact ? 'Importar venda' : 'Cadastrar venda'}
+                Importar NF-e
               </Button>
               <Button type="primary" icon={<ReloadOutlined />} onClick={fetchData} loading={loading} block={isCompact} className="fiscal-notes-header-btn fiscal-notes-header-btn--primary">
                 Atualizar
@@ -515,18 +796,41 @@ export default function FiscalNotes() {
           {isCompact && (
             <p className="fiscal-notes-mobile-hint">Nuvem Fiscal · Toque em uma linha ou em ⋮ para detalhes e downloads.</p>
           )}
-          <Tabs
-            activeKey={activeTab}
-            onChange={(k) => {
-              setSkip(0)
-              setData(null)
-              setActiveTab(k)
-            }}
-            size={isCompact ? 'small' : 'middle'}
-            className="fiscal-notes-tabs"
-            tabBarGutter={isCompact ? 6 : 24}
-            items={tabItems}
-          />
+
+          <nav className="fiscal-notes-view-nav" aria-label="Tipo de nota fiscal">
+            {FISCAL_VIEWS.map((view) => {
+              const Icon = view.icon
+              const isActive = activeView === view.key
+              return (
+                <button
+                  key={view.key}
+                  type="button"
+                  className={`fiscal-notes-view-nav-item${isActive ? ' fiscal-notes-view-nav-item--active' : ''}`}
+                  onClick={() => switchView(view.key)}
+                  aria-current={isActive ? 'page' : undefined}
+                >
+                  <span className="fiscal-notes-view-nav-icon" aria-hidden>
+                    <Icon />
+                  </span>
+                  <span className="fiscal-notes-view-nav-text">
+                    <span className="fiscal-notes-view-nav-label">{view.label}</span>
+                    <span className="fiscal-notes-view-nav-badge">{view.badge}</span>
+                  </span>
+                </button>
+              )
+            })}
+          </nav>
+
+          <div className="fiscal-notes-view-panel">
+            <div className="fiscal-notes-view-panel-head">
+              <Title level={5} className="fiscal-notes-view-panel-title">
+                {activeViewMeta.label}
+                <Tag className="fiscal-notes-view-panel-tag">{activeViewMeta.badge}</Tag>
+              </Title>
+              <Text type="secondary" className="fiscal-notes-view-panel-desc">
+                {activeViewMeta.description}
+              </Text>
+            </div>
 
           {isCompact && (
             <Button
@@ -603,7 +907,7 @@ export default function FiscalNotes() {
                   />
                 </Col>
 
-                {activeTab === 'nfe-received' || activeTab === 'nfe-all' ? (
+                {activeView === 'nfe-received' ? (
                   <>
                     <Col xs={24} sm={12} lg={6}>
                       <label className="fiscal-notes-filter-label">NSU</label>
@@ -666,19 +970,46 @@ export default function FiscalNotes() {
             )}
 
             <Col xs={24} className="fiscal-notes-filter-actions">
-              <Button
-                type="primary"
-                icon={<SearchOutlined />}
-                onClick={fetchData}
-                loading={loading}
-                block={isCompact}
-                size={isCompact ? 'large' : 'middle'}
-                className="fiscal-notes-consult-btn"
-              >
-                Consultar
-              </Button>
+              <Space direction={isCompact ? 'vertical' : 'horizontal'} style={{ width: '100%' }} size={8}>
+                {activeView === 'nfe-received' && (
+                  <Button
+                    onClick={handleSyncReceived}
+                    loading={syncLoading}
+                    block={isCompact}
+                    size={isCompact ? 'large' : 'middle'}
+                    className="fiscal-notes-sync-btn"
+                  >
+                    Buscar na SEFAZ
+                  </Button>
+                )}
+                <Button
+                  type="primary"
+                  icon={<SearchOutlined />}
+                  onClick={fetchData}
+                  loading={loading}
+                  block={isCompact}
+                  size={isCompact ? 'large' : 'middle'}
+                  className="fiscal-notes-consult-btn"
+                >
+                  Consultar
+                </Button>
+              </Space>
             </Col>
           </Row>
+
+          {activeView === 'nfe-received' && (
+            <Alert
+              type="info"
+              showIcon
+              className="fiscal-notes-received-hint"
+              message="Notas em que sua empresa é destinatária"
+              description="Quando outra empresa emite NF-e com o CNPJ da sua empresa, a SEFAZ disponibiliza o XML na distribuição DF-e. Use Buscar na SEFAZ e depois Consultar. Importar XML manual cria conta a pagar, mas não substitui esta lista."
+            />
+          )}
+
+          {listWarning && (
+            <Alert type="warning" showIcon className="fiscal-notes-list-warning" message={listWarning} />
+          )}
 
           <div className={`fiscal-notes-total${isCompact ? ' fiscal-notes-total--compact' : ''}`}>
             <Text type="secondary">
@@ -709,9 +1040,10 @@ export default function FiscalNotes() {
             dataSource={filteredRows}
             pagination={false}
             size={isCompact ? 'small' : 'middle'}
-            scroll={{ x: isCompact ? (activeTab === 'nfe-received' ? 540 : 440) : 1280 }}
+            scroll={{ x: isCompact ? (activeView === 'nfe-received' ? 540 : 440) : 1280 }}
             className="fiscal-notes-table"
           />
+          </div>
         </Card>
       </main>
 
@@ -757,18 +1089,16 @@ export default function FiscalNotes() {
         {detailLoading ? (
           <div className="fiscal-notes-detail-loading">Carregando…</div>
         ) : (
-          <pre className="fiscal-notes-detail-pre">
-            {JSON.stringify(detailJson ?? {}, null, 2)}
-          </pre>
+          <FiscalNoteDetailPanel data={detailJson} />
         )}
       </Modal>
 
       <Modal
         open={importOpen}
-        title={isCompact ? 'Importar venda (NF)' : 'Cadastrar venda a partir de Nota Fiscal'}
+        title="Importar NF-e"
         onCancel={() => setImportOpen(false)}
         onOk={handleImport}
-        okText="Cadastrar venda"
+        okText="Importar"
         confirmLoading={importLoading}
         width={importModalWidth}
         centered={!isCompact}
@@ -786,41 +1116,69 @@ export default function FiscalNotes() {
         okButtonProps={{ block: isCompact, size: isCompact ? 'large' : 'middle' }}
         cancelButtonProps={{ block: isCompact }}
       >
-        <Space direction="vertical" style={{ width: '100%' }} size={10}>
+        <Space direction="vertical" style={{ width: '100%' }} size={12}>
+          <Text type="secondary" className="fiscal-notes-import-hint">
+            Envie o XML ou o JSON da NF-e. Se a nota for de fornecedor (sua empresa como destinatária), será criada uma conta a pagar; caso contrário, uma venda.
+          </Text>
           <Input value={importNotes} onChange={(e) => setImportNotes(e.target.value)} placeholder="Observações (opcional)" />
-          <Upload
-            beforeUpload={(file) => {
-              setImportPdf(file)
-              return false
-            }}
-            maxCount={1}
-            accept="application/pdf"
-          >
-            <Button block={isCompact}>Selecionar PDF (opcional)</Button>
-          </Upload>
-          <Upload
-            beforeUpload={(file) => {
-              setImportXml(file)
-              return false
-            }}
+          <Upload.Dragger
+            fileList={importXmlList}
             maxCount={1}
             accept=".xml,application/xml,text/xml"
-          >
-            <Button block={isCompact}>Selecionar XML (obrigatório para enviar à SEFAZ)</Button>
-          </Upload>
-          <Upload
-            beforeUpload={(file) => {
-              setImportJson(file)
-              return false
+            className="fiscal-notes-import-dragger"
+            beforeUpload={() => true}
+            customRequest={({ file, onSuccess }) => {
+              const raw = pickAntdFile(file)
+              if (!raw) {
+                message.error('Não foi possível ler o arquivo XML.')
+                return
+              }
+              setImportXmlFile(raw)
+              setImportJsonFile(null)
+              setImportJsonList([])
+              setImportXmlList([{ uid: file.uid, name: file.name, status: 'done' }])
+              onSuccess?.('ok')
             }}
+            onRemove={() => {
+              setImportXmlList([])
+              setImportXmlFile(null)
+            }}
+          >
+            <p className="ant-upload-drag-icon">
+              <CloudUploadOutlined />
+            </p>
+            <p className="ant-upload-text">XML da NF-e</p>
+            <p className="ant-upload-hint">Clique ou arraste o arquivo .xml</p>
+          </Upload.Dragger>
+          <Upload.Dragger
+            fileList={importJsonList}
             maxCount={1}
             accept=".json,application/json,text/json"
+            className="fiscal-notes-import-dragger"
+            beforeUpload={() => true}
+            customRequest={({ file, onSuccess }) => {
+              const raw = pickAntdFile(file)
+              if (!raw) {
+                message.error('Não foi possível ler o arquivo JSON.')
+                return
+              }
+              setImportJsonFile(raw)
+              setImportXmlFile(null)
+              setImportXmlList([])
+              setImportJsonList([{ uid: file.uid, name: file.name, status: 'done' }])
+              onSuccess?.('ok')
+            }}
+            onRemove={() => {
+              setImportJsonList([])
+              setImportJsonFile(null)
+            }}
           >
-            <Button block={isCompact}>Selecionar JSON (opcional)</Button>
-          </Upload>
-          <Text type="secondary" className="fiscal-notes-import-hint">
-            Dica: para o MVP, a venda será criada com 1 item “Venda importada de NF-e” no valor total da nota.
-          </Text>
+            <p className="ant-upload-drag-icon">
+              <FileTextOutlined />
+            </p>
+            <p className="ant-upload-text">JSON da NF-e</p>
+            <p className="ant-upload-hint">Alternativa ao XML · apenas um arquivo por importação</p>
+          </Upload.Dragger>
         </Space>
       </Modal>
     </div>

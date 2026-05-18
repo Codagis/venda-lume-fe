@@ -6,6 +6,11 @@
 
 :root {
   --vl-ui-scale: 0.75;
+  --vl-brand: #1a4a2f;
+  --vl-brand-hover: #235a38;
+  --vl-brand-dark: #153f28;
+  --vl-brand-light: #e6ede8;
+  --vl-brand-soft: #d1e0d6;
 }
 
 html {
@@ -210,15 +215,15 @@ body {
 }
 
 .ant-table-wrapper .ant-table-tbody > tr:hover > td {
-  background: #f0fdfa !important;
+  background: var(--vl-brand-light) !important;
 }
 
 .ant-table-wrapper .ant-table-tbody > tr.ant-table-row-selected > td {
-  background: #ecfeff !important;
+  background: var(--vl-brand-soft) !important;
 }
 
 .ant-table-wrapper .ant-table-tbody > tr.ant-table-row-selected:hover > td {
-  background: #cffafe !important;
+  background: #c8d9ce !important;
 }
 
 .ant-table-wrapper .ant-table-cell-fix-left,
@@ -240,18 +245,41 @@ body {
 }
 
 .ant-table-wrapper .ant-pagination .ant-pagination-item:hover {
-  border-color: #99f6e4;
+  border-color: var(--vl-brand-soft);
 }
 
 .ant-table-wrapper .ant-pagination .ant-pagination-item-active {
-  border-color: #0d9488;
-  background: linear-gradient(180deg, #f0fdfa 0%, #ecfdf5 100%);
-  box-shadow: 0 1px 2px rgba(13, 148, 136, 0.12);
+  border-color: var(--vl-brand);
+  background: linear-gradient(180deg, var(--vl-brand-light) 0%, var(--vl-brand-soft) 100%);
+  box-shadow: 0 1px 2px rgba(26, 74, 47, 0.2);
 }
 
 .ant-table-wrapper .ant-pagination .ant-pagination-item-active a {
-  color: #0f766e;
+  color: var(--vl-brand-dark);
   font-weight: 600;
+}
+
+.ant-btn-primary:not(:disabled):not(.ant-btn-background-ghost) {
+  background: var(--vl-brand) !important;
+  border-color: var(--vl-brand) !important;
+  color: #ffffff !important;
+}
+
+.ant-btn-primary:not(:disabled):not(.ant-btn-background-ghost):hover {
+  background: var(--vl-brand-hover) !important;
+  border-color: var(--vl-brand-hover) !important;
+  color: #ffffff !important;
+}
+
+.ant-btn-primary:not(:disabled):not(.ant-btn-background-ghost):active {
+  background: var(--vl-brand-dark) !important;
+  border-color: var(--vl-brand-dark) !important;
+  color: #ffffff !important;
+}
+
+.ant-btn-primary:not(:disabled):not(.ant-btn-background-ghost) .anticon,
+.ant-btn-primary:not(:disabled):not(.ant-btn-background-ghost) span {
+  color: #ffffff !important;
 }
 
 .ant-table-wrapper .ant-pagination .ant-pagination-prev .ant-pagination-item-link,

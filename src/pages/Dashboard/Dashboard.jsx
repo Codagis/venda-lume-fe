@@ -61,9 +61,9 @@ import './Dashboard.css'
 dayjs.locale('pt-br')
 
 const { Text } = Typography
-const COLORS = ['#22c55e', '#38bdf8', '#fbbf24', '#64748b', '#a78bfa', '#2dd4bf']
-const COLORS2 = ['#115e59', '#22c55e', '#3b82f6', '#f59e0b', '#8b5cf6', '#14b8a6']
-const STRIP_ACCENT = ['#22c55e', '#fbbf24', '#38bdf8', '#64748b', '#a78bfa', '#34d399']
+const COLORS = ['#1a4a2f', '#38bdf8', '#fbbf24', '#64748b', '#a78bfa', '#5a8f6e']
+const COLORS2 = ['#235a38', '#1a4a2f', '#3b82f6', '#f59e0b', '#8b5cf6', '#5a8f6e']
+const STRIP_ACCENT = ['#1a4a2f', '#fbbf24', '#38bdf8', '#64748b', '#a78bfa', '#5a8f6e']
 const RECOMMENDATION_ICONS = {
   PRODUCT_FOCUS: TrophyOutlined,
   INVESTMENT: RiseOutlined,
@@ -454,7 +454,7 @@ export default function Dashboard() {
                         : `Vendas por dia (${appliedStartDate.format('DD/MM')} a ${appliedEndDate.format('DD/MM')})`
                       : 'Vendas por dia'
                   }
-                  extra={<ArrowUpOutlined style={{ color: '#52c41a' }} />}
+                  extra={<ArrowUpOutlined style={{ color: '#1a4a2f' }} />}
                 >
                   <div className="dashboard-chart-area">
                     <ResponsiveContainer width="100%" height={chartAreaHeight}>
@@ -469,8 +469,8 @@ export default function Dashboard() {
                       >
                         <defs>
                           <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#22c55e" stopOpacity={0.35} />
-                            <stop offset="95%" stopColor="#22c55e" stopOpacity={0} />
+                            <stop offset="5%" stopColor="#1a4a2f" stopOpacity={0.35} />
+                            <stop offset="95%" stopColor="#1a4a2f" stopOpacity={0} />
                           </linearGradient>
                         </defs>
                         <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />

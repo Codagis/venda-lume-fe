@@ -477,7 +477,7 @@ export default function MyDeliveries() {
                         style={{ display: 'none' }}
                       />
                       {deliveryPhotoFile && (
-                        <span style={{ fontSize: 12, color: '#52c41a' }}>Foto selecionada ✓</span>
+                        <span style={{ fontSize: 12, color: '#1a4a2f' }}>Foto selecionada ✓</span>
                       )}
                     </div>
                   </Form.Item>

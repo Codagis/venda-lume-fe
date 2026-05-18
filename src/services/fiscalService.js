@@ -17,6 +17,18 @@ export async function listNfeIssued(params = {}) {
   return res.json()
 }
 
+export async function syncNfeReceived(params = {}) {
+  const qs = new URLSearchParams()
+  if (params.tenantId) qs.set('tenantId', params.tenantId)
+  if (params.distNsu != null) qs.set('dist_nsu', String(params.distNsu))
+  const res = await apiFetch(`/fiscal/nfe/received/sync?${qs.toString()}`, { method: 'POST' })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err?.message || err?.error || 'Erro ao buscar NF-e recebidas na SEFAZ.')
+  }
+  return res.json()
+}
+
 export async function listNfeReceived(params = {}) {
   const qs = new URLSearchParams()
   if (params.tenantId) qs.set('tenantId', params.tenantId)

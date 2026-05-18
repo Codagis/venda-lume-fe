@@ -216,9 +216,9 @@
 
 .dashboard-kpi-spotlight {
   border: none !important;
-  background: linear-gradient(145deg, #042f2e 0%, #115e59 42%, #064e3b 100%) !important;
+  background: linear-gradient(145deg, #153f28 0%, #1a4a2f 42%, #235a38 100%) !important;
   color: #fff !important;
-  box-shadow: 0 20px 50px rgba(6, 78, 59, 0.45) !important;
+  box-shadow: 0 20px 50px rgba(26, 74, 47, 0.45) !important;
   position: relative;
   overflow: hidden;
 }
@@ -324,7 +324,7 @@
   flex: 1;
   max-width: 10px;
   border-radius: 6px;
-  background: linear-gradient(180deg, #2dd4bf 0%, #5eead4 35%, #e2e8f0 100%);
+  background: linear-gradient(180deg, #1a4a2f 0%, #5a8f6e 35%, #e2e8f0 100%);
   align-self: flex-end;
   transition: opacity 0.2s;
 }

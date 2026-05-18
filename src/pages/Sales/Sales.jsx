@@ -962,7 +962,7 @@ export default function Sales() {
       </Modal>
 
       <Modal
-        title={<><CheckCircleOutlined style={{ color: '#22c55e', marginRight: 8 }} />Venda registrada com sucesso!</>}
+        title={<><CheckCircleOutlined style={{ color: '#1a4a2f', marginRight: 8 }} />Venda registrada com sucesso!</>}
         open={successModalOpen}
         onCancel={closeSuccessModal}
         footer={null}
@@ -974,7 +974,7 @@ export default function Sales() {
             <p className="sales-success-number">Venda <strong>{lastSale.saleNumber}</strong></p>
             <p className="sales-success-total">Total: {formatPrice(lastSale.total)}</p>
             {lastDelivery && (
-              <p className="sales-success-delivery" style={{ marginTop: 8, color: '#22c55e' }}>
+              <p className="sales-success-delivery" style={{ marginTop: 8, color: '#1a4a2f' }}>
                 Entrega <strong>{lastDelivery.deliveryNumber}</strong> criada automaticamente.
               </p>
             )}

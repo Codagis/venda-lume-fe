@@ -92,7 +92,10 @@ export async function updateSaleCustomer(saleId, data) {
     body: JSON.stringify({
       customerId: data.customerId ?? undefined,
       customerName: data.customerName != null ? String(data.customerName).trim() || undefined : undefined,
-      customerDocument: data.customerDocument != null ? String(data.customerDocument).trim() || undefined : undefined,
+      customerDocument:
+        data.customerDocument != null
+          ? String(data.customerDocument).replace(/\D/g, '').trim() || undefined
+          : undefined,
     }),
   })
   if (!res.ok) {

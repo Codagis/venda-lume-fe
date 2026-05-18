@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { Form, Input, Button, message } from 'antd'
 import { UserOutlined, LockOutlined } from '@ant-design/icons'
 import { useAuth } from '../../contexts/AuthContext'
+import logoUrl from '../../../resources/images/logo.svg'
 import './Login.css'
 
 export default function Login() {
@@ -36,7 +37,9 @@ export default function Login() {
       <div className="login-container">
         <div className="login-card">
           <header className="login-header">
-            <h1 className="login-title">VendaLume</h1>
+            <div className="login-brand">
+              <img src={logoUrl} alt="VendaLume" className="login-brand-logo" width={280} height={93} />
+            </div>
             <p className="login-subtitle">Acesse sua conta</p>
           </header>
 
@@ -92,8 +95,8 @@ export default function Login() {
               </Button>
             </Form.Item>
           </Form>
+          <p className="login-footer">© VendaLume · Acesso restrito</p>
         </div>
-        <p className="login-footer">© VendaLume · Acesso restrito</p>
       </div>
     </div>
   )

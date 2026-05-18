@@ -14,7 +14,10 @@ const motionEase = 'cubic-bezier(0.33, 1, 0.68, 1)'
 const theme = {
   token: {
     fontFamily: "'Urbanist', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-    colorPrimary: '#0d9488',
+    colorPrimary: '#1a4a2f',
+    colorSuccess: '#1a4a2f',
+    colorSuccessBg: '#e6ede8',
+    colorSuccessBorder: '#d1e0d6',
     colorText: '#0f172a',
     colorTextSecondary: '#64748b',
     colorBorder: '#e2e8f0',
@@ -28,6 +31,12 @@ const theme = {
     motionEaseOut: motionEase,
   },
   components: {
+    Button: {
+      primaryColor: '#ffffff',
+      colorPrimary: '#1a4a2f',
+      colorPrimaryHover: '#235a38',
+      colorPrimaryActive: '#153f28',
+    },
     Card: {
       paddingLG: 22,
       padding: 18,
@@ -36,12 +45,12 @@ const theme = {
       headerBg: '#f8fafc',
       headerColor: '#64748b',
       headerSplitColor: '#e2e8f0',
-      headerSortActiveBg: '#ecfdf5',
-      headerSortHoverBg: '#d1fae5',
+      headerSortActiveBg: '#e6ede8',
+      headerSortHoverBg: '#d1e0d6',
       bodySortBg: '#f8fafc',
-      rowHoverBg: '#f0fdfa',
-      rowSelectedBg: '#ecfeff',
-      rowSelectedHoverBg: '#cffafe',
+      rowHoverBg: '#e6ede8',
+      rowSelectedBg: '#e6ede8',
+      rowSelectedHoverBg: '#d1e0d6',
       borderColor: '#f1f5f9',
       cellPaddingBlock: 14,
       cellPaddingInline: 18,
@@ -53,7 +62,7 @@ const theme = {
       headerBorderRadius: 0,
     },
     Pagination: {
-      itemActiveBg: '#f0fdfa',
+      itemActiveBg: '#e6ede8',
       borderRadius: 8,
     },
     Select: {

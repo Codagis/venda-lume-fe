@@ -9,6 +9,7 @@ import { getCurrentTenant } from '../services/tenantService'
 import { getIcon } from '../config/iconRegistry'
 import { MENU_GROUPS } from '../config/menuGroups'
 import { confirmLogoutModal } from '../utils/confirmModal'
+import brandMarkUrl from '../../resources/images/Vector.svg'
 import './MainLayout.css'
 
 const { Header, Sider, Content } = Layout
@@ -60,25 +61,12 @@ function SidebarBrand({ tenantLogo }) {
   return (
     <div className="main-layout-brand">
       <div className="main-layout-brand-mark">
-        {tenantLogo ? (
-          <img src={tenantLogo} alt="" className="main-layout-brand-mark-img" />
-        ) : (
-          <svg className="main-layout-brand-mark-svg" viewBox="0 0 32 32" aria-hidden>
-            <defs>
-              <linearGradient id="vl-brand-face" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
-                <stop offset="0%" stopColor="#047857" />
-                <stop offset="55%" stopColor="#0d9488" />
-                <stop offset="100%" stopColor="#115e59" />
-              </linearGradient>
-            </defs>
-            <rect width="32" height="32" rx="9" fill="url(#vl-brand-face)" />
-            <path
-              d="M11 9.5 L21 16 L11 22.5 V9.5 Z"
-              fill="#ecfccb"
-              style={{ filter: 'drop-shadow(0 0 6px rgba(190, 242, 100, 0.85))' }}
-            />
-          </svg>
-        )}
+        <img
+          src={tenantLogo || brandMarkUrl}
+          alt=""
+          className="main-layout-brand-mark-img"
+          aria-hidden
+        />
       </div>
       <span className="main-layout-brand-name">VendaLume</span>
     </div>

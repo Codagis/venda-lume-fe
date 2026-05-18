@@ -172,8 +172,8 @@
   border-radius: 10px;
   flex-shrink: 0;
   color: #ffffff !important;
-  background: linear-gradient(180deg, #115e59 0%, #0d9488 100%) !important;
-  border-color: #0f766e !important;
+  background: #1a4a2f !important;
+  border-color: #1a4a2f !important;
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
 }
 
@@ -189,8 +189,8 @@
 .deliveries-add-btn.ant-btn-primary:hover,
 .deliveries-add-btn:hover {
   color: #ffffff !important;
-  background: linear-gradient(180deg, #0f766e 0%, #14b8a6 100%) !important;
-  border-color: #0d9488 !important;
+  background: #235a38 !important;
+  border-color: #1a4a2f !important;
 }
 
 .deliveries-add-btn.ant-btn-primary:hover .anticon,
@@ -201,7 +201,7 @@
 }
 
 .deliveries-add-btn.ant-btn-primary:focus-visible {
-  outline: 2px solid #0d9488;
+  outline: 2px solid #1a4a2f;
   outline-offset: 2px;
 }
 

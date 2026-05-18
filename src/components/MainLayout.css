@@ -168,18 +168,12 @@
   justify-content: center;
 }
 
-.main-layout-brand-mark-svg {
-  width: 36px;
-  height: 36px;
-  display: block;
-}
-
 .main-layout-brand-mark-img {
   width: 36px;
   height: 36px;
-  object-fit: cover;
+  object-fit: contain;
   border-radius: 10px;
-  border: 1px solid #eef0f4;
+  display: block;
 }
 
 .main-layout-brand-name {
@@ -403,14 +397,14 @@
 .main-layout-search-result:hover,
 .main-layout-search-result:focus-visible {
   outline: none;
-  background: #f0fdfa;
+  background: #e6ede8;
   color: #0f172a;
 }
 
 .main-layout-search-result:hover .main-layout-search-result-section-icon,
 .main-layout-search-result:focus-visible .main-layout-search-result-section-icon {
   opacity: 1;
-  color: #0f766e;
+  color: #235a38;
 }
 
 .main-layout-search-result-title {
@@ -431,7 +425,7 @@
 .main-layout-search-result-section-icon {
   flex-shrink: 0;
   font-size: 11px;
-  color: #0d9488;
+  color: #1a4a2f;
   opacity: 0.9;
 }
 
@@ -560,7 +554,7 @@
 }
 
 .main-layout-menu .ant-menu-item-selected {
-  background: #115e59 !important;
+  background: #1a4a2f !important;
   color: #ffffff !important;
 }
 
@@ -570,12 +564,12 @@
 }
 
 .main-layout-menu .ant-menu-item-selected:hover {
-  background: #0f766e !important;
+  background: #235a38 !important;
   color: #ffffff !important;
 }
 
 .main-layout-menu .ant-menu-submenu .ant-menu-item-selected {
-  background: #115e59 !important;
+  background: #1a4a2f !important;
   color: #ffffff !important;
 }
 
@@ -702,10 +696,10 @@
   border-radius: 0 14px 14px 0;
   cursor: pointer;
   color: #fff;
-  background: linear-gradient(180deg, #115e59 0%, #0d9488 100%);
+  background: #1a4a2f;
   box-shadow:
     2px 0 12px rgba(15, 23, 42, 0.12),
-    4px 0 24px rgba(13, 148, 136, 0.25);
+    4px 0 24px rgba(26, 74, 47, 0.25);
   transition:
     width 0.26s var(--layout-motion-ease),
     padding 0.26s var(--layout-motion-ease),
@@ -720,7 +714,7 @@
   filter: brightness(1.06);
   box-shadow:
     3px 0 16px rgba(15, 23, 42, 0.14),
-    6px 0 28px rgba(13, 148, 136, 0.3);
+    6px 0 28px rgba(26, 74, 47, 0.3);
 }
 
 .main-layout-menu-edge:active {
@@ -729,7 +723,7 @@
 }
 
 .main-layout-menu-edge:focus-visible {
-  outline: 2px solid #0d9488;
+  outline: 2px solid #1a4a2f;
   outline-offset: 2px;
 }
 

@@ -26,7 +26,6 @@ import {
   DownOutlined,
   DeleteOutlined,
   FilePdfOutlined,
-  FileExcelOutlined,
   CalendarOutlined,
   AccountBookOutlined,
 } from '@ant-design/icons'
@@ -366,22 +365,6 @@ export default function Employees() {
     }
   }
 
-  const handleDownloadPayrollExcel = async () => {
-    if (isRoot && !effectiveTenantId) {
-      message.warning('Selecione a empresa para exportar a folha.')
-      return
-    }
-    setPayrollLoading('excel')
-    try {
-      await employeeService.downloadPayrollReportExcel(effectiveTenantId, payrollYear, payrollMonth)
-      message.success('Excel da folha baixado.')
-    } catch (e) {
-      message.error(e?.message || 'Erro ao gerar Excel.')
-    } finally {
-      setPayrollLoading(null)
-    }
-  }
-
   const handleDownloadReceipt = async (employee) => {
     if (isRoot && !effectiveTenantId) {
       message.warning('Selecione a empresa para gerar o recibo.')
@@ -564,7 +547,7 @@ export default function Employees() {
           </Card>
 
           <Card className="employees-payroll-card employees-payroll-card-receipt" title="Recibo de Pagamento de Salário (folha profissional)">
-            <p className="employees-payroll-desc">Exporte a folha em PDF/Excel ou gere o recibo de pagamento de salário (modelo profissional) por funcionário para o mês/ano selecionado.</p>
+            <p className="employees-payroll-desc">Exporte a folha em PDF ou gere o recibo de pagamento de salário (modelo profissional) por funcionário para o mês/ano selecionado.</p>
             <Row gutter={dashGutter} align="bottom" className="employees-payroll-row" style={{ marginBottom: 16 }}>
               {isRoot && (
                 <Col xs={24} sm={12} md={6}>
@@ -604,9 +587,6 @@ export default function Employees() {
                   <Button icon={<FilePdfOutlined />} loading={payrollLoading === 'pdf'} onClick={handleDownloadPayrollPdf} block={isCompact}>
                     Folha PDF
                   </Button>
-                  <Button icon={<FileExcelOutlined />} loading={payrollLoading === 'excel'} onClick={handleDownloadPayrollExcel} block={isCompact}>
-                    Folha Excel
-                  </Button>
                 </div>
               </Col>
             </Row>
@@ -622,11 +602,11 @@ export default function Employees() {
                       <span className="employees-receipt-item-salary">{formatCurrency(emp.salary)}</span>
                       <Button
                         type="primary"
-                        ghost
                         size="small"
                         icon={<FilePdfOutlined />}
                         loading={receiptLoadingId === emp.id}
                         block={isCompact}
+                        className="employees-receipt-btn"
                         onClick={(ev) => { ev.stopPropagation(); handleDownloadReceipt(emp) }}
                       >
                         Recibo
@@ -908,6 +888,7 @@ export default function Employees() {
                     type="primary"
                     icon={<FilePdfOutlined />}
                     block={isCompact}
+                    className="employees-receipt-btn"
                     loading={receiptLoadingId === editingId}
                     onClick={async () => {
                       const emp = employees.find((e) => e.id === editingId)

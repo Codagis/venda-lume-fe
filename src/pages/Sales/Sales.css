@@ -139,8 +139,8 @@
 }
 
 .sales-result-item:hover {
-  background: #f0fdf4;
-  border-color: #22c55e;
+  background: #e6ede8;
+  border-color: #1a4a2f;
   box-shadow: 0 2px 8px rgba(34, 197, 94, 0.15);
 }
 
@@ -169,7 +169,7 @@
 }
 
 .sales-result-item-meta strong {
-  color: #22c55e;
+  color: #1a4a2f;
   font-size: 14px;
 }
 
@@ -217,7 +217,7 @@
 }
 
 .sales-cart-card .ant-card-head {
-  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+  background: linear-gradient(135deg, #e6ede8 0%, #d1e0d6 100%);
   border-bottom: 1px solid #bbf7d0;
   font-weight: 600;
   font-size: 16px;
@@ -340,7 +340,7 @@
 }
 
 .sales-totals-box {
-  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+  background: linear-gradient(135deg, #e6ede8 0%, #d1e0d6 100%);
   border: 1px solid #bbf7d0;
   border-radius: 10px;
   padding: 20px;
@@ -356,7 +356,7 @@
 }
 
 .sales-total-line.sales-total-discount {
-  color: #059669;
+  color: #235a38;
 }
 
 .sales-total-line.sales-total-final {
@@ -369,7 +369,7 @@
 }
 
 .sales-total-line.sales-total-change {
-  color: #059669;
+  color: #235a38;
   font-weight: 600;
 }
 
@@ -399,7 +399,7 @@
 }
 
 .sales-customer-item:hover {
-  background: #f0fdf4;
+  background: #e6ede8;
   border-color: #bbf7d0;
 }
 

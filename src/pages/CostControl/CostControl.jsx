@@ -95,7 +95,7 @@ function formatDate(d) {
   return dayjs(d).format('DD/MM/YYYY')
 }
 
-const CHART_COLORS = ['#DC2626', '#F59E0B', '#10B981', '#3B82F6', '#6B7280']
+const CHART_COLORS = ['#DC2626', '#F59E0B', '#1a4a2f', '#3B82F6', '#6B7280']
 
 export default function CostControl() {
   const screens = Grid.useBreakpoint()

@@ -177,10 +177,19 @@ export default function Modules() {
             </div>
           </div>
 
-          <Button type="primary" icon={<PlusOutlined />} onClick={() => openModal()} className="settings-add-btn">
-            Novo módulo
-          </Button>
-          <Table rowKey="id" columns={columns} dataSource={modules} loading={loading} pagination={{ pageSize: 10 }} />
+          <div className="settings-toolbar">
+            <Button type="primary" icon={<PlusOutlined />} onClick={() => openModal()} className="settings-add-btn">
+              Novo módulo
+            </Button>
+          </div>
+          <Table
+            rowKey="id"
+            columns={columns}
+            dataSource={modules}
+            loading={loading}
+            pagination={{ pageSize: 10 }}
+            className="settings-table-wrap"
+          />
 
           <Drawer
             title={modal.id ? 'Editar módulo' : 'Novo módulo'}

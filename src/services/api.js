@@ -61,10 +61,17 @@ async function handleUnauthorized(res, path, opts) {
   if (res.status !== 401) return res
   try {
     await refreshToken()
+    const retryHeaders = { ...opts?.headers }
+    if (opts?.body instanceof FormData) {
+      delete retryHeaders['Content-Type']
+      delete retryHeaders['content-type']
+    } else {
+      Object.assign(retryHeaders, defaultOptions.headers)
+    }
     const retry = await fetch(`${API_BASE}${path}`, {
       ...opts,
       credentials: 'include',
-      headers: { ...defaultOptions.headers, ...opts?.headers },
+      headers: retryHeaders,
     })
     if (retry.status === 401) clearAuthAndRedirect()
     return retry
@@ -75,16 +82,18 @@ async function handleUnauthorized(res, path, opts) {
 }
 
 export function apiFetch(path, options = {}) {
+  const isFormData = options.body instanceof FormData
+  const headers = isFormData
+    ? { ...(options.headers || {}) }
+    : { ...defaultOptions.headers, ...(options.headers || {}) }
+  if (isFormData) {
+    delete headers['Content-Type']
+    delete headers['content-type']
+  }
   const opts = {
     ...defaultOptions,
     ...options,
-    headers: { ...defaultOptions.headers, ...options?.headers },
-  }
-  if (opts.body instanceof FormData) {
-    const headers = { ...(opts.headers || {}) }
-    delete headers['Content-Type']
-    delete headers['content-type']
-    opts.headers = headers
+    headers,
   }
   return fetch(`${API_BASE}${path}`, opts).then((res) => {
     if (res.status === 401) {

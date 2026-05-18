@@ -143,8 +143,8 @@
   font-size: 12px;
   padding: 2px 8px;
   border-radius: 4px;
-  background: #D1FAE5;
-  color: #059669;
+  background: #d1e0d6;
+  color: #235a38;
 }
 
 .sales-consult-status-cancelled {
@@ -322,11 +322,11 @@
 
 .sales-consult-link-num {
   font-weight: 600;
-  color: #115e59;
+  color: #235a38;
 }
 
 .sales-consult-link-num:hover {
-  color: #0d9488;
+  color: #1a4a2f;
 }
 
 .sales-consult-col-date {

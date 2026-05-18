@@ -642,7 +642,6 @@ export default function Settings() {
           icon={<PlusOutlined />}
           onClick={() => openModal('profile')}
           className="settings-add-btn"
-          block={isCompact}
         >
           Novo perfil
         </Button>
@@ -654,7 +653,7 @@ export default function Settings() {
           size={isCompact ? 'small' : 'middle'}
           scroll={isCompact ? { x: 640 } : undefined}
           pagination={{ pageSize: 10, simple: isCompact, showSizeChanger: !isCompact }}
-          className={isCompact ? 'settings-data-table' : undefined}
+          className={isCompact ? 'settings-table-wrap settings-data-table' : 'settings-table-wrap'}
         />
       </div>
     ),
@@ -676,7 +675,6 @@ export default function Settings() {
                 icon={<PlusOutlined />}
                 onClick={() => openModal('tenant')}
                 className="settings-add-btn"
-                block={isCompact}
               >
                 Nova empresa
               </Button>
@@ -688,7 +686,7 @@ export default function Settings() {
                 size={isCompact ? 'small' : 'middle'}
                 scroll={isCompact ? { x: 900 } : undefined}
                 pagination={{ pageSize: 10, simple: isCompact, showSizeChanger: !isCompact }}
-                className={isCompact ? 'settings-data-table' : undefined}
+                className={isCompact ? 'settings-table-wrap settings-data-table' : 'settings-table-wrap'}
               />
             </div>
           ),
@@ -708,7 +706,6 @@ export default function Settings() {
                 icon={<PlusOutlined />}
                 onClick={() => openModal('permission')}
                 className="settings-add-btn"
-                block={isCompact}
               >
                 Nova permissão
               </Button>
@@ -720,7 +717,7 @@ export default function Settings() {
                 size={isCompact ? 'small' : 'middle'}
                 scroll={isCompact ? { x: 720 } : undefined}
                 pagination={{ pageSize: 10, simple: isCompact, showSizeChanger: !isCompact }}
-                className={isCompact ? 'settings-data-table' : undefined}
+                className={isCompact ? 'settings-table-wrap settings-data-table' : 'settings-table-wrap'}
               />
             </div>
           ),
@@ -744,7 +741,6 @@ export default function Settings() {
                         icon={<EditOutlined />}
                         onClick={() => openModal('tenant', user.tenantId)}
                         className="settings-add-btn"
-                        block={isCompact}
                       >
                         Editar dados da empresa
                       </Button>
@@ -758,7 +754,7 @@ export default function Settings() {
                       size={isCompact ? 'small' : 'middle'}
                       scroll={isCompact ? { x: 720 } : undefined}
                       locale={{ emptyText: loadingMyTenant ? 'Carregando…' : 'Nenhum dado da empresa.' }}
-                      className={isCompact ? 'settings-data-table' : undefined}
+                      className={isCompact ? 'settings-table-wrap settings-data-table' : 'settings-table-wrap'}
                     />
                   </div>
                 ),
