@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react'
+﻿import { useState, useEffect, useCallback, useMemo } from 'react'
 import {
   Form,
   Input,
@@ -13,6 +13,10 @@ import {
   message,
   Space,
   Grid,
+  Tabs,
+  Tag,
+  Typography,
+  Tooltip,
 } from 'antd'
 import {
   UserOutlined,
@@ -21,19 +25,34 @@ import {
   FilterOutlined,
   DeleteOutlined,
   DownOutlined,
+  RadarChartOutlined,
+  FormOutlined,
 } from '@ant-design/icons'
 import { useAuth } from '../../contexts/AuthContext'
 import { confirmDeleteModal } from '../../utils/confirmModal'
 import * as customerService from '../../services/customerService'
 import * as tenantService from '../../services/tenantService'
-import { normalizeCpfCnpj, normalizePhone } from '../../utils/masks'
+import { maskCpfCnpj, normalizeCpfCnpj, normalizePhone } from '../../utils/masks'
 import { antdRuleCpfCnpj, antdRuleEmail } from '../../utils/validators'
+import CustomerCrmProfilePanel from '../../components/CustomerCrmProfilePanel'
+import { CRM_SEGMENT_META, getCrmSegmentMeta, formatCurrencyBr } from '../../config/customerCrmSegments'
 import './Customers.css'
 
 const { TextArea } = Input
 
 const FILTER_ALL = '__all__'
+const CRM_FILTER_ALL = '__crm_all__'
 const initialFormValues = { active: true }
+
+const { Text } = Typography
+
+const CRM_FILTER_OPTIONS = [
+  { value: CRM_FILTER_ALL, label: 'Todos os perfis' },
+  ...Object.entries(CRM_SEGMENT_META).map(([value, meta]) => ({
+    value,
+    label: meta.label,
+  })),
+]
 
 function mapCustomerToFormValues(customer) {
   return {
@@ -76,7 +95,11 @@ export default function Customers() {
   const [selectedTenantId, setSelectedTenantId] = useState(null)
   const [filterSearch, setFilterSearch] = useState('')
   const [filterActive, setFilterActive] = useState(FILTER_ALL)
+  const [filterCrmSegment, setFilterCrmSegment] = useState(CRM_FILTER_ALL)
   const [filtersExpanded, setFiltersExpanded] = useState(false)
+  const [crmSummaries, setCrmSummaries] = useState({})
+  const [loadingCrm, setLoadingCrm] = useState(false)
+  const [drawerTab, setDrawerTab] = useState('data')
 
   const FILTER_OPTIONS = [
     { value: FILTER_ALL, label: 'Todos' },
@@ -109,14 +132,33 @@ export default function Customers() {
         filter.tenantId = selectedTenantId
       }
       const res = await customerService.searchCustomers(filter)
-      setCustomers(res?.content ?? [])
+      const list = res?.content ?? []
+      setCustomers(list)
+      if (list.length > 0) {
+        setLoadingCrm(true)
+        try {
+          const tenantId = isRoot ? selectedTenantId : user?.tenantId
+          const summaries = await customerService.fetchCrmSummaries(
+            list.map((c) => c.id),
+            tenantId
+          )
+          setCrmSummaries(summaries || {})
+        } catch {
+          setCrmSummaries({})
+        } finally {
+          setLoadingCrm(false)
+        }
+      } else {
+        setCrmSummaries({})
+      }
     } catch (e) {
       message.error(e?.message || 'Erro ao carregar clientes.')
       setCustomers([])
+      setCrmSummaries({})
     } finally {
       setLoadingList(false)
     }
-  }, [isRoot, selectedTenantId, filterSearch, filterActive])
+  }, [isRoot, selectedTenantId, filterSearch, filterActive, user?.tenantId])
 
   useEffect(() => {
     if (isRoot) loadTenants()
@@ -124,6 +166,7 @@ export default function Customers() {
 
   useEffect(() => {
     if (!drawerOpen) return
+    if (editingId && drawerTab !== 'data') return
     const t = window.setTimeout(() => {
       form.resetFields()
       if (drawerRecord) {
@@ -135,11 +178,12 @@ export default function Customers() {
       }
     }, 0)
     return () => window.clearTimeout(t)
-  }, [drawerOpen, drawerRecord, isRoot, selectedTenantId, form])
+  }, [drawerOpen, drawerRecord, drawerTab, editingId, isRoot, selectedTenantId, form])
 
   const openDrawer = (customer = null) => {
     setEditingId(customer?.id ?? null)
     setDrawerRecord(customer ?? null)
+    setDrawerTab('data')
     setDrawerOpen(true)
   }
 
@@ -147,8 +191,20 @@ export default function Customers() {
     setDrawerOpen(false)
     setEditingId(null)
     setDrawerRecord(null)
+    setDrawerTab('data')
     form.resetFields()
   }
+
+  const effectiveTenantId = isRoot ? selectedTenantId : user?.tenantId
+
+  const displayedCustomers = useMemo(() => {
+    if (filterCrmSegment === CRM_FILTER_ALL) return customers
+    return customers.filter((c) => {
+      const crm = crmSummaries[c.id]
+      if (!crm) return false
+      return crm.primarySegment === filterCrmSegment || (crm.segments || []).includes(filterCrmSegment)
+    })
+  }, [customers, crmSummaries, filterCrmSegment])
 
   const handleDelete = useCallback(
     async (id) => {
@@ -199,6 +255,90 @@ export default function Customers() {
     }
   }
 
+  const customerForm = (
+    <Form
+      form={form}
+      layout="vertical"
+      onFinish={onFinish}
+      preserve={false}
+      className="customers-form customers-drawer-form"
+    >
+      {isRoot && !editingId && (
+        <Form.Item
+          name="tenantId"
+          label="Empresa"
+          rules={[{ required: true, message: 'Selecione a empresa' }]}
+        >
+          <Select
+            placeholder="Selecione a empresa"
+            options={tenants.map((t) => ({ value: t.id, label: t.name }))}
+            showSearch
+            optionFilterProp="label"
+          />
+        </Form.Item>
+      )}
+
+      <div className="customers-drawer-section">
+        <h3 className="customers-section-title">Dados básicos</h3>
+        <Form.Item name="name" label="Nome" rules={[{ required: true, message: 'Obrigatório' }, { max: 255 }]}>
+          <Input placeholder="Nome ou razão social" />
+        </Form.Item>
+        <Form.Item
+          name="document"
+          label="CPF ou CNPJ"
+          normalize={normalizeCpfCnpj}
+          rules={[{ max: 20 }, antdRuleCpfCnpj()]}
+          extra="Aceita CPF (11 dígitos) ou CNPJ (14 dígitos), com ou sem formatação."
+        >
+          <Input placeholder="CPF ou CNPJ" inputMode="numeric" />
+        </Form.Item>
+        <Form.Item name="email" label="E-mail" rules={[{ max: 255 }, antdRuleEmail()]}>
+          <Input placeholder="E-mail" type="email" />
+        </Form.Item>
+        <Form.Item name="phone" label="Telefone" normalize={normalizePhone} rules={[{ max: 20 }]}>
+          <Input placeholder="Telefone com DDD" inputMode="tel" />
+        </Form.Item>
+        <Form.Item name="phoneAlt" label="Telefone alternativo" normalize={normalizePhone} rules={[{ max: 20 }]}>
+          <Input placeholder="Opcional (com DDD)" inputMode="tel" />
+        </Form.Item>
+      </div>
+
+      <div className="customers-drawer-section">
+        <h3 className="customers-section-title">Endereço</h3>
+        <Form.Item name="addressStreet" label="Logradouro" rules={[{ max: 255 }]}>
+          <Input placeholder="Rua, avenida, etc." />
+        </Form.Item>
+        <Form.Item name="addressNumber" label="Número" rules={[{ max: 20 }]}>
+          <Input placeholder="NÂº" />
+        </Form.Item>
+        <Form.Item name="addressComplement" label="Complemento" rules={[{ max: 100 }]}>
+          <Input placeholder="Apto, bloco, etc." />
+        </Form.Item>
+        <Form.Item name="addressNeighborhood" label="Bairro" rules={[{ max: 100 }]}>
+          <Input placeholder="Bairro" />
+        </Form.Item>
+        <Form.Item name="addressCity" label="Cidade" rules={[{ max: 100 }]}>
+          <Input placeholder="Cidade" />
+        </Form.Item>
+        <Form.Item name="addressState" label="UF" rules={[{ max: 2 }]}>
+          <Input placeholder="UF" maxLength={2} />
+        </Form.Item>
+        <Form.Item name="addressZip" label="CEP" rules={[{ max: 10 }]}>
+          <Input placeholder="CEP" />
+        </Form.Item>
+      </div>
+
+      <div className="customers-drawer-section">
+        <Form.Item name="notes" label="Observações">
+          <TextArea rows={2} placeholder="Observações (opcional)" />
+        </Form.Item>
+        <Form.Item name="active" valuePropName="checked" label="Ativo">
+          <Switch checkedChildren="Sim" unCheckedChildren="Não" />
+        </Form.Item>
+      </div>
+    </Form>
+  )
+
   const formatAddress = (r) => {
     const parts = []
     if (r.addressStreet) parts.push(r.addressStreet)
@@ -213,11 +353,46 @@ export default function Customers() {
     () => [
       { title: 'Nome', dataIndex: 'name', key: 'name', ellipsis: true },
       {
+        title: 'Classificação CRM',
+        key: 'crm',
+        width: isCompact ? 120 : 200,
+        render: (_, r) => {
+          const crm = crmSummaries[r.id]
+          if (loadingCrm && !crm) {
+            return <Text type="secondary">…</Text>
+          }
+          if (!crm) {
+            return <Text type="secondary">—</Text>
+          }
+          const meta = getCrmSegmentMeta(crm.primarySegment)
+          return (
+            <div className="customers-crm-cell" onClick={(e) => e.stopPropagation()}>
+              <Tag color={meta.color} className="customers-crm-segment-tag">
+                {crm.primarySegmentLabel || meta.label}
+              </Tag>
+              {crm.strategicInsight && (
+                <Tooltip title={crm.strategicInsight}>
+                  <Text type="secondary" className="customers-crm-cell-insight" ellipsis>
+                    {crm.strategicInsight}
+                  </Text>
+                </Tooltip>
+              )}
+              {crm.totalOrders > 0 && (
+                <Text type="secondary" className="customers-crm-cell-meta">
+                  {crm.totalOrders} ped. · {formatCurrencyBr(crm.averageTicket)}
+                </Text>
+              )}
+            </div>
+          )
+        },
+      },
+      {
         title: 'Documento',
         dataIndex: 'document',
         key: 'document',
-        width: isCompact ? 112 : 130,
+        width: isCompact ? 140 : 180,
         ellipsis: true,
+        render: (doc) => (doc ? maskCpfCnpj(doc) : '—'),
       },
       {
         title: 'E-mail',
@@ -277,7 +452,7 @@ export default function Customers() {
         ),
       },
     ],
-    [isCompact, handleDelete]
+    [isCompact, handleDelete, crmSummaries, loadingCrm]
   )
 
   return (
@@ -291,7 +466,7 @@ export default function Customers() {
             <div className="customers-header-card-content">
               <h2 className="customers-page-title">Clientes</h2>
               <p className="customers-page-subtitle">
-                Cadastre e gerencie os clientes da sua empresa. Clique em um item para editar.
+                Cadastre clientes e visualize a classificação inteligente (CRM) gerada automaticamente a partir das vendas.
               </p>
             </div>
           </div>
@@ -352,6 +527,16 @@ export default function Customers() {
                       allowClear
                     />
                   </Col>
+                  <Col xs={24} sm={12} md={6}>
+                    <label>Perfil CRM</label>
+                    <Select
+                      placeholder="Todos os perfis"
+                      options={CRM_FILTER_OPTIONS}
+                      value={filterCrmSegment}
+                      onChange={setFilterCrmSegment}
+                      style={{ width: '100%' }}
+                    />
+                  </Col>
                   {isRoot && (
                     <Col xs={24} sm={12} md={6}>
                       <label>Empresa</label>
@@ -379,10 +564,10 @@ export default function Customers() {
           <Table
             rowKey="id"
             columns={columns}
-            dataSource={customers}
-            loading={loadingList}
+            dataSource={displayedCustomers}
+            loading={loadingList || loadingCrm}
             size={isCompact ? 'small' : 'middle'}
-            scroll={{ x: isCompact ? 520 : 1100 }}
+            scroll={{ x: isCompact ? 640 : 1280 }}
             pagination={{
               pageSize: 15,
               showSizeChanger: !isCompact,
@@ -400,11 +585,11 @@ export default function Customers() {
       </main>
 
       <Drawer
-        title={editingId ? 'Editar cliente' : 'Novo cliente'}
+        title={editingId ? drawerRecord?.name || 'Cliente' : 'Novo cliente'}
         open={drawerOpen}
         onClose={closeDrawer}
         placement="right"
-        width={isCompact ? '100%' : 520}
+        width={isCompact ? '100%' : editingId ? 640 : 520}
         destroyOnHidden
         rootClassName={`customers-drawer-root${isCompact ? ' customers-drawer-root--compact' : ''}`}
         styles={{
@@ -413,95 +598,55 @@ export default function Customers() {
           },
         }}
         extra={
-          <Space>
-            <Button onClick={closeDrawer}>Cancelar</Button>
-            <Button type="primary" loading={loading} onClick={() => form.submit()}>
-              {editingId ? 'Salvar' : 'Cadastrar'}
-            </Button>
-          </Space>
+          drawerTab === 'data' ? (
+            <Space>
+              <Button onClick={closeDrawer}>Cancelar</Button>
+              <Button type="primary" loading={loading} onClick={() => form.submit()}>
+                {editingId ? 'Salvar' : 'Cadastrar'}
+              </Button>
+            </Space>
+          ) : (
+            <Button onClick={closeDrawer}>Fechar</Button>
+          )
         }
       >
-        <Form
-          form={form}
-          layout="vertical"
-          onFinish={onFinish}
-          preserve={false}
-          className="customers-form customers-drawer-form"
-        >
-          {isRoot && !editingId && (
-            <Form.Item
-              name="tenantId"
-              label="Empresa"
-              rules={[{ required: true, message: 'Selecione a empresa' }]}
-            >
-              <Select
-                placeholder="Selecione a empresa"
-                options={tenants.map((t) => ({ value: t.id, label: t.name }))}
-                showSearch
-                optionFilterProp="label"
-              />
-            </Form.Item>
-          )}
-
-          <div className="customers-drawer-section">
-            <h3 className="customers-section-title">Dados básicos</h3>
-            <Form.Item name="name" label="Nome" rules={[{ required: true, message: 'Obrigatório' }, { max: 255 }]}>
-              <Input placeholder="Nome ou razão social" />
-            </Form.Item>
-            <Form.Item
-              name="document"
-              label="CPF ou CNPJ"
-              normalize={normalizeCpfCnpj}
-              rules={[{ max: 20 }, antdRuleCpfCnpj()]}
-              extra="Aceita CPF (11 dígitos) ou CNPJ (14 dígitos), com ou sem formatação."
-            >
-              <Input placeholder="CPF ou CNPJ" inputMode="numeric" />
-            </Form.Item>
-            <Form.Item name="email" label="E-mail" rules={[{ max: 255 }, antdRuleEmail()]}>
-              <Input placeholder="E-mail" type="email" />
-            </Form.Item>
-            <Form.Item name="phone" label="Telefone" normalize={normalizePhone} rules={[{ max: 20 }]}>
-              <Input placeholder="Telefone com DDD" inputMode="tel" />
-            </Form.Item>
-            <Form.Item name="phoneAlt" label="Telefone alternativo" normalize={normalizePhone} rules={[{ max: 20 }]}>
-              <Input placeholder="Opcional (com DDD)" inputMode="tel" />
-            </Form.Item>
-          </div>
-
-          <div className="customers-drawer-section">
-            <h3 className="customers-section-title">Endereço</h3>
-            <Form.Item name="addressStreet" label="Logradouro" rules={[{ max: 255 }]}>
-              <Input placeholder="Rua, avenida, etc." />
-            </Form.Item>
-            <Form.Item name="addressNumber" label="Número" rules={[{ max: 20 }]}>
-              <Input placeholder="Nº" />
-            </Form.Item>
-            <Form.Item name="addressComplement" label="Complemento" rules={[{ max: 100 }]}>
-              <Input placeholder="Apto, bloco, etc." />
-            </Form.Item>
-            <Form.Item name="addressNeighborhood" label="Bairro" rules={[{ max: 100 }]}>
-              <Input placeholder="Bairro" />
-            </Form.Item>
-            <Form.Item name="addressCity" label="Cidade" rules={[{ max: 100 }]}>
-              <Input placeholder="Cidade" />
-            </Form.Item>
-            <Form.Item name="addressState" label="UF" rules={[{ max: 2 }]}>
-              <Input placeholder="UF" maxLength={2} />
-            </Form.Item>
-            <Form.Item name="addressZip" label="CEP" rules={[{ max: 10 }]}>
-              <Input placeholder="CEP" />
-            </Form.Item>
-          </div>
-
-          <div className="customers-drawer-section">
-            <Form.Item name="notes" label="Observações">
-              <TextArea rows={2} placeholder="Observações (opcional)" />
-            </Form.Item>
-            <Form.Item name="active" valuePropName="checked" label="Ativo">
-              <Switch checkedChildren="Sim" unCheckedChildren="Não" />
-            </Form.Item>
-          </div>
-        </Form>
+        {editingId ? (
+          <Tabs
+            activeKey={drawerTab}
+            onChange={setDrawerTab}
+            className="customers-drawer-tabs"
+            destroyInactiveTabPane={false}
+            items={[
+              {
+                key: 'data',
+                label: (
+                  <span>
+                    <FormOutlined /> Cadastro
+                  </span>
+                ),
+                forceRender: true,
+                children: customerForm,
+              },
+              {
+                key: 'crm',
+                label: (
+                  <span>
+                    <RadarChartOutlined /> Perfil inteligente
+                  </span>
+                ),
+                children: (
+                  <CustomerCrmProfilePanel
+                    customerId={editingId}
+                    tenantId={effectiveTenantId}
+                    customerName={drawerRecord?.name}
+                  />
+                ),
+              },
+            ]}
+          />
+        ) : (
+          customerForm
+        )}
       </Drawer>
     </div>
   )

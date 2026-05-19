@@ -104,6 +104,39 @@ export async function downloadNfeIssuedXml(id, params = {}) {
   return res.blob()
 }
 
+export async function getFiscalNfeIssuedTaxes(id, params = {}) {
+  const qs = new URLSearchParams()
+  if (params.tenantId) qs.set('tenantId', params.tenantId)
+  const res = await apiFetch(`/fiscal/nfe/${encodeURIComponent(id)}/taxes?${qs.toString()}`)
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err?.message || err?.error || 'Erro ao consultar impostos da NF-e.')
+  }
+  return res.json()
+}
+
+export async function getFiscalNfeReceivedTaxes(id, params = {}) {
+  const qs = new URLSearchParams()
+  if (params.tenantId) qs.set('tenantId', params.tenantId)
+  const res = await apiFetch(`/fiscal/nfe/received/${encodeURIComponent(id)}/taxes?${qs.toString()}`)
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err?.message || err?.error || 'Erro ao consultar impostos da NF-e recebida.')
+  }
+  return res.json()
+}
+
+export async function getFiscalNfceIssuedTaxes(id, params = {}) {
+  const qs = new URLSearchParams()
+  if (params.tenantId) qs.set('tenantId', params.tenantId)
+  const res = await apiFetch(`/fiscal/nfce/${encodeURIComponent(id)}/taxes?${qs.toString()}`)
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err?.message || err?.error || 'Erro ao consultar impostos da NFC-e.')
+  }
+  return res.json()
+}
+
 export async function getNfceIssuedById(id, params = {}) {
   const qs = new URLSearchParams()
   if (params.tenantId) qs.set('tenantId', params.tenantId)

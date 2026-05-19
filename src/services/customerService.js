@@ -41,6 +41,38 @@ export async function deleteCustomer(id) {
   }
 }
 
+export async function fetchCrmSummaries(customerIds, tenantId = null) {
+  if (!customerIds?.length) return {}
+  let url = '/customers/crm/summaries'
+  if (tenantId != null && tenantId !== '') {
+    url += `?tenantId=${encodeURIComponent(tenantId)}`
+  }
+  const body = { customerIds }
+  if (tenantId != null && tenantId !== '') body.tenantId = tenantId
+  const res = await apiFetch(url, {
+    method: 'POST',
+    body: JSON.stringify(body),
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err?.message || 'Erro ao carregar classificação CRM.')
+  }
+  return res.json()
+}
+
+export async function fetchCrmProfile(customerId, tenantId = null) {
+  let url = `/customers/crm/${encodeURIComponent(customerId)}/profile`
+  if (tenantId != null && tenantId !== '') {
+    url += `?tenantId=${encodeURIComponent(tenantId)}`
+  }
+  const res = await apiFetch(url)
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err?.message || 'Erro ao carregar perfil CRM.')
+  }
+  return res.json()
+}
+
 export async function searchCustomers(filter = {}) {
   let url = '/customers/search'
   if (filter.tenantId != null && filter.tenantId !== '') {

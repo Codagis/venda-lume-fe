@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useCallback } from 'react'
 import dayjs from 'dayjs'
 import {
   Card,
@@ -9,7 +9,6 @@ import {
   message,
   Tag,
   Typography,
-  Select,
   Modal,
   Upload,
   Grid,
@@ -21,6 +20,8 @@ import {
   Descriptions,
   Collapse,
   Divider,
+  Spin,
+  DatePicker,
 } from 'antd'
 import {
   ReloadOutlined,
@@ -29,8 +30,6 @@ import {
   EyeOutlined,
   FilePdfOutlined,
   FileTextOutlined,
-  FilterOutlined,
-  DownOutlined,
   CloudUploadOutlined,
   ExportOutlined,
   InboxOutlined,
@@ -51,7 +50,11 @@ import {
   getNfceIssuedById,
   downloadNfceIssuedPdf,
   downloadNfceIssuedXml,
+  getFiscalNfeIssuedTaxes,
+  getFiscalNfeReceivedTaxes,
+  getFiscalNfceIssuedTaxes,
 } from '../../services/fiscalService'
+import InvoiceTaxDetailBlock from '../../components/InvoiceTaxDetailBlock'
 import { useAuth } from '../../contexts/AuthContext'
 import RootTenantSelect from '../../components/RootTenantSelect'
 import { importSaleFromInvoice } from '../../services/saleImportService'
@@ -172,6 +175,27 @@ function formatMoney(v) {
   return n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 }
 
+function isNoteAuthorized(row) {
+  const fiscal = describeFiscalStatus(row)
+  if (fiscal?.isOk) return true
+  return /autoriz|aprovado|registrad/i.test(String(row?.status || ''))
+}
+
+function pickDisplayTaxTotal(taxes) {
+  if (!taxes) return null
+  const n = Number(taxes.displayTotal ?? taxes.totalHighlighted ?? taxes.approximate ?? 0)
+  return Number.isFinite(n) ? n : null
+}
+
+async function fetchTaxesForRow(row, activeView, tenantId) {
+  const id = row?.id
+  if (!id || !isNoteAuthorized(row)) return null
+  const params = { tenantId }
+  if (activeView === 'nfe-received') return getFiscalNfeReceivedTaxes(id, params)
+  if (activeView === 'nfce-issued') return getFiscalNfceIssuedTaxes(id, params)
+  return getFiscalNfeIssuedTaxes(id, params)
+}
+
 function formatDoc(doc) {
   const d = onlyDigits(doc)
   if (d.length === 14) return d.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5')
@@ -198,7 +222,7 @@ function fiscalDocumentLabel(documentKind) {
   return 'Nota fiscal'
 }
 
-function FiscalNoteDetailPanel({ data, documentKind = 'nfe' }) {
+function FiscalNoteDetailPanel({ data, documentKind = 'nfe', taxes = null, taxesLoading = false }) {
   const info = describeFiscalStatus(data)
   const mensagens = data?.mensagens || info?.auth?.mensagens || info?.doc?.mensagens
   const msgList = Array.isArray(mensagens) ? mensagens : []
@@ -208,6 +232,15 @@ function FiscalNoteDetailPanel({ data, documentKind = 'nfe' }) {
 
   return (
     <Space direction="vertical" size={16} style={{ width: '100%' }}>
+      {(taxesLoading || taxes) && (
+        <>
+          <Divider orientation="left" plain>
+            Imposto da nota (XML)
+          </Divider>
+          <InvoiceTaxDetailBlock taxes={taxes} loading={taxesLoading} />
+        </>
+      )}
+
       {info?.status && (
         <Alert
           type={info.isRejected ? 'error' : info.isOk ? 'success' : 'warning'}
@@ -318,6 +351,24 @@ function FiscalNoteDetailPanel({ data, documentKind = 'nfe' }) {
   )
 }
 
+function getRowChaveDigits(row) {
+  return onlyDigits(row?.chave || row?.chave_acesso || row?.chaveAcesso)
+}
+
+function getRowEmissionDayjs(row) {
+  const iso =
+    row?.data_emissao ||
+    row?.dataEmissao ||
+    row?.dhEmi ||
+    row?.autorizacao?.data_evento ||
+    row?.data_evento
+  if (iso) {
+    const d = dayjs(iso)
+    if (d.isValid()) return d
+  }
+  return emissionFromChave(row)
+}
+
 function getDocNumberDigits(row) {
   if (!row) return ''
   const raw =
@@ -346,6 +397,10 @@ export default function FiscalNotes() {
   const [detailLoading, setDetailLoading] = useState(false)
   const [detailTitle, setDetailTitle] = useState('')
   const [detailJson, setDetailJson] = useState(null)
+  const [detailTaxes, setDetailTaxes] = useState(null)
+  const [detailTaxesLoading, setDetailTaxesLoading] = useState(false)
+  const [taxByDocId, setTaxByDocId] = useState({})
+  const [taxesLoading, setTaxesLoading] = useState(false)
 
   const [importOpen, setImportOpen] = useState(false)
   const [importLoading, setImportLoading] = useState(false)
@@ -356,19 +411,10 @@ export default function FiscalNotes() {
   const [importNotes, setImportNotes] = useState('')
 
   const [tenantId, setTenantId] = useState('')
-  const [top, setTop] = useState(20)
-  const [skip, setSkip] = useState(0)
-  const [inlinecount, setInlinecount] = useState(true)
-
-  const [numero, setNumero] = useState('')
-  const [ref, setRef] = useState('')
-  const [chave, setChave] = useState('')
-  const [serie, setSerie] = useState('')
-
-  const [distNsu, setDistNsu] = useState('')
-  const [formaDistribuicao, setFormaDistribuicao] = useState('completa')
-  const [chaveAcesso, setChaveAcesso] = useState('')
-  const [filtersExpanded, setFiltersExpanded] = useState(false)
+  const [filterChave, setFilterChave] = useState('')
+  const [filterNumero, setFilterNumero] = useState('')
+  const [filterDataDe, setFilterDataDe] = useState(null)
+  const [filterDataAte, setFilterDataAte] = useState(null)
   const [syncLoading, setSyncLoading] = useState(false)
 
   const listWarning = useMemo(() => {
@@ -379,10 +425,28 @@ export default function FiscalNotes() {
   const rows = useMemo(() => safeArray(data), [data])
   const total = useMemo(() => getCount(data), [data])
   const filteredRows = useMemo(() => {
-    const qNum = onlyDigits(numero)
-    if (!qNum) return rows
-    return rows.filter((r) => getDocNumberDigits(r).includes(qNum))
-  }, [rows, numero])
+    let list = rows
+    const qNum = onlyDigits(filterNumero)
+    if (qNum) {
+      list = list.filter((r) => getDocNumberDigits(r).includes(qNum))
+    }
+    const qChave = onlyDigits(filterChave)
+    if (qChave) {
+      list = list.filter((r) => getRowChaveDigits(r).includes(qChave))
+    }
+    if (filterDataDe || filterDataAte) {
+      const start = filterDataDe?.isValid() ? filterDataDe.startOf('day') : null
+      const end = filterDataAte?.isValid() ? filterDataAte.endOf('day') : null
+      list = list.filter((r) => {
+        const d = getRowEmissionDayjs(r)
+        if (!d?.isValid()) return false
+        if (start && d.isBefore(start)) return false
+        if (end && d.isAfter(end)) return false
+        return true
+      })
+    }
+    return list
+  }, [rows, filterNumero, filterChave, filterDataDe, filterDataAte])
 
   const effectiveTenantId = user?.isRoot && tenantId.trim() ? tenantId.trim() : undefined
 
@@ -456,6 +520,8 @@ export default function FiscalNotes() {
       setDetailOpen(true)
       setDetailLoading(true)
       setDetailJson(null)
+      setDetailTaxes(null)
+      setDetailTaxesLoading(isNoteAuthorized(row))
       const id = row?.id
       const direction = row?.direction
       const isNfce = activeView === 'nfce-issued'
@@ -485,6 +551,18 @@ export default function FiscalNotes() {
     } finally {
       setDetailLoading(false)
     }
+    if (isNoteAuthorized(row)) {
+      try {
+        const taxes = await loadTaxesForOne(row, activeView)
+        setDetailTaxes(taxes)
+      } catch {
+        setDetailTaxes(null)
+      } finally {
+        setDetailTaxesLoading(false)
+      }
+    } else {
+      setDetailTaxesLoading(false)
+    }
   }
 
   const handleDownloadPdf = async (row) => {
@@ -512,6 +590,47 @@ export default function FiscalNotes() {
       message.error(e?.message || 'Erro ao baixar PDF.')
     }
   }
+
+  const loadTaxesForRows = useCallback(
+    async (list, view) => {
+      const eligible = (list || []).filter((r) => r?.id && isNoteAuthorized(r))
+      if (eligible.length === 0) return
+      setTaxesLoading(true)
+      const entries = await Promise.all(
+        eligible.map(async (row) => {
+          try {
+            const taxes = await fetchTaxesForRow(row, view, effectiveTenantId)
+            return taxes ? [row.id, taxes] : null
+          } catch {
+            return null
+          }
+        })
+      )
+      const next = {}
+      entries.forEach((entry) => {
+        if (entry) next[entry[0]] = entry[1]
+      })
+      setTaxByDocId((prev) => ({ ...prev, ...next }))
+      setTaxesLoading(false)
+    },
+    [effectiveTenantId]
+  )
+
+  const loadTaxesForOne = useCallback(
+    async (row, view) => {
+      const id = row?.id
+      if (!id) return null
+      if (taxByDocId[id]) return taxByDocId[id]
+      try {
+        const taxes = await fetchTaxesForRow(row, view, effectiveTenantId)
+        if (taxes) setTaxByDocId((prev) => ({ ...prev, [id]: taxes }))
+        return taxes
+      } catch {
+        return null
+      }
+    },
+    [effectiveTenantId, taxByDocId]
+  )
 
   const handleDownloadXml = async (row) => {
     const id = row?.id
@@ -544,12 +663,8 @@ export default function FiscalNotes() {
       setSyncLoading(true)
       const syncRes = await syncNfeReceived({
         tenantId: effectiveTenantId,
-        distNsu: distNsu !== '' && distNsu != null ? Number(distNsu) : 0,
+        distNsu: 0,
       })
-      const nextNsu = syncRes?.ultimo_nsu ?? syncRes?.max_nsu
-      if (nextNsu != null && nextNsu !== '') {
-        setDistNsu(String(nextNsu))
-      }
       const motivo = syncRes?.motivo_status || syncRes?.status
       if (motivo) {
         message.info(typeof motivo === 'string' ? motivo : 'Consulta à SEFAZ concluída.')
@@ -567,39 +682,28 @@ export default function FiscalNotes() {
   const fetchData = async () => {
     setLoading(true)
     try {
+      const chaveParam = filterChave.trim() || undefined
+      const listParams = {
+        tenantId: effectiveTenantId,
+        top: 100,
+        skip: 0,
+        inlinecount: true,
+      }
       let res
       if (activeView === 'nfe-issued') {
-        res = await listNfeIssued({
-          tenantId: effectiveTenantId,
-          top,
-          skip,
-          inlinecount,
-          referencia: ref,
-          chave,
-          serie,
-        })
+        res = await listNfeIssued({ ...listParams, chave: chaveParam })
       } else if (activeView === 'nfe-received') {
         res = await listNfeReceived({
-          tenantId: effectiveTenantId,
-          top,
-          skip,
-          inlinecount,
-          distNsu: distNsu ? Number(distNsu) : undefined,
-          formaDistribuicao,
-          chaveAcesso,
+          ...listParams,
+          chaveAcesso: chaveParam,
         })
       } else {
-        res = await listNfceIssued({
-          tenantId: effectiveTenantId,
-          top,
-          skip,
-          inlinecount,
-          referencia: ref,
-          chave,
-          serie,
-        })
+        res = await listNfceIssued({ ...listParams, chave: chaveParam })
       }
       setData(res)
+      setTaxByDocId({})
+      const list = safeArray(res)
+      loadTaxesForRows(list, activeView)
     } catch (e) {
       message.error(e?.message || 'Erro ao consultar notas fiscais.')
     } finally {
@@ -695,6 +799,26 @@ export default function FiscalNotes() {
         render: (v) => fmtValue(v),
       },
       {
+        title: 'Imposto (ref.)',
+        key: 'invoiceTax',
+        width: isCompact ? 108 : 128,
+        align: 'right',
+        responsive: isCompact ? ['sm'] : undefined,
+        render: (_, row) => {
+          const id = row?.id
+          if (!id || !isNoteAuthorized(row)) return <Text type="secondary">—</Text>
+          const taxes = taxByDocId[id]
+          if (taxesLoading && !taxes) return <Spin size="small" />
+          const total = pickDisplayTaxTotal(taxes)
+          if (total == null) return <Text type="secondary">—</Text>
+          return (
+            <Tooltip title="Tributos do XML autorizado (ICMS, PIS, COFINS, vTotTrib…)">
+              <Text strong>{formatMoney(total)}</Text>
+            </Tooltip>
+          )
+        },
+      },
+      {
         title: 'Status',
         dataIndex: 'status',
         key: 'status',
@@ -773,7 +897,7 @@ export default function FiscalNotes() {
 
     if (activeView === 'nfe-received') return [...receivedExtraColumns, ...baseColumns]
     return baseColumns
-  }, [activeView, isCompact, effectiveTenantId])
+  }, [activeView, isCompact, taxByDocId, taxesLoading])
 
   const activeViewMeta = useMemo(
     () => FISCAL_VIEWS.find((v) => v.key === activeView) || FISCAL_VIEWS[0],
@@ -782,12 +906,23 @@ export default function FiscalNotes() {
 
   const detailModalWidth = isCompact ? 'min(100%, calc(100vw - 24px))' : 980
   const importModalWidth = isCompact ? '100%' : 720
-  const showAdvancedFilters = !isCompact || filtersExpanded
+  const hasActiveFilters =
+    Boolean(filterChave.trim()) ||
+    Boolean(onlyDigits(filterNumero)) ||
+    Boolean(filterDataDe) ||
+    Boolean(filterDataAte)
 
   const switchView = (key) => {
-    setSkip(0)
     setData(null)
+    setTaxByDocId({})
     setActiveView(key)
+  }
+
+  const clearFilters = () => {
+    setFilterChave('')
+    setFilterNumero('')
+    setFilterDataDe(null)
+    setFilterDataAte(null)
   }
 
   return (
@@ -846,25 +981,9 @@ export default function FiscalNotes() {
               </Text>
             </div>
 
-          {isCompact && (
-            <Button
-              type="button"
-              className={`fiscal-notes-filters-toggle vl-filters-toggle-btn${filtersExpanded ? ' vl-filters-toggle-btn--open' : ''}`}
-              icon={<FilterOutlined />}
-              onClick={() => setFiltersExpanded((v) => !v)}
-              block
-              aria-expanded={filtersExpanded}
-            >
-              <span className="vl-filters-toggle-label">
-                {filtersExpanded ? 'Ocultar filtros da consulta' : 'Filtros da consulta (top, chave, NSU…)'}
-              </span>
-              <DownOutlined className="vl-filters-chevron" aria-hidden />
-            </Button>
-          )}
-
-          <Row gutter={filterGutter} className="fiscal-notes-filters">
+          <Row gutter={filterGutter} className="fiscal-notes-filters fiscal-notes-filters--simple">
             {Boolean(user?.isRoot) && (
-              <Col xs={24} sm={12} lg={8}>
+              <Col xs={24} sm={12} lg={6}>
                 <label className="fiscal-notes-filter-label">Empresa</label>
                 <RootTenantSelect
                   isRoot={Boolean(user?.isRoot)}
@@ -875,120 +994,54 @@ export default function FiscalNotes() {
               </Col>
             )}
 
-            <Col xs={24} sm={12} lg={isCompact ? 24 : 6}>
-              <label className="fiscal-notes-filter-label">Número da nota</label>
+            <Col xs={24} sm={12} lg={6}>
+              <label className="fiscal-notes-filter-label">Chave da nota</label>
               <Input
-                value={numero}
-                onChange={(e) => setNumero(e.target.value)}
-                placeholder="Filtra na lista · ex.: 879861681"
+                value={filterChave}
+                onChange={(e) => setFilterChave(e.target.value)}
+                placeholder="44 dígitos ou parte da chave"
                 allowClear
+                inputMode="numeric"
               />
-              {isCompact && (
-                <span className="fiscal-notes-filter-hint">Só afeta as notas já carregadas abaixo.</span>
-              )}
             </Col>
 
-            {showAdvancedFilters && (
-              <>
-                <Col xs={24} sm={12} lg={4}>
-                  <label className="fiscal-notes-filter-label">$top</label>
-                  <Input
-                    value={String(top)}
-                    onChange={(e) => setTop(Number(e.target.value || 0) || 20)}
-                    placeholder="1-100"
-                    inputMode="numeric"
-                  />
-                </Col>
-                <Col xs={24} sm={12} lg={4}>
-                  <label className="fiscal-notes-filter-label">$skip</label>
-                  <Input
-                    value={String(skip)}
-                    onChange={(e) => setSkip(Number(e.target.value || 0) || 0)}
-                    placeholder="0"
-                    inputMode="numeric"
-                  />
-                </Col>
-                <Col xs={24} sm={12} lg={8}>
-                  <label className="fiscal-notes-filter-label">Contagem</label>
-                  <Select
-                    value={String(inlinecount)}
-                    onChange={(v) => setInlinecount(v === 'true')}
-                    options={[
-                      { value: 'true', label: isCompact ? 'Com total' : 'Contar total (inlinecount)' },
-                      { value: 'false', label: isCompact ? 'Sem total' : 'Sem total' },
-                    ]}
-                    style={{ width: '100%' }}
-                  />
-                </Col>
+            <Col xs={24} sm={12} lg={6}>
+              <label className="fiscal-notes-filter-label">Data inicial</label>
+              <DatePicker
+                value={filterDataDe}
+                onChange={(d) => setFilterDataDe(d)}
+                format="DD/MM/YYYY"
+                placeholder="De"
+                allowClear
+                style={{ width: '100%' }}
+              />
+            </Col>
 
-                {activeView === 'nfe-received' ? (
-                  <>
-                    <Col xs={24} sm={12} lg={6}>
-                      <label className="fiscal-notes-filter-label">NSU</label>
-                      <Input
-                        value={distNsu}
-                        onChange={(e) => setDistNsu(e.target.value)}
-                        placeholder="0 = desde o início"
-                        inputMode="numeric"
-                      />
-                      <Text type="secondary" className="fiscal-notes-filter-hint">
-                        Vazio usa 0 na busca. Após consultar, o último NSU é preenchido para a próxima.
-                      </Text>
-                    </Col>
-                    <Col xs={24} sm={12} lg={8}>
-                      <label className="fiscal-notes-filter-label">Distribuição</label>
-                      <Select
-                        value={formaDistribuicao}
-                        onChange={setFormaDistribuicao}
-                        options={[
-                          { value: 'completa', label: 'Completa' },
-                          { value: 'resumida', label: 'Resumida' },
-                        ]}
-                        style={{ width: '100%' }}
-                      />
-                    </Col>
-                    <Col xs={24} sm={24} lg={10}>
-                      <label className="fiscal-notes-filter-label">Chave de acesso</label>
-                      <Input
-                        value={chaveAcesso}
-                        onChange={(e) => setChaveAcesso(e.target.value)}
-                        placeholder="Opcional"
-                      />
-                    </Col>
-                  </>
-                ) : (
-                  <>
-                    <Col xs={24} sm={12} lg={8}>
-                      <label className="fiscal-notes-filter-label">Referência</label>
-                      <Input
-                        value={ref}
-                        onChange={(e) => setRef(e.target.value)}
-                        placeholder="Opcional"
-                      />
-                    </Col>
-                    <Col xs={24} sm={24} lg={10}>
-                      <label className="fiscal-notes-filter-label">Chave</label>
-                      <Input
-                        value={chave}
-                        onChange={(e) => setChave(e.target.value)}
-                        placeholder="Opcional"
-                      />
-                    </Col>
-                    <Col xs={24} sm={12} lg={6}>
-                      <label className="fiscal-notes-filter-label">Série</label>
-                      <Input
-                        value={serie}
-                        onChange={(e) => setSerie(e.target.value)}
-                        placeholder="Opcional"
-                      />
-                    </Col>
-                  </>
-                )}
-              </>
-            )}
+            <Col xs={24} sm={12} lg={6}>
+              <label className="fiscal-notes-filter-label">Data final</label>
+              <DatePicker
+                value={filterDataAte}
+                onChange={(d) => setFilterDataAte(d)}
+                format="DD/MM/YYYY"
+                placeholder="Até"
+                allowClear
+                style={{ width: '100%' }}
+              />
+            </Col>
+
+            <Col xs={24} sm={12} lg={6}>
+              <label className="fiscal-notes-filter-label">Número da nota</label>
+              <Input
+                value={filterNumero}
+                onChange={(e) => setFilterNumero(e.target.value)}
+                placeholder="Ex.: 123456"
+                allowClear
+                inputMode="numeric"
+              />
+            </Col>
 
             <Col xs={24} className="fiscal-notes-filter-actions">
-              <Space direction={isCompact ? 'vertical' : 'horizontal'} style={{ width: '100%' }} size={8}>
+              <Space direction={isCompact ? 'vertical' : 'horizontal'} wrap style={{ width: '100%' }} size={8}>
                 {activeView === 'nfe-received' && (
                   <Button
                     onClick={handleSyncReceived}
@@ -1011,7 +1064,15 @@ export default function FiscalNotes() {
                 >
                   Consultar
                 </Button>
+                {hasActiveFilters && (
+                  <Button onClick={clearFilters} block={isCompact}>
+                    Limpar filtros
+                  </Button>
+                )}
               </Space>
+              <Text type="secondary" className="fiscal-notes-filter-hint fiscal-notes-filter-hint--block">
+                Chave completa é enviada à consulta na Nuvem Fiscal; número e datas (inicial/final) refinam a lista exibida.
+              </Text>
             </Col>
           </Row>
 
@@ -1035,7 +1096,7 @@ export default function FiscalNotes() {
                 <>
                   {isCompact ? 'Registros: ' : 'Total: '}
                   <Text strong>{total}</Text>
-                  {isCompact && filteredRows.length !== rows.length && (
+                  {filteredRows.length !== rows.length && (
                     <span className="fiscal-notes-total-filtered"> · exibindo {filteredRows.length}</span>
                   )}
                 </>
@@ -1109,6 +1170,8 @@ export default function FiscalNotes() {
         ) : (
           <FiscalNoteDetailPanel
             data={detailJson}
+            taxes={detailTaxes}
+            taxesLoading={detailTaxesLoading}
             documentKind={
               activeView === 'nfce-issued'
                 ? 'nfce'

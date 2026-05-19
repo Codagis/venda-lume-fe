@@ -382,6 +382,18 @@
   margin-bottom: 12px;
 }
 
+.fiscal-notes-filters--simple {
+  padding-bottom: 4px;
+}
+
+.fiscal-notes-filter-hint--block {
+  display: block;
+  margin-top: 8px;
+  font-size: 12px;
+  line-height: 1.45;
+  max-width: 640px;
+}
+
 .fiscal-notes-filter-label {
   display: block;
   margin-bottom: 6px;

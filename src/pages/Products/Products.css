@@ -693,16 +693,13 @@
   font-size: 11px;
 }
 
-.products-table-actions {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.products-table-actions .products-table-btn {
+.products-table-actions-btn {
   width: 32px;
   height: 32px;
   padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .products-table-barcode {

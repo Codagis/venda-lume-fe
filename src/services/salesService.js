@@ -218,6 +218,17 @@ export async function downloadNfePdf(saleId, saleNumber = '') {
   URL.revokeObjectURL(url)
 }
 
+/** Tributos da NF-e extraídos do XML autorizado (após emissão). */
+export async function getSaleInvoiceTaxes(saleId, refresh = false) {
+  const qs = refresh ? '?refresh=true' : ''
+  const res = await apiFetch(`/sales/${saleId}/invoice-taxes${qs}`)
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err?.message || err?.error || 'Erro ao consultar impostos da NF-e.')
+  }
+  return res.json()
+}
+
 export async function downloadSalesReportExcel(filter = {}) {
   let url = '/sales/report/excel'
   if (filter.tenantId != null && filter.tenantId !== '') {

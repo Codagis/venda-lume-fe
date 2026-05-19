@@ -21,6 +21,7 @@ import {
   Alert,
   Tag,
   Grid,
+  Dropdown,
 } from 'antd'
 import {
   PlusOutlined,
@@ -40,6 +41,7 @@ import {
   WarningOutlined,
   EditOutlined,
   EyeOutlined,
+  MoreOutlined,
   FileTextOutlined,
   ClockCircleOutlined,
   IdcardOutlined,
@@ -103,6 +105,64 @@ function isLowStock(r) {
 function isOutOfStock(r) {
   if (!r.trackStock) return false
   return Number(r.stockQuantity ?? 0) <= 0
+}
+
+function mapProductToFormValues(product) {
+  return {
+    ...initialFormValues,
+    tenantId: product.tenantId ?? undefined,
+    sku: product.sku,
+    barcode: product.barcode,
+    internalCode: product.internalCode,
+    name: product.name,
+    shortDescription: product.shortDescription,
+    description: product.description,
+    unitPrice: product.unitPrice,
+    costPrice: product.costPrice,
+    discountPrice: product.discountPrice,
+    taxRate: product.taxRate,
+    unitOfMeasure: product.unitOfMeasure ?? 'UN',
+    sellByWeight: product.sellByWeight ?? false,
+    trackStock: product.trackStock ?? false,
+    deductStockOnSale: product.deductStockOnSale ?? true,
+    stockQuantity: product.stockQuantity ?? 0,
+    minStock: product.minStock ?? 0,
+    allowNegativeStock: product.allowNegativeStock ?? false,
+    brand: product.brand,
+    ncm: product.ncm,
+    cest: product.cest,
+    displayOrder: product.displayOrder,
+    active: product.active ?? true,
+    availableForSale: product.availableForSale ?? true,
+    availableForDelivery: product.availableForDelivery ?? true,
+    featured: product.featured ?? false,
+    emitsNfce: product.emitsNfce != null ? !!product.emitsNfce : true,
+    emitsNfe: product.emitsNfe != null ? !!product.emitsNfe : false,
+    emitsComprovanteSimples:
+      product.emitsComprovanteSimples != null ? !!product.emitsComprovanteSimples : true,
+    imageUrl: product.imageUrl,
+    weight: product.weight,
+    width: product.width,
+    height: product.height,
+    depth: product.depth,
+    serveSize: product.serveSize,
+    calories: product.calories,
+    ingredients: product.ingredients,
+    allergens: product.allergens,
+    nutritionalInfo: product.nutritionalInfo,
+    minOrderQuantity: product.minOrderQuantity,
+    maxOrderQuantity: product.maxOrderQuantity,
+    sellMultiple: product.sellMultiple,
+    preparationTimeMinutes: product.preparationTimeMinutes,
+    hasLots: Array.isArray(product.lots) && product.lots.length > 0,
+    lots: Array.isArray(product.lots)
+      ? product.lots.map((l) => ({
+          lotCode: l.lotCode,
+          expiresAt: l.expiresAt ? dayjs(l.expiresAt) : null,
+          quantity: l.quantity ?? 0,
+        }))
+      : [],
+  }
 }
 
 export default function Products() {
@@ -210,7 +270,10 @@ export default function Products() {
     if (isRoot) loadTenants()
   }, [isRoot, loadTenants])
 
-
+  useEffect(() => {
+    if (!drawerOpen) return
+    form.setFieldsValue(drawerFormInitialValues)
+  }, [drawerOpen, drawerFormInstanceKey, form])
 
   const openDrawer = (product = null) => {
     drawerLoadGenRef.current += 1
@@ -219,62 +282,7 @@ export default function Products() {
     setEditingId(product?.id ?? null)
     setPreviewImageUrl(product?.imageUrl ?? null)
     setSelectedImageFile(null)
-    const initial = product
-      ? {
-          ...initialFormValues,
-          tenantId: product.tenantId ?? undefined,
-          sku: product.sku,
-          barcode: product.barcode,
-          internalCode: product.internalCode,
-          name: product.name,
-          shortDescription: product.shortDescription,
-          description: product.description,
-          unitPrice: product.unitPrice,
-          costPrice: product.costPrice,
-          discountPrice: product.discountPrice,
-          taxRate: product.taxRate,
-          unitOfMeasure: product.unitOfMeasure ?? 'UN',
-          sellByWeight: product.sellByWeight ?? false,
-          trackStock: product.trackStock ?? false,
-          deductStockOnSale: product.deductStockOnSale ?? true,
-          stockQuantity: product.stockQuantity ?? 0,
-          minStock: product.minStock ?? 0,
-          allowNegativeStock: product.allowNegativeStock ?? false,
-          brand: product.brand,
-          ncm: product.ncm,
-          cest: product.cest,
-          displayOrder: product.displayOrder,
-          active: product.active ?? true,
-          availableForSale: product.availableForSale ?? true,
-          availableForDelivery: product.availableForDelivery ?? true,
-          featured: product.featured ?? false,
-          emitsNfce: product.emitsNfce != null ? !!product.emitsNfce : true,
-          emitsNfe: product.emitsNfe != null ? !!product.emitsNfe : false,
-          emitsComprovanteSimples: product.emitsComprovanteSimples != null ? !!product.emitsComprovanteSimples : true,
-          imageUrl: product.imageUrl,
-          weight: product.weight,
-          width: product.width,
-          height: product.height,
-          depth: product.depth,
-          serveSize: product.serveSize,
-          calories: product.calories,
-          ingredients: product.ingredients,
-          allergens: product.allergens,
-          nutritionalInfo: product.nutritionalInfo,
-          minOrderQuantity: product.minOrderQuantity,
-          maxOrderQuantity: product.maxOrderQuantity,
-          sellMultiple: product.sellMultiple,
-          preparationTimeMinutes: product.preparationTimeMinutes,
-          hasLots: Array.isArray(product.lots) && product.lots.length > 0,
-          lots: Array.isArray(product.lots)
-            ? product.lots.map((l) => ({
-                lotCode: l.lotCode,
-                expiresAt: l.expiresAt ? dayjs(l.expiresAt) : null,
-                quantity: l.quantity ?? 0,
-              }))
-            : [],
-        }
-      : getEmptyDrawerInitial()
+    const initial = product ? mapProductToFormValues(product) : getEmptyDrawerInitial()
     setDrawerFormInitialValues(initial)
     setDrawerFormInstanceKey((k) => k + 1)
     setDrawerOpen(true)
@@ -284,17 +292,12 @@ export default function Products() {
         try {
           const full = await getProductById(product.id)
           if (drawerLoadGenRef.current !== loadGen || !full) return
-          form.setFieldsValue({
-            hasLots: Array.isArray(full.lots) && full.lots.length > 0,
-            lots: Array.isArray(full.lots)
-              ? full.lots.map((l) => ({
-                  lotCode: l.lotCode,
-                  expiresAt: l.expiresAt ? dayjs(l.expiresAt) : null,
-                  quantity: l.quantity ?? 0,
-                }))
-              : [],
-          })
+          const fullInitial = mapProductToFormValues(full)
+          setDrawerFormInitialValues(fullInitial)
+          form.setFieldsValue(fullInitial)
+          setPreviewImageUrl(full.imageUrl ?? null)
         } catch (e) {
+          message.error(e?.message || 'Erro ao carregar dados do produto.')
         }
       })()
     }
@@ -424,7 +427,6 @@ export default function Products() {
       key: 'image',
       width: isCompact ? 64 : 88,
       align: 'center',
-      ...(isCompact ? {} : { fixed: 'left' }),
       render: (_, record) =>
         record.imageUrl ? (
           <img src={record.imageUrl} alt="" className="products-table-img" />
@@ -550,31 +552,58 @@ export default function Products() {
     {
       title: '',
       key: 'actions',
-      width: isCompact ? 100 : 112,
+      width: 48,
       align: 'center',
-      ...(isCompact ? {} : { fixed: 'right' }),
       render: (_, record) => (
-        <Space size={0} className="products-table-actions" onClick={(e) => e.stopPropagation()}>
-          <Tooltip title="Ver detalhes">
-            <Button type="text" size="small" icon={<EyeOutlined />} onClick={() => openDetailDrawer(record)} className="products-table-btn" />
-          </Tooltip>
-          <Tooltip title="Editar">
-            <Button type="text" size="small" icon={<EditOutlined />} onClick={() => openDrawer(record)} className="products-table-btn" />
-          </Tooltip>
+        <Dropdown
+          trigger={['click']}
+          placement="bottomRight"
+          menu={{
+            items: [
+              {
+                key: 'view',
+                label: 'Ver detalhes',
+                icon: <EyeOutlined />,
+                onClick: ({ domEvent }) => {
+                  domEvent?.stopPropagation()
+                  openDetailDrawer(record)
+                },
+              },
+              {
+                key: 'edit',
+                label: 'Editar',
+                icon: <EditOutlined />,
+                onClick: ({ domEvent }) => {
+                  domEvent?.stopPropagation()
+                  openDrawer(record)
+                },
+              },
+              { type: 'divider' },
+              {
+                key: 'delete',
+                label: 'Excluir',
+                icon: <DeleteOutlined />,
+                danger: true,
+                onClick: ({ domEvent }) => {
+                  domEvent?.stopPropagation()
+                  confirmDeleteModal({
+                    title: 'Excluir este produto?',
+                    onOk: () => handleDelete(record.id),
+                  })
+                },
+              },
+            ],
+          }}
+        >
           <Button
             type="text"
             size="small"
-            danger
-            icon={<DeleteOutlined />}
-            className="products-table-btn"
-            onClick={() =>
-              confirmDeleteModal({
-                title: 'Excluir este produto?',
-                onOk: () => handleDelete(record.id),
-              })
-            }
+            icon={<MoreOutlined />}
+            className="products-table-actions-btn"
+            aria-label="Ações do produto"
+            onClick={(e) => e.stopPropagation()}
           />
-        </Space>
+        </Dropdown>
       ),
     },
   ]

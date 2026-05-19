@@ -316,3 +316,271 @@
   border-color: #E4E7EC;
   border-radius: 6px;
 }
+
+/* CRM — classificação inteligente */
+.customers-crm-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  max-width: 220px;
+}
+
+.customers-crm-cell .customers-crm-segment-tag,
+.customers-crm-cell .ant-tag {
+  width: fit-content;
+  max-width: 100%;
+  margin-inline-end: 0;
+  flex: 0 0 auto;
+}
+
+.customers-crm-cell-insight {
+  font-size: 11px;
+  line-height: 1.35;
+  display: block;
+}
+
+.customers-crm-cell-meta {
+  font-size: 11px;
+}
+
+.customers-drawer-tabs {
+  margin-bottom: 8px;
+}
+
+.customers-drawer-tabs .ant-tabs-nav {
+  margin-bottom: 16px;
+}
+
+.customers-crm-loading {
+  display: flex;
+  justify-content: center;
+  padding: 48px 16px;
+}
+
+.customers-crm-profile-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.customers-crm-profile-name {
+  margin: 4px 0 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #1d2939;
+}
+
+.customers-crm-primary-tag {
+  font-size: 13px;
+  padding: 4px 12px;
+}
+
+.customers-crm-segments-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.customers-crm-strategy-alert {
+  margin-bottom: 16px;
+}
+
+.customers-crm-stats {
+  margin-bottom: 8px;
+}
+
+.customers-crm-prefs {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.customers-crm-dates {
+  margin-top: 16px;
+  margin-bottom: 0;
+  font-size: 12px;
+}
+
+.customers-crm-highlights .ant-list-item {
+  padding-inline: 0;
+  border: none;
+}
+
+/* Comportamento de compra — cards */
+.customers-crm-behavior-section {
+  margin-top: 8px;
+  padding-top: 4px;
+}
+
+.customers-crm-behavior-section-head {
+  margin-bottom: 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #e4e7ec;
+}
+
+.customers-crm-behavior-section-title {
+  margin: 0 0 4px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #1d2939;
+}
+
+.customers-crm-behavior-section-sub {
+  font-size: 12px;
+  display: block;
+}
+
+.customers-crm-behavior-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+@media (max-width: 576px) {
+  .customers-crm-behavior-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.customers-crm-behavior-card {
+  display: flex;
+  gap: 12px;
+  padding: 14px;
+  border-radius: 10px;
+  border: 1px solid #e4e7ec;
+  background: #fafbfc;
+  min-height: 88px;
+}
+
+.customers-crm-behavior-card--wide {
+  grid-column: 1 / -1;
+}
+
+.customers-crm-behavior-card-icon {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  color: #1a4a2f;
+  background: #e8f0eb;
+}
+
+.customers-crm-behavior-card--orders .customers-crm-behavior-card-icon {
+  background: #e8f0eb;
+  color: #1a4a2f;
+}
+
+.customers-crm-behavior-card--frequency .customers-crm-behavior-card-icon {
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+.customers-crm-behavior-card--recency .customers-crm-behavior-card-icon {
+  background: #ecfdf5;
+  color: #059669;
+}
+
+.customers-crm-behavior-card--alert .customers-crm-behavior-card-icon {
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+.customers-crm-behavior-card--products .customers-crm-behavior-card-icon {
+  background: #fffbeb;
+  color: #d97706;
+}
+
+.customers-crm-behavior-card--payment .customers-crm-behavior-card-icon {
+  background: #f5f3ff;
+  color: #7c3aed;
+}
+
+.customers-crm-behavior-card--channel .customers-crm-behavior-card-icon {
+  background: #f0fdf4;
+  color: #16a34a;
+}
+
+.customers-crm-behavior-card--schedule .customers-crm-behavior-card-icon {
+  background: #fdf4ff;
+  color: #a855f7;
+}
+
+.customers-crm-behavior-card--delivery .customers-crm-behavior-card-icon {
+  background: #fff7ed;
+  color: #ea580c;
+}
+
+.customers-crm-behavior-card--location .customers-crm-behavior-card-icon {
+  background: #f0f9ff;
+  color: #0284c7;
+}
+
+.customers-crm-behavior-card-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.customers-crm-behavior-card-title {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 6px;
+}
+
+.customers-crm-behavior-card-value {
+  margin: 0 0 6px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1d2939;
+  line-height: 1.4;
+}
+
+.customers-crm-behavior-card-detail {
+  display: block;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.customers-crm-behavior-products {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.customers-crm-behavior-products li {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: #fff;
+  border: 1px solid #e4e7ec;
+}
+
+.customers-crm-behavior-product-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: #1d2939;
+}
+
+.customers-crm-behavior-product-meta {
+  font-size: 11px;
+  color: #667085;
+  white-space: nowrap;
+}
