@@ -1,0 +1,31 @@
+{
+  "id": "/?source=pwa-fe",
+  "short_name": "VendaLume",
+  "name": "VendaLume — Gestão",
+  "description": "Gestão de vendas, estoque, PDV, delivery e fiscal para o seu negócio.",
+  "lang": "pt-BR",
+  "dir": "ltr",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone"],
+  "orientation": "any",
+  "theme_color": "#1a4a2f",
+  "background_color": "#f4f1e8",
+  "categories": ["business", "productivity"],
+  "prefer_related_applications": false,
+  "icons": [
+    {
+      "src": "AppIcon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "AppIcon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ]
+}

@@ -6,8 +6,11 @@ import ptBR from 'antd/locale/pt_BR'
 import { AuthProvider } from './contexts/AuthContext'
 import { ModulesProvider } from './contexts/ModulesContext'
 import App from './App.jsx'
+import { registerPwa } from './registerPwa'
 import 'antd/dist/reset.css'
 import './index.css'
+
+registerPwa()
 
 const motionEase = 'cubic-bezier(0.33, 1, 0.68, 1)'
 

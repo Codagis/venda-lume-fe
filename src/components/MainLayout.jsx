@@ -60,16 +60,23 @@ function buildNavSearchOptions(modulesByCode) {
 function SidebarBrand({ tenantLogo }) {
   if (tenantLogo) {
     return (
-      <motion.div className="main-layout-brand">
-      <div className="main-layout-brand-mark">
-        <img
-          src={tenantLogo || logoUrl}
-          alt=""
-          className="main-layout-brand-mark-img"
-          aria-hidden
-        />
+      <div className="main-layout-brand">
+        <div className="main-layout-brand-mark">
+          <img
+            src={tenantLogo}
+            alt=""
+            className="main-layout-brand-mark-img"
+            aria-hidden
+          />
+        </div>
+        <span className="main-layout-brand-name">VendaLume</span>
       </div>
-      <span className="main-layout-brand-name">VendaLume</span>
+    )
+  }
+
+  return (
+    <div className="main-layout-brand main-layout-brand--full-logo">
+      <img src={logoUrl} alt="VendaLume" className="main-layout-brand-logo" />
     </div>
   )
 }

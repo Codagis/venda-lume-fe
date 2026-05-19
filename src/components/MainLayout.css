@@ -186,6 +186,20 @@
   text-overflow: ellipsis;
 }
 
+.main-layout-brand--full-logo {
+  flex: 1;
+  min-width: 0;
+}
+
+.main-layout-brand-logo {
+  display: block;
+  height: 32px;
+  width: auto;
+  max-width: 100%;
+  object-fit: contain;
+  object-position: left center;
+}
+
 .main-layout-toggle {
   flex-shrink: 0;
   display: inline-flex !important;
