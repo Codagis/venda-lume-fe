@@ -198,6 +198,17 @@
   gap: 10px;
 }
 
+.sale-detail-action-btn-wrap,
+.fiscal-emit-btn-wrap {
+  display: block;
+  width: 100%;
+}
+
+.sale-detail-action-btn-wrap .ant-btn,
+.fiscal-emit-btn-wrap .ant-btn {
+  width: 100%;
+}
+
 .sale-detail-action-btn {
   min-height: 40px;
   font-weight: 500;

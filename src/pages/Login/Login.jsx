@@ -38,7 +38,7 @@ export default function Login() {
         <div className="login-card">
           <header className="login-header">
             <div className="login-brand">
-              <img src={logoUrl} alt="VendaLume" className="login-brand-logo" width={280} height={93} />
+              <img src={logoUrl} alt="VendaLume" className="login-logo" width={280} height={48} />
             </div>
             <p className="login-subtitle">Acesse sua conta</p>
           </header>

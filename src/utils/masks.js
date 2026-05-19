@@ -56,6 +56,10 @@ export function isValidCpfCnpj(doc) {
   return digits.length === 11 || digits.length === 14
 }
 
+export function isValidCpf(doc) {
+  return onlyDigits(doc).length === 11
+}
+
 export function digitsOnlyCpfCnpj(doc) {
   const digits = onlyDigits(doc)
   if (!digits) return ''

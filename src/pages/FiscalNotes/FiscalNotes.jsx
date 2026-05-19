@@ -191,10 +191,20 @@ function getEmitenteLabel(row) {
   )
 }
 
-function FiscalNoteDetailPanel({ data }) {
+function fiscalDocumentLabel(documentKind) {
+  if (documentKind === 'nfce') return 'NFC-e'
+  if (documentKind === 'nfe-received') return 'NF-e recebida'
+  if (documentKind === 'nfe') return 'NF-e'
+  return 'Nota fiscal'
+}
+
+function FiscalNoteDetailPanel({ data, documentKind = 'nfe' }) {
   const info = describeFiscalStatus(data)
   const mensagens = data?.mensagens || info?.auth?.mensagens || info?.doc?.mensagens
   const msgList = Array.isArray(mensagens) ? mensagens : []
+  const docLabel = fiscalDocumentLabel(documentKind)
+  const motivoMencionaNfe =
+    info?.motivo && /nf-?e/i.test(info.motivo) && documentKind === 'nfce'
 
   return (
     <Space direction="vertical" size={16} style={{ width: '100%' }}>
@@ -204,9 +214,9 @@ function FiscalNoteDetailPanel({ data }) {
           showIcon
           message={
             info.isRejected
-              ? 'Nota rejeitada pela SEFAZ'
+              ? `${docLabel} rejeitada pela SEFAZ`
               : info.isOk
-                ? 'Nota autorizada'
+                ? `${docLabel} autorizada`
                 : `Situação: ${info.status}`
           }
           description={
@@ -218,7 +228,13 @@ function FiscalNoteDetailPanel({ data }) {
               )}
               {info.motivo && (
                 <p className="fiscal-notes-detail-alert-body">
-                  <strong>Motivo:</strong> {info.motivo}
+                  <strong>Motivo (texto oficial da SEFAZ):</strong> {info.motivo}
+                </p>
+              )}
+              {motivoMencionaNfe && (
+                <p className="fiscal-notes-detail-alert-body fiscal-notes-detail-sefaz-hint">
+                  A SEFAZ usa a expressão &quot;NF-e&quot; no motivo do código 100 mesmo para NFC-e (modelo 65).
+                  Isso não indica que o documento consultado seja NF-e de produto.
                 </p>
               )}
               {!info.motivo && info.isRejected && (
@@ -528,8 +544,12 @@ export default function FiscalNotes() {
       setSyncLoading(true)
       const syncRes = await syncNfeReceived({
         tenantId: effectiveTenantId,
-        distNsu: distNsu ? Number(distNsu) : undefined,
+        distNsu: distNsu !== '' && distNsu != null ? Number(distNsu) : 0,
       })
+      const nextNsu = syncRes?.ultimo_nsu ?? syncRes?.max_nsu
+      if (nextNsu != null && nextNsu !== '') {
+        setDistNsu(String(nextNsu))
+      }
       const motivo = syncRes?.motivo_status || syncRes?.status
       if (motivo) {
         message.info(typeof motivo === 'string' ? motivo : 'Consulta à SEFAZ concluída.')
@@ -708,52 +728,46 @@ export default function FiscalNotes() {
       {
         title: 'Ações',
         key: 'actions',
-        width: isCompact ? 52 : 220,
+        width: 56,
         align: 'center',
-        ...(isCompact ? {} : { fixed: 'right' }),
-        render: (_, row) =>
-          isCompact ? (
-            <Dropdown
-              menu={{
-                items: [
-                  {
-                    key: 'details',
-                    label: 'Detalhes',
-                    icon: <EyeOutlined />,
-                    onClick: () => handleDetails(row),
-                  },
-                  {
-                    key: 'pdf',
-                    label: 'Baixar PDF',
-                    icon: <FilePdfOutlined />,
-                    onClick: () => handleDownloadPdf(row),
-                  },
-                  {
-                    key: 'xml',
-                    label: 'Baixar XML',
-                    icon: <FileTextOutlined />,
-                    onClick: () => handleDownloadXml(row),
-                  },
-                ],
-              }}
-              trigger={['click']}
-              placement="bottomRight"
-            >
-              <Button type="default" size="small" icon={<MoreOutlined />} aria-label="Ações da nota" className="fiscal-notes-row-actions-btn" />
-            </Dropdown>
-          ) : (
-            <Space size={8} wrap>
-              <Button size="small" onClick={() => handleDetails(row)}>
-                Detalhes
-              </Button>
-              <Button size="small" onClick={() => handleDownloadPdf(row)}>
-                PDF
-              </Button>
-              <Button size="small" onClick={() => handleDownloadXml(row)}>
-                XML
-              </Button>
-            </Space>
-          ),
+        fixed: 'right',
+        className: 'fiscal-notes-col-actions',
+        render: (_, row) => (
+          <Dropdown
+            menu={{
+              items: [
+                {
+                  key: 'details',
+                  label: 'Detalhes',
+                  icon: <EyeOutlined />,
+                  onClick: () => handleDetails(row),
+                },
+                {
+                  key: 'pdf',
+                  label: 'Baixar PDF',
+                  icon: <FilePdfOutlined />,
+                  onClick: () => handleDownloadPdf(row),
+                },
+                {
+                  key: 'xml',
+                  label: 'Baixar XML',
+                  icon: <FileTextOutlined />,
+                  onClick: () => handleDownloadXml(row),
+                },
+              ],
+            }}
+            trigger={['click']}
+            placement="bottomRight"
+          >
+            <Button
+              type="text"
+              size="small"
+              icon={<MoreOutlined />}
+              aria-label="Ações da nota"
+              className="fiscal-notes-row-actions-btn"
+            />
+          </Dropdown>
+        ),
       },
     ]
 
@@ -914,8 +928,12 @@ export default function FiscalNotes() {
                       <Input
                         value={distNsu}
                         onChange={(e) => setDistNsu(e.target.value)}
-                        placeholder="Opcional"
+                        placeholder="0 = desde o início"
+                        inputMode="numeric"
                       />
+                      <Text type="secondary" className="fiscal-notes-filter-hint">
+                        Vazio usa 0 na busca. Após consultar, o último NSU é preenchido para a próxima.
+                      </Text>
                     </Col>
                     <Col xs={24} sm={12} lg={8}>
                       <label className="fiscal-notes-filter-label">Distribuição</label>
@@ -1089,7 +1107,16 @@ export default function FiscalNotes() {
         {detailLoading ? (
           <div className="fiscal-notes-detail-loading">Carregando…</div>
         ) : (
-          <FiscalNoteDetailPanel data={detailJson} />
+          <FiscalNoteDetailPanel
+            data={detailJson}
+            documentKind={
+              activeView === 'nfce-issued'
+                ? 'nfce'
+                : activeView === 'nfe-received'
+                  ? 'nfe-received'
+                  : 'nfe'
+            }
+          />
         )}
       </Modal>
 

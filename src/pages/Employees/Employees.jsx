@@ -39,18 +39,18 @@ import { antdRuleCpfCnpj, antdRuleEmail } from '../../utils/validators'
 import './Employees.css'
 
 const { TextArea } = Input
-const { RangePicker } = DatePicker
 
 const FILTER_ALL = '__all__'
 const CONTRACT_TYPE_OPTIONS = [{ value: 'CLT', label: 'CLT' }]
 const initialFormValues = { active: true, paymentDay: 5, salary: 0, contractType: 'CLT' }
 
-const MONTHS = [
-  { value: 1, label: 'Janeiro' }, { value: 2, label: 'Fevereiro' }, { value: 3, label: 'Março' },
-  { value: 4, label: 'Abril' }, { value: 5, label: 'Maio' }, { value: 6, label: 'Junho' },
-  { value: 7, label: 'Julho' }, { value: 8, label: 'Agosto' }, { value: 9, label: 'Setembro' },
-  { value: 10, label: 'Outubro' }, { value: 11, label: 'Novembro' }, { value: 12, label: 'Dezembro' },
-]
+function monthYearFromDayjs(d) {
+  if (!d || !d.isValid()) {
+    const now = dayjs()
+    return { year: now.year(), month: now.month() + 1 }
+  }
+  return { year: d.year(), month: d.month() + 1 }
+}
 
 function mapEmployeeToFormValues(employee) {
   return {
@@ -82,7 +82,7 @@ function mapEmployeeToFormValues(employee) {
     bankAgency: employee.bankAgency,
     bankAccount: employee.bankAccount,
     bankPix: employee.bankPix,
-    hireDate: employee.hireDate || undefined,
+    hireDate: employee.hireDate ? dayjs(employee.hireDate) : null,
     notes: employee.notes,
     active: employee.active ?? true,
     contractType: employee.contractType ?? 'CLT',
@@ -112,15 +112,14 @@ export default function Employees() {
   const [filterSearch, setFilterSearch] = useState('')
   const [filterActive, setFilterActive] = useState(FILTER_ALL)
   const [filtersExpanded, setFiltersExpanded] = useState(false)
-  const [payrollYear, setPayrollYear] = useState(new Date().getFullYear())
-  const [payrollMonth, setPayrollMonth] = useState(new Date().getMonth() + 1)
+  const [payrollPeriod, setPayrollPeriod] = useState(() => dayjs().startOf('month'))
   const [payrollLoading, setPayrollLoading] = useState(null)
   const [receiptLoadingId, setReceiptLoadingId] = useState(null)
-  const [drawerReceiptYear, setDrawerReceiptYear] = useState(new Date().getFullYear())
-  const [drawerReceiptMonth, setDrawerReceiptMonth] = useState(new Date().getMonth() + 1)
+  const [drawerReceiptPeriod, setDrawerReceiptPeriod] = useState(() => dayjs().startOf('month'))
   const [generateDrawerOpen, setGenerateDrawerOpen] = useState(false)
   const [selectedEmployeeIds, setSelectedEmployeeIds] = useState([])
-  const [generateMonthRange, setGenerateMonthRange] = useState(null)
+  const [generateMonthStart, setGenerateMonthStart] = useState(null)
+  const [generateMonthEnd, setGenerateMonthEnd] = useState(null)
   const [generateBatchLoading, setGenerateBatchLoading] = useState(false)
 
   const FILTER_OPTIONS = [
@@ -242,7 +241,7 @@ export default function Employees() {
         bankAgency: values.bankAgency?.trim() || undefined,
         bankAccount: values.bankAccount?.trim() || undefined,
         bankPix: values.bankPix?.trim() || undefined,
-        hireDate: values.hireDate || undefined,
+        hireDate: values.hireDate ? values.hireDate.format('YYYY-MM-DD') : undefined,
         notes: values.notes?.trim() || undefined,
         active: values.active ?? true,
         contractType: 'CLT',
@@ -288,7 +287,8 @@ export default function Employees() {
     }
     setPayrollLoading('generate')
     try {
-      const created = await employeeService.generatePayroll(effectiveTenantId, payrollYear, payrollMonth)
+      const { year, month } = monthYearFromDayjs(payrollPeriod)
+      const created = await employeeService.generatePayroll(effectiveTenantId, year, month)
       message.success(created?.length ? `Foram criadas ${created.length} conta(s) a pagar.` : 'Nenhuma conta nova criada (já existem para este mês).')
       if (created?.length) handleFilter()
     } catch (e) {
@@ -307,16 +307,20 @@ export default function Employees() {
       message.warning('Selecione a empresa para gerar as contas.')
       return
     }
-    if (!generateMonthRange || !generateMonthRange[0] || !generateMonthRange[1]) {
-      message.warning('Selecione o período de meses.')
+    if (!generateMonthStart || !generateMonthEnd) {
+      message.warning('Selecione o mês inicial e o mês final do período.')
+      return
+    }
+    if (generateMonthEnd.isBefore(generateMonthStart, 'month')) {
+      message.warning('O mês final deve ser igual ou posterior ao mês inicial.')
       return
     }
     if (selectedEmployeeIds.length === 0) {
       message.warning('Selecione pelo menos um funcionário.')
       return
     }
-    const start = generateMonthRange[0]
-    const end = generateMonthRange[1]
+    const start = generateMonthStart
+    const end = generateMonthEnd
     const months = []
     let current = dayjs(start).startOf('month')
     const endDate = dayjs(end).endOf('month')
@@ -356,7 +360,8 @@ export default function Employees() {
     }
     setPayrollLoading('pdf')
     try {
-      await employeeService.downloadPayrollReportPdf(effectiveTenantId, payrollYear, payrollMonth)
+      const { year, month } = monthYearFromDayjs(payrollPeriod)
+      await employeeService.downloadPayrollReportPdf(effectiveTenantId, year, month)
       message.success('PDF da folha baixado.')
     } catch (e) {
       message.error(e?.message || 'Erro ao gerar PDF.')
@@ -372,7 +377,8 @@ export default function Employees() {
     }
     setReceiptLoadingId(employee.id)
     try {
-      await employeeService.downloadSalaryReceiptPdf(effectiveTenantId, employee.id, payrollYear, payrollMonth)
+      const { year, month } = monthYearFromDayjs(payrollPeriod)
+      await employeeService.downloadSalaryReceiptPdf(effectiveTenantId, employee.id, year, month)
       message.success(`Recibo de ${employee.name} baixado.`)
     } catch (e) {
       message.error(e?.message || 'Erro ao gerar recibo.')
@@ -498,21 +504,14 @@ export default function Employees() {
                 </Col>
               )}
               <Col xs={24} sm={8} md={4}>
-                <label className="employees-payroll-label">Ano</label>
-                <Select
-                  value={payrollYear}
-                  onChange={setPayrollYear}
-                  options={Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - 2 + i).map((y) => ({ value: y, label: String(y) }))}
+                <label className="employees-payroll-label">Mês de referência</label>
+                <DatePicker
+                  picker="month"
+                  value={payrollPeriod}
+                  onChange={(d) => setPayrollPeriod(d || dayjs().startOf('month'))}
+                  format="MM/YYYY"
                   style={{ width: '100%' }}
-                />
-              </Col>
-              <Col xs={24} sm={8} md={4}>
-                <label className="employees-payroll-label">Mês</label>
-                <Select
-                  value={payrollMonth}
-                  onChange={setPayrollMonth}
-                  options={MONTHS}
-                  style={{ width: '100%' }}
+                  allowClear={false}
                 />
               </Col>
               <Col xs={24} sm={24} md={10}>
@@ -535,7 +534,8 @@ export default function Employees() {
                     block={isCompact}
                     onClick={() => {
                       setSelectedEmployeeIds([])
-                      setGenerateMonthRange(null)
+                      setGenerateMonthStart(null)
+                      setGenerateMonthEnd(null)
                       setGenerateDrawerOpen(true)
                     }}
                   >
@@ -563,22 +563,15 @@ export default function Employees() {
                   />
                 </Col>
               )}
-              <Col xs={24} sm={8} md={4}>
-                <label className="employees-payroll-label">Ano</label>
-                <Select
-                  value={payrollYear}
-                  onChange={setPayrollYear}
-                  options={Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - 2 + i).map((y) => ({ value: y, label: String(y) }))}
+              <Col xs={24} sm={12} md={6}>
+                <label className="employees-payroll-label">Mês de referência</label>
+                <DatePicker
+                  picker="month"
+                  value={payrollPeriod}
+                  onChange={(d) => setPayrollPeriod(d || dayjs().startOf('month'))}
+                  format="MM/YYYY"
                   style={{ width: '100%' }}
-                />
-              </Col>
-              <Col xs={24} sm={8} md={4}>
-                <label className="employees-payroll-label">Mês</label>
-                <Select
-                  value={payrollMonth}
-                  onChange={setPayrollMonth}
-                  options={MONTHS}
-                  style={{ width: '100%' }}
+                  allowClear={false}
                 />
               </Col>
               <Col xs={24} sm={24} md={10}>
@@ -867,20 +860,15 @@ export default function Employees() {
               <h3 className="employees-section-title">Folha de pagamento</h3>
               <p className="employees-receipt-hint">Gerar recibo de pagamento de salário deste funcionário (PDF com dados reais).</p>
               <Row gutter={dashGutter} align="middle" className="employees-drawer-receipt-row">
-                <Col xs={24} sm={8}>
-                  <Select
-                    value={drawerReceiptMonth}
-                    onChange={setDrawerReceiptMonth}
-                    options={MONTHS}
+                <Col xs={24} sm={12}>
+                  <label className="employees-payroll-label">Mês de referência</label>
+                  <DatePicker
+                    picker="month"
+                    value={drawerReceiptPeriod}
+                    onChange={(d) => setDrawerReceiptPeriod(d || dayjs().startOf('month'))}
+                    format="MM/YYYY"
                     style={{ width: '100%' }}
-                  />
-                </Col>
-                <Col xs={24} sm={8}>
-                  <Select
-                    value={drawerReceiptYear}
-                    onChange={setDrawerReceiptYear}
-                    options={Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - i).map((y) => ({ value: y, label: String(y) }))}
-                    style={{ width: '100%' }}
+                    allowClear={false}
                   />
                 </Col>
                 <Col xs={24} sm={24}>
@@ -896,9 +884,10 @@ export default function Employees() {
                         message.error('Empresa do funcionário não identificada.')
                         return
                       }
+                      const { year, month } = monthYearFromDayjs(drawerReceiptPeriod)
                       setReceiptLoadingId(editingId)
                       try {
-                        await employeeService.downloadSalaryReceiptPdf(emp.tenantId, editingId, drawerReceiptYear, drawerReceiptMonth)
+                        await employeeService.downloadSalaryReceiptPdf(emp.tenantId, editingId, year, month)
                         message.success('Recibo gerado com sucesso.')
                       } catch (err) {
                         message.error(err?.message || 'Erro ao gerar recibo.')
@@ -958,7 +947,7 @@ export default function Employees() {
           <div className="employees-drawer-section">
             <h3 className="employees-section-title">Admissão e observações</h3>
             <Form.Item name="hireDate" label="Data de admissão">
-              <Input type="date" />
+              <DatePicker format="DD/MM/YYYY" style={{ width: '100%' }} />
             </Form.Item>
             <Form.Item name="notes" label="Observações">
               <TextArea rows={2} placeholder="Observações (opcional)" />
@@ -1012,14 +1001,42 @@ export default function Employees() {
           </div>
         )}
         <div style={{ marginBottom: 16 }}>
-          <label className="employees-payroll-label">Período (meses)</label>
-          <RangePicker
-            picker="month"
-            value={generateMonthRange}
-            onChange={setGenerateMonthRange}
-            style={{ width: '100%' }}
-            format="MM/YYYY"
-          />
+          <Row gutter={dashGutter}>
+            <Col xs={24} sm={12}>
+              <label className="employees-payroll-label">Mês inicial</label>
+              <DatePicker
+                picker="month"
+                value={generateMonthStart}
+                onChange={(d) => {
+                  setGenerateMonthStart(d)
+                  if (d && generateMonthEnd && d.isAfter(generateMonthEnd, 'month')) {
+                    setGenerateMonthEnd(d)
+                  }
+                }}
+                disabledDate={(d) => (generateMonthEnd ? d.isAfter(generateMonthEnd, 'month') : false)}
+                format="MM/YYYY"
+                style={{ width: '100%' }}
+                placeholder="Mês inicial"
+              />
+            </Col>
+            <Col xs={24} sm={12}>
+              <label className="employees-payroll-label">Mês final</label>
+              <DatePicker
+                picker="month"
+                value={generateMonthEnd}
+                onChange={(d) => {
+                  setGenerateMonthEnd(d)
+                  if (d && generateMonthStart && d.isBefore(generateMonthStart, 'month')) {
+                    setGenerateMonthStart(d)
+                  }
+                }}
+                disabledDate={(d) => (generateMonthStart ? d.isBefore(generateMonthStart, 'month') : false)}
+                format="MM/YYYY"
+                style={{ width: '100%' }}
+                placeholder="Mês final"
+              />
+            </Col>
+          </Row>
         </div>
         <div>
           <label className="employees-payroll-label">Funcionários</label>

@@ -16,6 +16,7 @@ import {
   Collapse,
   DatePicker,
   Checkbox,
+  Alert,
 } from 'antd'
 import {
   ShoppingCartOutlined,
@@ -44,6 +45,16 @@ import * as tenantService from '../../services/tenantService'
 import * as customerService from '../../services/customerService'
 import * as deliveryService from '../../services/deliveryService'
 import { confirmDeleteModal } from '../../utils/confirmModal'
+import FiscalEmitButton from '../../components/FiscalEmitButton'
+import {
+  showNfceEmitButton,
+  isNfceEmitEnabled,
+  nfceEmitDisabledReason,
+  salePaymentRequiresCardAuthorization,
+  showNfeEmitButton,
+  isNfeEmitEnabled,
+  nfeEmitDisabledReason,
+} from '../../utils/saleFiscalEmit'
 import dayjs from 'dayjs'
 import './Sales.css'
 import { normalizeCpfCnpj } from '../../utils/masks'
@@ -980,29 +991,60 @@ export default function Sales() {
             )}
             <Divider />
             <p style={{ marginBottom: 16, color: '#64748b', fontSize: 13 }}>Deseja gerar algum comprovante?</p>
+            {lastSale.nfceRequiresPayment && (
+              <Alert
+                type="warning"
+                showIcon
+                message="NFC-e indisponível sem pagamento"
+                description="A venda precisa ter forma de pagamento e estar concluída. Use Consulta de vendas para registrar o pagamento."
+                style={{ marginBottom: 12 }}
+              />
+            )}
+            {lastSale.nfceRequiresCardAuthorization && salePaymentRequiresCardAuthorization(lastSale) && (
+              <Alert
+                type="warning"
+                showIcon
+                message="NFC-e exige código de autorização do cartão"
+                description="Pagamento em crédito ou débito: informe o código de autorização em Consulta de vendas antes de emitir o cupom fiscal. PIX e outras formas não exigem esse código."
+                style={{ marginBottom: 12 }}
+              />
+            )}
+            {lastSale.nfeRequiresCustomerDocument && (
+              <Alert
+                type="warning"
+                showIcon
+                message="NF-e exige CPF do cliente"
+                description="Informe o CPF do cliente na venda (Consulta de vendas) antes de gerar a NF-e."
+                style={{ marginBottom: 12 }}
+              />
+            )}
             <Space direction="vertical" style={{ width: '100%' }} size={12}>
-              {lastSale.canEmitFiscalReceipt && (
-                <Button
+              {showNfceEmitButton(lastSale) && (
+                <FiscalEmitButton
                   type="primary"
                   block
                   size="large"
                   icon={<FilePdfOutlined />}
+                  disabled={!isNfceEmitEnabled(lastSale, lastSale.cardAuthorization)}
+                  disabledTitle={nfceEmitDisabledReason(lastSale, lastSale.cardAuthorization)}
                   onClick={handleDownloadFiscal}
                   loading={loadingFiscalReceipt}
                 >
                   Gerar cupom fiscal (NFC-e)
-                </Button>
+                </FiscalEmitButton>
               )}
-              {lastSale.canEmitNfe && (
-                <Button
+              {showNfeEmitButton(lastSale) && (
+                <FiscalEmitButton
                   block
                   size="large"
                   icon={<FilePdfOutlined />}
+                  disabled={!isNfeEmitEnabled(lastSale, lastSale.customerDocument)}
+                  disabledTitle={nfeEmitDisabledReason(lastSale, lastSale.customerDocument)}
                   onClick={handleDownloadNfe}
                   loading={loadingNfe}
                 >
                   Gerar NF-e
-                </Button>
+                </FiscalEmitButton>
               )}
               {lastSale.canEmitSimpleReceipt && (
                 <Button
@@ -1015,7 +1057,7 @@ export default function Sales() {
                   Gerar comprovante de venda
                 </Button>
               )}
-              {(!lastSale.canEmitFiscalReceipt && !lastSale.canEmitSimpleReceipt && !lastSale.canEmitNfe) && (
+              {!showNfceEmitButton(lastSale) && !lastSale.canEmitSimpleReceipt && !showNfeEmitButton(lastSale) && (
                 <p style={{ color: '#94a3b8', fontSize: 13 }}>Nenhum comprovante disponível para esta empresa.</p>
               )}
               {lastDelivery && (

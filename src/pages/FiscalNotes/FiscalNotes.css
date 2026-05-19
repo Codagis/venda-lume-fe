@@ -271,8 +271,21 @@
   vertical-align: middle;
 }
 
+.fiscal-notes-table .fiscal-notes-col-actions {
+  padding-inline: 4px !important;
+}
+
 .fiscal-notes-row-actions-btn {
-  min-width: 36px;
+  width: 32px;
+  min-width: 32px;
+  height: 32px;
+  padding: 0;
+  color: #475467;
+}
+
+.fiscal-notes-row-actions-btn:hover {
+  color: #1a4a2f;
+  background: #e6ede8;
 }
 
 /* Modal de detalhes: sempre centralizado (vertical e horizontal) */
@@ -306,6 +319,12 @@
 
 .fiscal-notes-detail-alert-body + .fiscal-notes-detail-alert-body {
   margin-top: 8px;
+}
+
+.fiscal-notes-detail-sefaz-hint {
+  font-size: 12px;
+  color: #667085;
+  line-height: 1.45;
 }
 
 .fiscal-notes-detail-desc .ant-descriptions-item-label {

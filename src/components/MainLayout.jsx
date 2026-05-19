@@ -9,7 +9,7 @@ import { getCurrentTenant } from '../services/tenantService'
 import { getIcon } from '../config/iconRegistry'
 import { MENU_GROUPS } from '../config/menuGroups'
 import { confirmLogoutModal } from '../utils/confirmModal'
-import brandMarkUrl from '../../resources/images/Vector.svg'
+import logoUrl from '../../resources/images/logo.svg'
 import './MainLayout.css'
 
 const { Header, Sider, Content } = Layout
@@ -58,11 +58,12 @@ function buildNavSearchOptions(modulesByCode) {
 }
 
 function SidebarBrand({ tenantLogo }) {
-  return (
-    <div className="main-layout-brand">
+  if (tenantLogo) {
+    return (
+      <motion.div className="main-layout-brand">
       <div className="main-layout-brand-mark">
         <img
-          src={tenantLogo || brandMarkUrl}
+          src={tenantLogo || logoUrl}
           alt=""
           className="main-layout-brand-mark-img"
           aria-hidden

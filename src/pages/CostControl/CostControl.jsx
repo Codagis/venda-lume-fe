@@ -57,7 +57,6 @@ import CostAccountCategoriesPanel from '../../components/CostAccountCategoriesPa
 import './CostControl.css'
 
 const { TextArea } = Input
-const { RangePicker } = DatePicker
 
 const STATUS_OPTIONS = [
   { value: 'PENDING', label: 'Pendente' },
@@ -130,8 +129,8 @@ export default function CostControl() {
   const [editingReceivableId, setEditingReceivableId] = useState(null)
   const [paymentDrawerOpen, setPaymentDrawerOpen] = useState(false)
   const [paymentTarget, setPaymentTarget] = useState(null)
-  const [filtersPayable, setFiltersPayable] = useState({ search: '', status: undefined, supplierId: undefined, employeeId: undefined, dueDateRange: null })
-  const [filtersReceivable, setFiltersReceivable] = useState({ search: '', status: undefined, customerId: undefined, dueDateRange: null })
+  const [filtersPayable, setFiltersPayable] = useState({ search: '', status: undefined, supplierId: undefined, employeeId: undefined, dueDateFrom: null, dueDateTo: null })
+  const [filtersReceivable, setFiltersReceivable] = useState({ search: '', status: undefined, customerId: undefined, dueDateFrom: null, dueDateTo: null })
   const [filtersPayableExpanded, setFiltersPayableExpanded] = useState(false)
   const [filtersReceivableExpanded, setFiltersReceivableExpanded] = useState(false)
   const [reportLoading, setReportLoading] = useState(null)
@@ -287,8 +286,8 @@ export default function CostControl() {
       if (filtersPayable.status) filter.status = filtersPayable.status
     if (filtersPayable.supplierId) filter.supplierId = filtersPayable.supplierId
     if (filtersPayable.employeeId) filter.employeeId = filtersPayable.employeeId
-      if (filtersPayable.dueDateRange?.[0]) filter.dueDateFrom = filtersPayable.dueDateRange[0].format('YYYY-MM-DD')
-      if (filtersPayable.dueDateRange?.[1]) filter.dueDateTo = filtersPayable.dueDateRange[1].format('YYYY-MM-DD')
+      if (filtersPayable.dueDateFrom) filter.dueDateFrom = filtersPayable.dueDateFrom.format('YYYY-MM-DD')
+      if (filtersPayable.dueDateTo) filter.dueDateTo = filtersPayable.dueDateTo.format('YYYY-MM-DD')
       const tenantId = isRoot ? selectedTenantId : undefined
       const res = await costControlService.searchPayables(filter, tenantId)
       setPayables(res?.content ?? [])
@@ -309,8 +308,8 @@ export default function CostControl() {
       if (filtersReceivable.search?.trim()) filter.search = filtersReceivable.search.trim()
       if (filtersReceivable.status) filter.status = filtersReceivable.status
       if (filtersReceivable.customerId) filter.customerId = filtersReceivable.customerId
-      if (filtersReceivable.dueDateRange?.[0]) filter.dueDateFrom = filtersReceivable.dueDateRange[0].format('YYYY-MM-DD')
-      if (filtersReceivable.dueDateRange?.[1]) filter.dueDateTo = filtersReceivable.dueDateRange[1].format('YYYY-MM-DD')
+      if (filtersReceivable.dueDateFrom) filter.dueDateFrom = filtersReceivable.dueDateFrom.format('YYYY-MM-DD')
+      if (filtersReceivable.dueDateTo) filter.dueDateTo = filtersReceivable.dueDateTo.format('YYYY-MM-DD')
       const tenantId = isRoot ? selectedTenantId : undefined
       const res = await costControlService.searchReceivables(filter, tenantId)
       setReceivables(res?.content ?? [])
@@ -575,8 +574,8 @@ export default function CostControl() {
     if (filtersPayable.status) f.status = filtersPayable.status
     if (filtersPayable.supplierId) f.supplierId = filtersPayable.supplierId
     if (filtersPayable.employeeId) f.employeeId = filtersPayable.employeeId
-    if (filtersPayable.dueDateRange?.[0]) f.dueDateFrom = filtersPayable.dueDateRange[0].format('YYYY-MM-DD')
-    if (filtersPayable.dueDateRange?.[1]) f.dueDateTo = filtersPayable.dueDateRange[1].format('YYYY-MM-DD')
+    if (filtersPayable.dueDateFrom) f.dueDateFrom = filtersPayable.dueDateFrom.format('YYYY-MM-DD')
+    if (filtersPayable.dueDateTo) f.dueDateTo = filtersPayable.dueDateTo.format('YYYY-MM-DD')
     return f
   }
 
@@ -585,8 +584,8 @@ export default function CostControl() {
     if (filtersReceivable.search?.trim()) f.search = filtersReceivable.search.trim()
     if (filtersReceivable.status) f.status = filtersReceivable.status
     if (filtersReceivable.customerId) f.customerId = filtersReceivable.customerId
-    if (filtersReceivable.dueDateRange?.[0]) f.dueDateFrom = filtersReceivable.dueDateRange[0].format('YYYY-MM-DD')
-    if (filtersReceivable.dueDateRange?.[1]) f.dueDateTo = filtersReceivable.dueDateRange[1].format('YYYY-MM-DD')
+    if (filtersReceivable.dueDateFrom) f.dueDateFrom = filtersReceivable.dueDateFrom.format('YYYY-MM-DD')
+    if (filtersReceivable.dueDateTo) f.dueDateTo = filtersReceivable.dueDateTo.format('YYYY-MM-DD')
     return f
   }
 
@@ -1068,13 +1067,38 @@ export default function CostControl() {
                               allowClear
                             />
                           </Col>
-                          <Col xs={24} sm={12} md={6}>
-                            <label className="cost-control-filter-label">Vencimento</label>
-                            <RangePicker
-                              placeholder={['De', 'Até']}
-                              value={filtersPayable.dueDateRange}
-                              onChange={(dates) => setFiltersPayable((f) => ({ ...f, dueDateRange: dates }))}
+                          <Col xs={24} sm={12} md={3}>
+                            <label className="cost-control-filter-label">Vencimento de</label>
+                            <DatePicker
+                              value={filtersPayable.dueDateFrom}
+                              onChange={(d) => {
+                                setFiltersPayable((f) => {
+                                  const next = { ...f, dueDateFrom: d }
+                                  if (d && f.dueDateTo && d.isAfter(f.dueDateTo, 'day')) next.dueDateTo = d
+                                  return next
+                                })
+                              }}
+                              disabledDate={(d) => (filtersPayable.dueDateTo ? d.isAfter(filtersPayable.dueDateTo, 'day') : false)}
+                              format="DD/MM/YYYY"
                               style={{ width: '100%' }}
+                              placeholder="De"
+                            />
+                          </Col>
+                          <Col xs={24} sm={12} md={3}>
+                            <label className="cost-control-filter-label">Vencimento até</label>
+                            <DatePicker
+                              value={filtersPayable.dueDateTo}
+                              onChange={(d) => {
+                                setFiltersPayable((f) => {
+                                  const next = { ...f, dueDateTo: d }
+                                  if (d && f.dueDateFrom && d.isBefore(f.dueDateFrom, 'day')) next.dueDateFrom = d
+                                  return next
+                                })
+                              }}
+                              disabledDate={(d) => (filtersPayable.dueDateFrom ? d.isBefore(filtersPayable.dueDateFrom, 'day') : false)}
+                              format="DD/MM/YYYY"
+                              style={{ width: '100%' }}
+                              placeholder="Até"
                             />
                           </Col>
                           <Col xs={24} md={4} className="cost-control-filter-submit-col">
@@ -1263,13 +1287,38 @@ export default function CostControl() {
                               allowClear
                             />
                           </Col>
-                          <Col xs={24} sm={12} md={6}>
-                            <label className="cost-control-filter-label">Vencimento</label>
-                            <RangePicker
-                              placeholder={['De', 'Até']}
-                              value={filtersReceivable.dueDateRange}
-                              onChange={(dates) => setFiltersReceivable((f) => ({ ...f, dueDateRange: dates }))}
+                          <Col xs={24} sm={12} md={3}>
+                            <label className="cost-control-filter-label">Vencimento de</label>
+                            <DatePicker
+                              value={filtersReceivable.dueDateFrom}
+                              onChange={(d) => {
+                                setFiltersReceivable((f) => {
+                                  const next = { ...f, dueDateFrom: d }
+                                  if (d && f.dueDateTo && d.isAfter(f.dueDateTo, 'day')) next.dueDateTo = d
+                                  return next
+                                })
+                              }}
+                              disabledDate={(d) => (filtersReceivable.dueDateTo ? d.isAfter(filtersReceivable.dueDateTo, 'day') : false)}
+                              format="DD/MM/YYYY"
                               style={{ width: '100%' }}
+                              placeholder="De"
+                            />
+                          </Col>
+                          <Col xs={24} sm={12} md={3}>
+                            <label className="cost-control-filter-label">Vencimento até</label>
+                            <DatePicker
+                              value={filtersReceivable.dueDateTo}
+                              onChange={(d) => {
+                                setFiltersReceivable((f) => {
+                                  const next = { ...f, dueDateTo: d }
+                                  if (d && f.dueDateFrom && d.isBefore(f.dueDateFrom, 'day')) next.dueDateFrom = d
+                                  return next
+                                })
+                              }}
+                              disabledDate={(d) => (filtersReceivable.dueDateFrom ? d.isBefore(filtersReceivable.dueDateFrom, 'day') : false)}
+                              format="DD/MM/YYYY"
+                              style={{ width: '100%' }}
+                              placeholder="Até"
                             />
                           </Col>
                           <Col xs={24} md={4} className="cost-control-filter-submit-col">

@@ -13,7 +13,9 @@ const motionEase = 'cubic-bezier(0.33, 1, 0.68, 1)'
 
 const theme = {
   token: {
-    fontFamily: "'Urbanist', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+    fontFamily: "'Sora', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+    fontWeight: 300,
+    fontWeightStrong: 700,
     colorPrimary: '#1a4a2f',
     colorSuccess: '#1a4a2f',
     colorSuccessBg: '#e6ede8',

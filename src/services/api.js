@@ -9,7 +9,7 @@ export async function login(username, password) {
   const res = await fetch(`${API_BASE}/auth/login`, {
     method: 'POST',
     ...defaultOptions,
-    body: JSON.stringify({ username, password }),
+    body: JSON.stringify({ username, password, client: 'web' }),
   })
 
   if (!res.ok) {

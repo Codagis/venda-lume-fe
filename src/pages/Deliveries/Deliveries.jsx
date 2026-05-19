@@ -39,7 +39,6 @@ import { normalizePhone } from '../../utils/masks'
 import './Deliveries.css'
 
 const { TextArea } = Input
-const { RangePicker } = DatePicker
 
 const STATUS_OPTIONS = [
   { value: 'PENDING', label: 'Pendente' },
@@ -122,7 +121,8 @@ export default function Deliveries() {
     search: '',
     status: undefined,
     deliveryPersonId: undefined,
-    dateRange: null,
+    periodStart: null,
+    periodEnd: null,
     listType: 'all',
   })
 
@@ -147,8 +147,8 @@ export default function Deliveries() {
       if (filters.search?.trim()) filter.search = filters.search.trim()
       if (filters.status) filter.status = filters.status
       if (filters.deliveryPersonId) filter.deliveryPersonId = filters.deliveryPersonId
-      if (filters.dateRange?.[0]) filter.startDate = filters.dateRange[0].format('YYYY-MM-DD') + 'T00:00:00'
-      if (filters.dateRange?.[1]) filter.endDate = filters.dateRange[1].format('YYYY-MM-DD') + 'T23:59:59'
+      if (filters.periodStart) filter.startDate = filters.periodStart.format('YYYY-MM-DD') + 'T00:00:00'
+      if (filters.periodEnd) filter.endDate = filters.periodEnd.format('YYYY-MM-DD') + 'T23:59:59'
 
       const [allRes, activeRes] = await Promise.all([
         deliveryService.searchDeliveries(filter, isRoot ? effectiveTenantId : undefined),
@@ -614,11 +614,35 @@ export default function Deliveries() {
                         optionFilterProp="label"
                       />
                     </Col>
-                    <Col xs={24} sm={12} md={6}>
-                      <label>Período</label>
-                      <RangePicker
-                        value={filters.dateRange}
-                        onChange={(v) => setFilters((f) => ({ ...f, dateRange: v }))}
+                    <Col xs={24} sm={12} md={3}>
+                      <label>Data início</label>
+                      <DatePicker
+                        value={filters.periodStart}
+                        onChange={(d) => {
+                          setFilters((f) => {
+                            const next = { ...f, periodStart: d }
+                            if (d && f.periodEnd && d.isAfter(f.periodEnd, 'day')) next.periodEnd = d
+                            return next
+                          })
+                        }}
+                        disabledDate={(d) => (filters.periodEnd ? d.isAfter(filters.periodEnd, 'day') : false)}
+                        format="DD/MM/YYYY"
+                        style={{ width: '100%' }}
+                      />
+                    </Col>
+                    <Col xs={24} sm={12} md={3}>
+                      <label>Data fim</label>
+                      <DatePicker
+                        value={filters.periodEnd}
+                        onChange={(d) => {
+                          setFilters((f) => {
+                            const next = { ...f, periodEnd: d }
+                            if (d && f.periodStart && d.isBefore(f.periodStart, 'day')) next.periodStart = d
+                            return next
+                          })
+                        }}
+                        disabledDate={(d) => (filters.periodStart ? d.isBefore(filters.periodStart, 'day') : false)}
+                        format="DD/MM/YYYY"
                         style={{ width: '100%' }}
                       />
                     </Col>

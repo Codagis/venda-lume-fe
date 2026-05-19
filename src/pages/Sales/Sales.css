@@ -1,3 +1,12 @@
+.fiscal-emit-btn-wrap {
+  display: block;
+  width: 100%;
+}
+
+.fiscal-emit-btn-wrap .ant-btn {
+  width: 100%;
+}
+
 .sales-page {
   flex: 1 1 auto;
   min-height: 0;

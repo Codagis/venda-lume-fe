@@ -59,20 +59,21 @@ import {
 import * as tenantService from '../../services/tenantService'
 import * as cardMachineService from '../../services/cardMachineService'
 import { confirmDeleteModal } from '../../utils/confirmModal'
-import { maskCpfCnpj, isValidCpfCnpj } from '../../utils/masks'
+import { maskCpfCnpj } from '../../utils/masks'
+import {
+  saleHasCardAuthorization,
+  saleHasValidCustomerCpf,
+  salePaymentRequiresCardAuthorization,
+  showNfceEmitButton,
+  isNfceEmitEnabled,
+  nfceEmitDisabledReason,
+  showNfeEmitButton,
+  isNfeEmitEnabled,
+  nfeEmitDisabledReason,
+} from '../../utils/saleFiscalEmit'
+import FiscalEmitButton from '../../components/FiscalEmitButton'
 import dayjs from 'dayjs'
 import './SalesConsult.css'
-
-function effectiveSaleCustomerDocument(sale, editDoc) {
-  const doc = (editDoc != null && String(editDoc).trim() !== ''
-    ? String(editDoc).trim()
-    : sale?.customerDocument) || ''
-  return doc.trim()
-}
-
-function saleHasValidCustomerDocument(sale, editDoc) {
-  return isValidCpfCnpj(effectiveSaleCustomerDocument(sale, editDoc))
-}
 
 function formatPrice(value) {
   if (value == null) return 'R$ 0,00'
@@ -682,10 +683,15 @@ export default function SalesConsult() {
                   <Input
                     value={customerEditDoc}
                     onChange={(e) => setCustomerEditDoc(maskCpfCnpj(e.target.value))}
-                    placeholder={`CPF/CNPJ atual: ${selectedSale.customerDocument ? maskCpfCnpj(selectedSale.customerDocument) : 'não informado'}`}
+                    placeholder={`CPF atual: ${selectedSale.customerDocument ? maskCpfCnpj(selectedSale.customerDocument) : 'não informado'}`}
                     maxLength={18}
                     inputMode="numeric"
                   />
+                  {(selectedSale.nfeRequiresCustomerDocument || selectedSale.canEmitNfe) && (
+                    <p style={{ margin: 0, fontSize: 12, color: '#667085' }}>
+                      Produtos desta venda exigem <strong>CPF</strong> (11 dígitos) para emissão de NF-e.
+                    </p>
+                  )}
                   <Button
                     type="primary"
                     loading={savingCustomer}
@@ -695,6 +701,14 @@ export default function SalesConsult() {
                       const doc = docRaw ? docRaw.replace(/\D/g, '') : undefined
                       if (docRaw && doc && doc.length !== 11 && doc.length !== 14) {
                         message.warning('Informe um CPF (11 dígitos) ou CNPJ (14 dígitos) válido.')
+                        return
+                      }
+                      if (
+                        doc
+                        && doc.length === 14
+                        && (selectedSale.nfeRequiresCustomerDocument || selectedSale.canEmitNfe)
+                      ) {
+                        message.warning('Para NF-e informe o CPF do cliente (11 dígitos), não CNPJ.')
                         return
                       }
                       setSavingCustomer(true)
@@ -716,7 +730,7 @@ export default function SalesConsult() {
                       }
                     }}
                   >
-                    Salvar nome e CPF/CNPJ
+                    Salvar nome e documento
                   </Button>
                   <p style={{ margin: 0, fontSize: 12, color: '#666' }}>
                     Altere o nome e/ou CPF/CNPJ do cliente. A alteração fica registrada na auditoria da venda.
@@ -900,7 +914,7 @@ export default function SalesConsult() {
                           <Form.Item label="Bandeira do cartão">
                             <Select value={paymentFormCardBrand} onChange={setPaymentFormCardBrand} options={CARD_BRAND_OPTIONS} style={{ width: '100%' }} />
                           </Form.Item>
-                          <Form.Item label="Número da autorização" extra="Necessário para emissão de NFC-e.">
+                          <Form.Item label="Número da autorização" extra="Obrigatório para NFC-e apenas em pagamento com cartão de crédito ou débito.">
                             <Input value={paymentFormCardAuthorization} onChange={(e) => setPaymentFormCardAuthorization(e.target.value)} placeholder="Código (até 20 caracteres)" maxLength={20} />
                           </Form.Item>
                           {paymentFormPaymentMethod === 'CREDIT_CARD' && (
@@ -1067,13 +1081,45 @@ export default function SalesConsult() {
               </Card>
             )}
 
-            {(selectedSale.canEmitNfe || selectedSale.nfeRequiresCustomerDocument)
-              && !saleHasValidCustomerDocument(selectedSale, customerEditDoc) && (
+            {selectedSale.nfceRequiresPayment && (
               <Alert
                 type="warning"
                 showIcon
-                message="Sem CPF ou CNPJ não é possível emitir NF-e"
-                description="O botão Gerar NF-e só aparece quando o cliente da venda tiver CPF ou CNPJ informado. Use a seção 'Alterar cliente da venda' abaixo para informar o documento."
+                message="Venda sem pagamento — NFC-e indisponível"
+                description="Registre a forma de pagamento e conclua a venda (não pode estar aberta ou em rascunho) antes de gerar o cupom fiscal."
+                style={{ marginBottom: 16 }}
+              />
+            )}
+
+            {selectedSale.nfeRequiresPayment && (
+              <Alert
+                type="warning"
+                showIcon
+                message="Venda sem pagamento — NF-e indisponível"
+                description="Registre a forma de pagamento e conclua a venda antes de gerar a NF-e."
+                style={{ marginBottom: 16 }}
+              />
+            )}
+
+            {salePaymentRequiresCardAuthorization(selectedSale)
+              && selectedSale.nfceRequiresCardAuthorization
+              && !saleHasCardAuthorization(selectedSale, cardAuthValue) && (
+              <Alert
+                type="warning"
+                showIcon
+                message="Sem código de autorização não é possível emitir NFC-e"
+                description="Pagamento em cartão de crédito ou débito: informe o código de autorização na seção abaixo. Para PIX, dinheiro e demais formas, o cupom fiscal pode ser gerado após o pagamento registrado."
+                style={{ marginBottom: 16 }}
+              />
+            )}
+
+            {(selectedSale.canEmitNfe || selectedSale.nfeRequiresCustomerDocument)
+              && !saleHasValidCustomerCpf(selectedSale, customerEditDoc) && (
+              <Alert
+                type="warning"
+                showIcon
+                message="Sem CPF do cliente não é possível emitir NF-e"
+                description="Há produtos configurados para NF-e. O botão NF-e só fica disponível com CPF válido (11 dígitos) do cliente. Use a seção 'Alterar cliente da venda' para informar o CPF."
                 style={{ marginBottom: 16 }}
               />
             )}
@@ -1124,14 +1170,18 @@ export default function SalesConsult() {
 
             <Card size="small" className="sale-detail-section sale-detail-actions" title="Ações">
               <div className="sale-detail-actions-grid">
-                {selectedSale.canEmitFiscalReceipt && (
-                  <Button
+                {showNfceEmitButton(selectedSale) && (
+                  <FiscalEmitButton
                     icon={<FilePdfOutlined />}
+                    disabled={!isNfceEmitEnabled(selectedSale, cardAuthValue)}
+                    disabledTitle={nfceEmitDisabledReason(selectedSale, cardAuthValue)}
                     onClick={async () => {
                       setLoadingFiscalReceipt(true)
                       try {
                         await downloadFiscalReceiptPdf(selectedSale.id, selectedSale.saleNumber)
                         message.success('Cupom fiscal baixado com sucesso!')
+                        const refreshed = await getSaleById(selectedSale.id)
+                        setSelectedSale(refreshed)
                       } catch (e) {
                         message.error(e?.message || 'Erro ao gerar cupom fiscal.')
                       } finally {
@@ -1143,23 +1193,14 @@ export default function SalesConsult() {
                     block
                   >
                     Cupom fiscal (NFC-e)
-                  </Button>
+                  </FiscalEmitButton>
                 )}
-                {(selectedSale.canEmitNfe
-                  || (selectedSale.nfeRequiresCustomerDocument && saleHasValidCustomerDocument(selectedSale, customerEditDoc))) && (
-                  <Button
+                {showNfeEmitButton(selectedSale) && (
+                  <FiscalEmitButton
                     icon={<FilePdfOutlined />}
+                    disabled={!isNfeEmitEnabled(selectedSale, customerEditDoc)}
+                    disabledTitle={nfeEmitDisabledReason(selectedSale, customerEditDoc)}
                     onClick={async () => {
-                      if (!saleHasValidCustomerDocument(selectedSale, customerEditDoc)) {
-                        message.warning('Informe e salve o CPF ou CNPJ do cliente antes de gerar a NF-e.')
-                        return
-                      }
-                      const editDigits = (customerEditDoc || '').replace(/\D/g, '')
-                      const savedDigits = (selectedSale.customerDocument || '').replace(/\D/g, '')
-                      if (editDigits && editDigits !== savedDigits) {
-                        message.warning('Salve o CPF/CNPJ na seção "Alterar cliente da venda" antes de gerar a NF-e.')
-                        return
-                      }
                       setLoadingNfe(true)
                       try {
                         await downloadNfePdf(selectedSale.id)
@@ -1177,7 +1218,7 @@ export default function SalesConsult() {
                     block
                   >
                     NF-e
-                  </Button>
+                  </FiscalEmitButton>
                 )}
                 {selectedSale.canEmitSimpleReceipt && (
                   <Button
