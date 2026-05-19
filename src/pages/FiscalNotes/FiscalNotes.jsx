@@ -55,6 +55,7 @@ import {
   getFiscalNfceIssuedTaxes,
 } from '../../services/fiscalService'
 import InvoiceTaxDetailBlock from '../../components/InvoiceTaxDetailBlock'
+import FiscalReconciliationPanel from '../../components/FiscalReconciliationPanel'
 import { useAuth } from '../../contexts/AuthContext'
 import RootTenantSelect from '../../components/RootTenantSelect'
 import { importSaleFromInvoice } from '../../services/saleImportService'
@@ -945,6 +946,8 @@ export default function FiscalNotes() {
           {isCompact && (
             <p className="fiscal-notes-mobile-hint">Nuvem Fiscal · Toque em uma linha ou em ⋮ para detalhes e downloads.</p>
           )}
+
+          <FiscalReconciliationPanel tenantId={effectiveTenantId} isCompact={isCompact} />
 
           <nav className="fiscal-notes-view-nav" aria-label="Tipo de nota fiscal">
             {FISCAL_VIEWS.map((view) => {

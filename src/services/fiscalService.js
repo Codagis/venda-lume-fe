@@ -187,6 +187,20 @@ export async function listNfeAll(params = {}) {
   return res.json()
 }
 
+export async function runFiscalReconciliation(params = {}) {
+  const qs = new URLSearchParams()
+  if (params.tenantId) qs.set('tenantId', params.tenantId)
+  if (params.startDate) qs.set('startDate', params.startDate)
+  if (params.endDate) qs.set('endDate', params.endDate)
+  if (params.includeNfe != null) qs.set('includeNfe', String(params.includeNfe))
+  const res = await apiFetch(`/fiscal/reconciliation?${qs.toString()}`)
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err?.message || err?.error || 'Erro ao executar conciliação fiscal.')
+  }
+  return res.json()
+}
+
 export async function listNfceIssued(params = {}) {
   const qs = new URLSearchParams()
   if (params.tenantId) qs.set('tenantId', params.tenantId)

@@ -976,31 +976,33 @@ export default function CostControl() {
                           </span>
                           <DownOutlined className="vl-filters-chevron" aria-hidden />
                         </Button>
-                        <Space
-                          direction={isCompact ? 'vertical' : 'horizontal'}
-                          size={isCompact ? 8 : 12}
-                          className="cost-control-export-actions"
-                          style={isCompact ? { width: '100%' } : { marginLeft: 'auto' }}
-                        >
-                          <Button
-                            icon={<FileExcelOutlined />}
-                            onClick={handleExportPayablesExcel}
-                            loading={reportLoading === 'payables-excel'}
-                            disabled={isRoot && !selectedTenantId}
-                            block={isCompact}
+                        {payables.length > 0 && (
+                          <Space
+                            direction={isCompact ? 'vertical' : 'horizontal'}
+                            size={isCompact ? 8 : 12}
+                            className="cost-control-export-actions"
+                            style={isCompact ? { width: '100%' } : { marginLeft: 'auto' }}
                           >
-                            Exportar Excel
-                          </Button>
-                          <Button
-                            icon={<FilePdfOutlined />}
-                            onClick={handleExportPayablesPdf}
-                            loading={reportLoading === 'payables-pdf'}
-                            disabled={isRoot && !selectedTenantId}
-                            block={isCompact}
-                          >
-                            Exportar PDF
-                          </Button>
-                        </Space>
+                            <Button
+                              icon={<FileExcelOutlined />}
+                              onClick={handleExportPayablesExcel}
+                              loading={reportLoading === 'payables-excel'}
+                              disabled={isRoot && !selectedTenantId}
+                              block={isCompact}
+                            >
+                              Exportar Excel
+                            </Button>
+                            <Button
+                              icon={<FilePdfOutlined />}
+                              onClick={handleExportPayablesPdf}
+                              loading={reportLoading === 'payables-pdf'}
+                              disabled={isRoot && !selectedTenantId}
+                              block={isCompact}
+                            >
+                              Exportar PDF
+                            </Button>
+                          </Space>
+                        )}
                         <Button
                           type="primary"
                           icon={<PlusOutlined />}
@@ -1209,31 +1211,33 @@ export default function CostControl() {
                           </span>
                           <DownOutlined className="vl-filters-chevron" aria-hidden />
                         </Button>
-                        <Space
-                          direction={isCompact ? 'vertical' : 'horizontal'}
-                          size={isCompact ? 8 : 12}
-                          className="cost-control-export-actions"
-                          style={isCompact ? { width: '100%' } : { marginLeft: 'auto' }}
-                        >
-                          <Button
-                            icon={<FileExcelOutlined />}
-                            onClick={handleExportReceivablesExcel}
-                            loading={reportLoading === 'receivables-excel'}
-                            disabled={isRoot && !selectedTenantId}
-                            block={isCompact}
+                        {receivables.length > 0 && (
+                          <Space
+                            direction={isCompact ? 'vertical' : 'horizontal'}
+                            size={isCompact ? 8 : 12}
+                            className="cost-control-export-actions"
+                            style={isCompact ? { width: '100%' } : { marginLeft: 'auto' }}
                           >
-                            Exportar Excel
-                          </Button>
-                          <Button
-                            icon={<FilePdfOutlined />}
-                            onClick={handleExportReceivablesPdf}
-                            loading={reportLoading === 'receivables-pdf'}
-                            disabled={isRoot && !selectedTenantId}
-                            block={isCompact}
-                          >
-                            Exportar PDF
-                          </Button>
-                        </Space>
+                            <Button
+                              icon={<FileExcelOutlined />}
+                              onClick={handleExportReceivablesExcel}
+                              loading={reportLoading === 'receivables-excel'}
+                              disabled={isRoot && !selectedTenantId}
+                              block={isCompact}
+                            >
+                              Exportar Excel
+                            </Button>
+                            <Button
+                              icon={<FilePdfOutlined />}
+                              onClick={handleExportReceivablesPdf}
+                              loading={reportLoading === 'receivables-pdf'}
+                              disabled={isRoot && !selectedTenantId}
+                              block={isCompact}
+                            >
+                              Exportar PDF
+                            </Button>
+                          </Space>
+                        )}
                         <Button
                           type="primary"
                           icon={<PlusOutlined />}

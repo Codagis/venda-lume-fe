@@ -480,26 +480,28 @@ export default function SalesConsult() {
                 </span>
                 <DownOutlined className="vl-filters-chevron" aria-hidden />
               </Button>
-              <Space direction={isCompact ? 'vertical' : 'horizontal'} size={isCompact ? 10 : 8} className="sales-consult-export-actions">
-                <Button
-                  icon={<FileExcelOutlined />}
-                  onClick={handleExportExcel}
-                  loading={exportingExcel}
-                  disabled={!effectiveTenantId && isRoot}
-                  block={isCompact}
-                >
-                  Exportar Excel
-                </Button>
-                <Button
-                  icon={<FilePdfOutlined />}
-                  onClick={handleExportPdf}
-                  loading={exportingPdf}
-                  disabled={!effectiveTenantId && isRoot}
-                  block={isCompact}
-                >
-                  Exportar PDF
-                </Button>
-              </Space>
+              {sales.length > 0 && (
+                <Space direction={isCompact ? 'vertical' : 'horizontal'} size={isCompact ? 10 : 8} className="sales-consult-export-actions">
+                  <Button
+                    icon={<FileExcelOutlined />}
+                    onClick={handleExportExcel}
+                    loading={exportingExcel}
+                    disabled={!effectiveTenantId && isRoot}
+                    block={isCompact}
+                  >
+                    Exportar Excel
+                  </Button>
+                  <Button
+                    icon={<FilePdfOutlined />}
+                    onClick={handleExportPdf}
+                    loading={exportingPdf}
+                    disabled={!effectiveTenantId && isRoot}
+                    block={isCompact}
+                  >
+                    Exportar PDF
+                  </Button>
+                </Space>
+              )}
             </div>
             <div
               className={`vl-filters-expand${filtersExpanded ? ' vl-filters-expand--open' : ''}`}

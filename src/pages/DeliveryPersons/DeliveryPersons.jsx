@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback } from 'react'
-import { Form, Input, Select, Button, Table, Drawer, Space, message, Grid } from 'antd'
-import { UserOutlined, PlusOutlined } from '@ant-design/icons'
+import { useState, useEffect, useCallback, useMemo } from 'react'
+import { Form, Input, Select, Switch, Button, Table, Drawer, Space, message, Grid } from 'antd'
+import { UserOutlined, PlusOutlined, EditOutlined } from '@ant-design/icons'
 import { useAuth } from '../../contexts/AuthContext'
 import * as tenantService from '../../services/tenantService'
 import * as userService from '../../services/userService'
@@ -21,6 +21,7 @@ export default function DeliveryPersons() {
   const [allUsers, setAllUsers] = useState([])
   const [loading, setLoading] = useState(false)
   const [deliveryPersonDrawerOpen, setDeliveryPersonDrawerOpen] = useState(false)
+  const [editingDeliveryPersonId, setEditingDeliveryPersonId] = useState(null)
   const [savingDeliveryPerson, setSavingDeliveryPerson] = useState(false)
 
   const effectiveTenantId = isRoot ? selectedTenantId : user?.tenantId
@@ -51,7 +52,7 @@ export default function DeliveryPersons() {
 
   useEffect(() => {
     if (isRoot) loadTenants()
-  }, [isRoot])
+  }, [isRoot, loadTenants])
 
   useEffect(() => {
     loadAllUsers()
@@ -61,36 +62,119 @@ export default function DeliveryPersons() {
     (u) => u.role === 'DELIVERY' && (!effectiveTenantId || u.tenantId === effectiveTenantId)
   )
 
-  const openDeliveryPersonDrawer = () => {
+  const closeDeliveryPersonDrawer = () => {
+    setDeliveryPersonDrawerOpen(false)
+    setEditingDeliveryPersonId(null)
     formDeliveryPerson.resetFields()
-    formDeliveryPerson.setFieldsValue({
-      role: 'DELIVERY',
-      tenantId: effectiveTenantId ?? undefined,
-    })
+  }
+
+  const openDeliveryPersonDrawer = (person = null) => {
+    setEditingDeliveryPersonId(person?.id ?? null)
+    formDeliveryPerson.resetFields()
+    if (person) {
+      formDeliveryPerson.setFieldsValue({
+        username: person.username,
+        fullName: person.fullName,
+        email: person.email,
+        phone: person.phone,
+        tenantId: person.tenantId ?? effectiveTenantId ?? undefined,
+        active: person.active !== false,
+      })
+    } else {
+      formDeliveryPerson.setFieldsValue({
+        role: 'DELIVERY',
+        tenantId: effectiveTenantId ?? undefined,
+        active: true,
+      })
+    }
     setDeliveryPersonDrawerOpen(true)
   }
 
-  const handleCreateDeliveryPerson = async (values) => {
+  const handleSaveDeliveryPerson = async (values) => {
     setSavingDeliveryPerson(true)
     try {
-      await userService.createUser({
-        username: values.username?.trim(),
-        password: values.password?.trim(),
-        fullName: values.fullName?.trim(),
-        email: values.email?.trim(),
-        phone: values.phone?.trim() || undefined,
-        role: 'DELIVERY',
-        tenantId: values.tenantId || effectiveTenantId,
-      })
-      message.success('Entregador cadastrado!')
-      setDeliveryPersonDrawerOpen(false)
+      if (editingDeliveryPersonId) {
+        const payload = {
+          email: values.email?.trim(),
+          fullName: values.fullName?.trim(),
+          role: 'DELIVERY',
+          tenantId: values.tenantId || effectiveTenantId,
+          active: values.active ?? true,
+          phone: values.phone?.trim() || undefined,
+        }
+        if (values.password?.trim()) payload.password = values.password.trim()
+        await userService.updateUser(editingDeliveryPersonId, payload)
+        message.success('Entregador atualizado!')
+      } else {
+        await userService.createUser({
+          username: values.username?.trim(),
+          password: values.password?.trim(),
+          fullName: values.fullName?.trim(),
+          email: values.email?.trim(),
+          phone: values.phone?.trim() || undefined,
+          role: 'DELIVERY',
+          tenantId: values.tenantId || effectiveTenantId,
+        })
+        message.success('Entregador cadastrado!')
+      }
+      closeDeliveryPersonDrawer()
       loadAllUsers()
     } catch (e) {
-      message.error(e?.message || 'Erro ao cadastrar.')
+      message.error(e?.message || 'Erro ao salvar.')
     } finally {
       setSavingDeliveryPerson(false)
     }
   }
+
+  const columns = useMemo(
+    () => [
+      { title: 'Nome', dataIndex: 'fullName', key: 'fullName', ellipsis: true },
+      { title: 'Usuário', dataIndex: 'username', key: 'username', width: isCompact ? 100 : undefined, ellipsis: true },
+      {
+        title: 'E-mail',
+        dataIndex: 'email',
+        key: 'email',
+        ellipsis: true,
+        responsive: ['md'],
+      },
+      {
+        title: 'Telefone',
+        dataIndex: 'phone',
+        key: 'phone',
+        width: 130,
+        responsive: ['sm'],
+        render: (v) => v || '—',
+      },
+      {
+        title: 'Ativo',
+        dataIndex: 'active',
+        key: 'active',
+        width: 72,
+        align: 'center',
+        render: (v) => (v !== false ? 'Sim' : 'Não'),
+      },
+      {
+        title: '',
+        key: 'actions',
+        width: 52,
+        align: 'center',
+        render: (_, record) => (
+          <Button
+            type="text"
+            size="small"
+            icon={<EditOutlined />}
+            title="Editar"
+            aria-label="Editar entregador"
+            onClick={(e) => {
+              e.stopPropagation()
+              openDeliveryPersonDrawer(record)
+            }}
+          />
+        ),
+      },
+    ],
+    [isCompact]
+  )
 
   const drawerRootClass = `deliveries-drawer-root${isCompact ? ' deliveries-drawer-root--compact' : ''}`
   const drawerBodyStyle = {
@@ -133,7 +217,7 @@ export default function DeliveryPersons() {
             <Button
               type="primary"
               icon={<PlusOutlined />}
-              onClick={openDeliveryPersonDrawer}
+              onClick={() => openDeliveryPersonDrawer()}
               className="deliveries-add-btn"
               block={isCompact}
             >
@@ -143,36 +227,11 @@ export default function DeliveryPersons() {
 
           <Table
             rowKey="id"
-            columns={[
-              { title: 'Nome', dataIndex: 'fullName', key: 'fullName', ellipsis: true },
-              { title: 'Usuário', dataIndex: 'username', key: 'username', width: isCompact ? 100 : undefined, ellipsis: true },
-              {
-                title: 'E-mail',
-                dataIndex: 'email',
-                key: 'email',
-                ellipsis: true,
-                responsive: ['md'],
-              },
-              {
-                title: 'Telefone',
-                dataIndex: 'phone',
-                key: 'phone',
-                width: 130,
-                responsive: ['sm'],
-              },
-              {
-                title: 'Ativo',
-                dataIndex: 'active',
-                key: 'active',
-                width: 72,
-                align: 'center',
-                render: (v) => (v ? 'Sim' : 'Não'),
-              },
-            ]}
+            columns={columns}
             dataSource={deliveryPersonsList}
             loading={loading}
             size={isCompact ? 'small' : 'middle'}
-            scroll={{ x: isCompact ? 520 : 900 }}
+            scroll={{ x: isCompact ? 560 : 900 }}
             pagination={{
               pageSize: 15,
               showSizeChanger: !isCompact,
@@ -187,9 +246,9 @@ export default function DeliveryPersons() {
       </main>
 
       <Drawer
-        title="Novo entregador"
+        title={editingDeliveryPersonId ? 'Editar entregador' : 'Novo entregador'}
         open={deliveryPersonDrawerOpen}
-        onClose={() => setDeliveryPersonDrawerOpen(false)}
+        onClose={closeDeliveryPersonDrawer}
         placement="right"
         width={isCompact ? '100%' : 460}
         destroyOnHidden
@@ -197,14 +256,14 @@ export default function DeliveryPersons() {
         styles={{ body: drawerBodyStyle }}
         extra={
           <Space>
-            <Button onClick={() => setDeliveryPersonDrawerOpen(false)}>Cancelar</Button>
+            <Button onClick={closeDeliveryPersonDrawer}>Cancelar</Button>
             <Button type="primary" loading={savingDeliveryPerson} onClick={() => formDeliveryPerson.submit()}>
-              Cadastrar
+              {editingDeliveryPersonId ? 'Salvar' : 'Cadastrar'}
             </Button>
           </Space>
         }
       >
-        <Form form={formDeliveryPerson} layout="vertical" onFinish={handleCreateDeliveryPerson}>
+        <Form form={formDeliveryPerson} layout="vertical" onFinish={handleSaveDeliveryPerson}>
           {isRoot && (
             <Form.Item name="tenantId" label="Empresa" rules={[{ required: true, message: 'Selecione a empresa' }]}>
               <Select
@@ -212,14 +271,24 @@ export default function DeliveryPersons() {
                 options={tenants.map((t) => ({ value: t.id, label: t.name }))}
                 showSearch
                 optionFilterProp="label"
+                disabled={!!editingDeliveryPersonId}
               />
             </Form.Item>
           )}
-          <Form.Item name="username" label="Usuário" rules={[{ required: true }, { min: 3 }]}>
-            <Input placeholder="Nome de usuário para login" />
+          <Form.Item
+            name="username"
+            label="Usuário"
+            rules={editingDeliveryPersonId ? [] : [{ required: true }, { min: 3 }]}
+          >
+            <Input placeholder="Nome de usuário para login" disabled={!!editingDeliveryPersonId} />
           </Form.Item>
-          <Form.Item name="password" label="Senha" rules={[{ required: true }, { min: 8, message: 'Mínimo 8 caracteres' }]}>
-            <Input.Password placeholder="Senha" />
+          <Form.Item
+            name="password"
+            label="Senha"
+            rules={editingDeliveryPersonId ? [] : [{ required: true }, { min: 8, message: 'Mínimo 8 caracteres' }]}
+            extra={editingDeliveryPersonId ? 'Deixe em branco para não alterar' : undefined}
+          >
+            <Input.Password placeholder={editingDeliveryPersonId ? 'Nova senha (opcional)' : 'Senha'} />
           </Form.Item>
           <Form.Item name="fullName" label="Nome completo" rules={[{ required: true }]}>
             <Input placeholder="Nome completo" />
@@ -230,6 +299,11 @@ export default function DeliveryPersons() {
           <Form.Item name="phone" label="Telefone" normalize={normalizePhone}>
             <Input placeholder="Telefone com DDD" inputMode="tel" />
           </Form.Item>
+          {editingDeliveryPersonId && (
+            <Form.Item name="active" valuePropName="checked" label="Ativo">
+              <Switch checkedChildren="Sim" unCheckedChildren="Não" />
+            </Form.Item>
+          )}
         </Form>
       </Drawer>
     </div>

@@ -1,0 +1,177 @@
+.fiscal-recon-card {
+  margin-bottom: 16px;
+  border: 1px solid #c8e0ce;
+  background: linear-gradient(180deg, #f8fdf9 0%, #ffffff 42%);
+}
+
+.fiscal-recon-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.fiscal-recon-head-title {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  flex: 1;
+  min-width: 200px;
+}
+
+.fiscal-recon-head-icon {
+  font-size: 22px;
+  color: #1e4d32;
+  margin-top: 2px;
+}
+
+.fiscal-recon-head-sub {
+  font-size: 12px;
+  display: block;
+  margin-top: 2px;
+}
+
+.fiscal-recon-actions {
+  flex-shrink: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px;
+}
+
+.fiscal-recon-actions--stack {
+  flex-direction: column;
+  align-items: stretch;
+  width: 100%;
+}
+
+.fiscal-recon-dates {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px;
+}
+
+.fiscal-recon-dates--stack {
+  flex-direction: column;
+  align-items: stretch;
+  width: 100%;
+}
+
+.fiscal-recon-date-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 140px;
+}
+
+.fiscal-recon-dates--stack .fiscal-recon-date-field {
+  min-width: 0;
+  width: 100%;
+}
+
+.fiscal-recon-date-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: #475569;
+}
+
+.fiscal-recon-run-btn {
+  flex-shrink: 0;
+}
+
+.fiscal-recon-dates--stack + .fiscal-recon-run-btn {
+  width: 100%;
+}
+
+.fiscal-recon-body {
+  margin-top: 16px;
+}
+
+.fiscal-recon-stats {
+  margin-bottom: 12px;
+}
+
+.fiscal-recon-stat {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 10px 12px;
+  height: 100%;
+}
+
+.fiscal-recon-stat--highlight {
+  background: #fef3c7;
+  border-color: #fcd34d;
+}
+
+.fiscal-recon-stat-label {
+  display: block;
+  font-size: 11px;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 4px;
+}
+
+.fiscal-recon-stat-value {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.fiscal-recon-alerts {
+  margin-bottom: 12px;
+}
+
+.fiscal-recon-issue-desc {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 220px;
+  max-width: 480px;
+}
+
+.fiscal-recon-issue-message,
+.fiscal-recon-issue-detail {
+  white-space: normal;
+  word-break: break-word;
+  line-height: 1.45;
+  display: block;
+}
+
+.fiscal-recon-issue-detail {
+  font-size: 12px;
+}
+
+.fiscal-recon-refs {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.fiscal-recon-amounts {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.fiscal-recon-table-wrap {
+  margin-top: 8px;
+  overflow-x: auto;
+  width: 100%;
+}
+
+.fiscal-recon-table {
+  min-width: 900px;
+}
+
+.fiscal-recon-table .ant-table-cell {
+  vertical-align: top;
+}
