@@ -1051,16 +1051,17 @@ export default function SalesConsult() {
             {selectedSale.items?.length > 0 && (
               <Card size="small" className="sale-detail-section" title="Itens da venda">
                 <Table
+                  className="sale-detail-items-table"
                   dataSource={selectedSale.items}
                   rowKey="id"
                   size="small"
                   pagination={false}
-                  scroll={{ x: isCompact ? 320 : undefined }}
+                  scroll={{ x: 440 }}
                   columns={[
-                    { title: 'Produto', dataIndex: 'productName', ellipsis: true },
-                    { title: 'Qtd', dataIndex: 'quantity', width: 56 },
-                    { title: 'Unit.', dataIndex: 'unitPrice', width: 72, render: formatPrice },
-                    { title: 'Total', dataIndex: 'total', width: 72, render: formatPrice },
+                    { title: 'Produto', dataIndex: 'productName', ellipsis: true, width: 140 },
+                    { title: 'Qtd', dataIndex: 'quantity', width: 52, align: 'center' },
+                    { title: 'Unit.', dataIndex: 'unitPrice', width: 110, align: 'right', render: formatPrice },
+                    { title: 'Total', dataIndex: 'total', width: 110, align: 'right', render: formatPrice },
                   ]}
                 />
               </Card>

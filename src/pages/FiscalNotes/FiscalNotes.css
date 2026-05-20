@@ -341,9 +341,20 @@
   margin-bottom: 8px;
 }
 
+.fiscal-notes-json-copy-btn {
+  padding: 0 4px;
+  height: auto;
+}
+
+.fiscal-notes-detail-json-wrap {
+  position: relative;
+}
+
 .fiscal-notes-detail-json-collapse .fiscal-notes-detail-pre {
   margin: 0;
   max-height: 40vh;
+  overflow: auto;
+  user-select: all;
 }
 
 .fiscal-notes-detail-pre {

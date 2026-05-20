@@ -1,0 +1,53 @@
+.manual-nfe-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.manual-nfe-alert {
+  margin-bottom: 0;
+}
+
+.manual-nfe-card {
+  border: 1px solid #e2e8f0;
+}
+
+.manual-nfe-card + .manual-nfe-card {
+  margin-top: 0;
+}
+
+.manual-nfe-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.manual-nfe-item-block {
+  margin-bottom: 8px;
+}
+
+.manual-nfe-item-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.manual-nfe-item-title {
+  margin: 0 !important;
+  font-size: 14px !important;
+}
+
+.manual-nfe-item-divider {
+  margin: 16px 0 !important;
+}
+
+.manual-nfe-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding-bottom: 8px;
+}
+
+.manual-nfe-panel--compact .manual-nfe-actions .ant-btn {
+  width: 100%;
+}

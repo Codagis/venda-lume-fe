@@ -201,6 +201,20 @@ export async function runFiscalReconciliation(params = {}) {
   return res.json()
 }
 
+export async function emitManualNfe(body, params = {}) {
+  const qs = new URLSearchParams()
+  if (params.tenantId) qs.set('tenantId', params.tenantId)
+  const res = await apiFetch(`/fiscal/nfe/emit?${qs.toString()}`, {
+    method: 'POST',
+    body: JSON.stringify(body),
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err?.message || err?.error || 'Erro ao emitir NF-e.')
+  }
+  return res.json()
+}
+
 export async function listNfceIssued(params = {}) {
   const qs = new URLSearchParams()
   if (params.tenantId) qs.set('tenantId', params.tenantId)

@@ -34,6 +34,8 @@ import {
   ExportOutlined,
   InboxOutlined,
   ShoppingCartOutlined,
+  FormOutlined,
+  CopyOutlined,
 } from '@ant-design/icons'
 import './FiscalNotes.css'
 import {
@@ -54,8 +56,8 @@ import {
   getFiscalNfeReceivedTaxes,
   getFiscalNfceIssuedTaxes,
 } from '../../services/fiscalService'
-import InvoiceTaxDetailBlock from '../../components/InvoiceTaxDetailBlock'
 import FiscalReconciliationPanel from '../../components/FiscalReconciliationPanel'
+import ManualNfeEmitPanel from '../../components/ManualNfeEmitPanel'
 import { useAuth } from '../../contexts/AuthContext'
 import RootTenantSelect from '../../components/RootTenantSelect'
 import { importSaleFromInvoice } from '../../services/saleImportService'
@@ -83,6 +85,13 @@ const FISCAL_VIEWS = [
     badge: 'Cupom',
     description: 'Notas fiscais de consumidor emitidas no PDV ou vendas.',
     icon: ShoppingCartOutlined,
+  },
+  {
+    key: 'nfe-manual',
+    label: 'Emitir NF-e',
+    badge: 'Manual',
+    description: 'Preencha destinatário e itens (como no XML) e envie para autorização na SEFAZ.',
+    icon: FormOutlined,
   },
 ]
 
@@ -223,25 +232,27 @@ function fiscalDocumentLabel(documentKind) {
   return 'Nota fiscal'
 }
 
-function FiscalNoteDetailPanel({ data, documentKind = 'nfe', taxes = null, taxesLoading = false }) {
+function FiscalNoteDetailPanel({ data, documentKind = 'nfe' }) {
   const info = describeFiscalStatus(data)
   const mensagens = data?.mensagens || info?.auth?.mensagens || info?.doc?.mensagens
   const msgList = Array.isArray(mensagens) ? mensagens : []
   const docLabel = fiscalDocumentLabel(documentKind)
   const motivoMencionaNfe =
     info?.motivo && /nf-?e/i.test(info.motivo) && documentKind === 'nfce'
+  const jsonText = JSON.stringify(data ?? {}, null, 2)
+
+  const copyDetailJson = async (e) => {
+    e?.stopPropagation?.()
+    try {
+      await navigator.clipboard.writeText(jsonText)
+      message.success('JSON copiado para a área de transferência.')
+    } catch {
+      message.error('Não foi possível copiar o JSON.')
+    }
+  }
 
   return (
     <Space direction="vertical" size={16} style={{ width: '100%' }}>
-      {(taxesLoading || taxes) && (
-        <>
-          <Divider orientation="left" plain>
-            Imposto da nota (XML)
-          </Divider>
-          <InvoiceTaxDetailBlock taxes={taxes} loading={taxesLoading} />
-        </>
-      )}
-
       {info?.status && (
         <Alert
           type={info.isRejected ? 'error' : info.isOk ? 'success' : 'warning'}
@@ -338,12 +349,26 @@ function FiscalNoteDetailPanel({ data, documentKind = 'nfe', taxes = null, taxes
 
       <Collapse
         className="fiscal-notes-detail-json-collapse"
+        defaultActiveKey={['json']}
         items={[
           {
             key: 'json',
             label: 'JSON completo (logs técnicos)',
+            extra: (
+              <Button
+                type="link"
+                size="small"
+                icon={<CopyOutlined />}
+                className="fiscal-notes-json-copy-btn"
+                onClick={copyDetailJson}
+              >
+                Copiar JSON
+              </Button>
+            ),
             children: (
-              <pre className="fiscal-notes-detail-pre">{JSON.stringify(data ?? {}, null, 2)}</pre>
+              <div className="fiscal-notes-detail-json-wrap">
+                <pre className="fiscal-notes-detail-pre">{jsonText}</pre>
+              </div>
             ),
           },
         ]}
@@ -398,8 +423,6 @@ export default function FiscalNotes() {
   const [detailLoading, setDetailLoading] = useState(false)
   const [detailTitle, setDetailTitle] = useState('')
   const [detailJson, setDetailJson] = useState(null)
-  const [detailTaxes, setDetailTaxes] = useState(null)
-  const [detailTaxesLoading, setDetailTaxesLoading] = useState(false)
   const [taxByDocId, setTaxByDocId] = useState({})
   const [taxesLoading, setTaxesLoading] = useState(false)
 
@@ -521,8 +544,6 @@ export default function FiscalNotes() {
       setDetailOpen(true)
       setDetailLoading(true)
       setDetailJson(null)
-      setDetailTaxes(null)
-      setDetailTaxesLoading(isNoteAuthorized(row))
       const id = row?.id
       const direction = row?.direction
       const isNfce = activeView === 'nfce-issued'
@@ -551,18 +572,6 @@ export default function FiscalNotes() {
       setDetailJson(row || {})
     } finally {
       setDetailLoading(false)
-    }
-    if (isNoteAuthorized(row)) {
-      try {
-        const taxes = await loadTaxesForOne(row, activeView)
-        setDetailTaxes(taxes)
-      } catch {
-        setDetailTaxes(null)
-      } finally {
-        setDetailTaxesLoading(false)
-      }
-    } else {
-      setDetailTaxesLoading(false)
     }
   }
 
@@ -615,22 +624,6 @@ export default function FiscalNotes() {
       setTaxesLoading(false)
     },
     [effectiveTenantId]
-  )
-
-  const loadTaxesForOne = useCallback(
-    async (row, view) => {
-      const id = row?.id
-      if (!id) return null
-      if (taxByDocId[id]) return taxByDocId[id]
-      try {
-        const taxes = await fetchTaxesForRow(row, view, effectiveTenantId)
-        if (taxes) setTaxByDocId((prev) => ({ ...prev, [id]: taxes }))
-        return taxes
-      } catch {
-        return null
-      }
-    },
-    [effectiveTenantId, taxByDocId]
   )
 
   const handleDownloadXml = async (row) => {
@@ -984,6 +977,48 @@ export default function FiscalNotes() {
               </Text>
             </div>
 
+          {activeView === 'nfe-manual' ? (
+            <>
+            {Boolean(user?.isRoot) && (
+              <Row gutter={filterGutter} className="fiscal-notes-filters fiscal-notes-filters--simple" style={{ marginBottom: 16 }}>
+                <Col xs={24} sm={12} lg={8}>
+                  <label className="fiscal-notes-filter-label">Empresa</label>
+                  <RootTenantSelect
+                    isRoot={Boolean(user?.isRoot)}
+                    value={tenantId}
+                    onChange={setTenantId}
+                    style={{ width: '100%', maxWidth: isCompact ? '100%' : 520 }}
+                  />
+                </Col>
+              </Row>
+            )}
+            <ManualNfeEmitPanel
+              tenantId={effectiveTenantId}
+              isCompact={isCompact}
+              onEmitted={async () => {
+                setActiveView('nfe-issued')
+                setData(null)
+                setTaxByDocId({})
+                setLoading(true)
+                try {
+                  const res = await listNfeIssued({
+                    tenantId: effectiveTenantId,
+                    top: 100,
+                    skip: 0,
+                    inlinecount: true,
+                  })
+                  setData(res)
+                  loadTaxesForRows(safeArray(res), 'nfe-issued')
+                } catch (e) {
+                  message.error(e?.message || 'Erro ao atualizar lista de NF-e.')
+                } finally {
+                  setLoading(false)
+                }
+              }}
+            />
+            </>
+          ) : (
+            <>
           <Row gutter={filterGutter} className="fiscal-notes-filters fiscal-notes-filters--simple">
             {Boolean(user?.isRoot) && (
               <Col xs={24} sm={12} lg={6}>
@@ -1125,6 +1160,8 @@ export default function FiscalNotes() {
             scroll={{ x: isCompact ? (activeView === 'nfe-received' ? 540 : 440) : 1280 }}
             className="fiscal-notes-table"
           />
+            </>
+          )}
           </div>
         </Card>
       </main>
@@ -1173,8 +1210,6 @@ export default function FiscalNotes() {
         ) : (
           <FiscalNoteDetailPanel
             data={detailJson}
-            taxes={detailTaxes}
-            taxesLoading={detailTaxesLoading}
             documentKind={
               activeView === 'nfce-issued'
                 ? 'nfce'

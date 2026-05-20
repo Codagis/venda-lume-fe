@@ -188,6 +188,19 @@
   padding: 12px;
 }
 
+.sale-detail-items-table {
+  width: 100%;
+}
+
+.sale-detail-items-table .ant-table-cell {
+  white-space: nowrap;
+}
+
+.sale-detail-items-table .ant-table-cell:first-child {
+  white-space: normal;
+  word-break: break-word;
+}
+
 .sale-detail-actions .ant-card-body {
   padding: 16px;
 }
