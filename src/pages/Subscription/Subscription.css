@@ -1,0 +1,47 @@
+.subscription-page {
+  padding: 0 0 24px;
+}
+
+.subscription-header-card {
+  margin-bottom: 16px;
+}
+
+.subscription-header-icon {
+  font-size: 32px;
+  color: var(--ant-color-primary);
+}
+
+.subscription-title {
+  margin: 0 !important;
+}
+
+.subscription-subtitle {
+  margin-bottom: 0 !important;
+}
+
+.subscription-qr-wrap {
+  display: flex;
+  justify-content: center;
+}
+
+.subscription-qr {
+  max-width: 220px;
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--ant-color-border);
+  border-radius: 8px;
+  padding: 8px;
+  background: #fff;
+}
+
+.subscription-row-selected td {
+  background: var(--ant-color-primary-bg) !important;
+}
+
+.subscription-row-blocking td {
+  background: var(--ant-color-error-bg) !important;
+}
+
+.subscription-pix-panel {
+  scroll-margin-top: 80px;
+}

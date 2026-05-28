@@ -19,6 +19,7 @@ const Registers = lazy(() => import('../pages/Registers/Registers'))
 const Cashiers = lazy(() => import('../pages/Cashiers/Cashiers'))
 const Employees = lazy(() => import('../pages/Employees/Employees'))
 const FiscalNotes = lazy(() => import('../pages/FiscalNotes/FiscalNotes'))
+const Subscription = lazy(() => import('../pages/Subscription/Subscription'))
 
 const registry = {
   Dashboard,
@@ -39,6 +40,7 @@ const registry = {
   Cashiers,
   Employees,
   FiscalNotes,
+  Subscription,
 }
 
 function LoadingFallback() {

@@ -16,6 +16,7 @@ import {
   Avatar,
   Divider,
   Grid,
+  InputNumber,
 } from 'antd'
 import {
   SettingOutlined,
@@ -237,6 +238,10 @@ export default function Settings() {
           interestRatePercent: t.interestRatePercent ?? 0,
           cardFeeType: t.cardFeeType || undefined,
           cardFeeValue: t.cardFeeValue ?? undefined,
+          subscriptionEnabled: t.subscriptionEnabled ?? false,
+          subscriptionMonthlyAmount: t.subscriptionMonthlyAmount ?? undefined,
+          subscriptionDueDay: t.subscriptionDueDay ?? undefined,
+          subscriptionGraceDays: t.subscriptionGraceDays ?? 0,
         })
         loadCardMachines(id)
       }).catch((e) => message.error(e?.message || 'Erro ao carregar empresa.'))
@@ -288,6 +293,10 @@ export default function Settings() {
         certificadoPassword: values.certificadoPassword || undefined,
         crtNfe: values.crtNfe ?? null,
         ambienteNfe: values.ambienteNfe ?? null,
+      }
+      if (isRoot && payload.subscriptionMonthlyAmount != null) {
+        payload.subscriptionMonthlyAmount =
+          Math.round(Number(payload.subscriptionMonthlyAmount) * 100) / 100
       }
       if (!isRoot && modal.id) {
         delete payload.active
@@ -1064,9 +1073,59 @@ export default function Settings() {
                   />
                 </Card>
                 {isRoot && (
-                  <Form.Item name="active" label="Ativo" valuePropName="checked" initialValue={true}>
-                    <Switch />
-                  </Form.Item>
+                  <>
+                    <Card title="Plano de mensalidade" size="small" style={{ marginBottom: 16 }}>
+                      <Form.Item
+                        name="subscriptionEnabled"
+                        label="Cobrança de mensalidade ativa"
+                        valuePropName="checked"
+                      >
+                        <Switch />
+                      </Form.Item>
+                      <Form.Item
+                        noStyle
+                        shouldUpdate={(prev, curr) => prev.subscriptionEnabled !== curr.subscriptionEnabled}
+                      >
+                        {({ getFieldValue }) =>
+                          getFieldValue('subscriptionEnabled') ? (
+                            <>
+                              <Form.Item
+                                name="subscriptionMonthlyAmount"
+                                label="Valor da mensalidade (R$)"
+                                rules={[{ required: true, message: 'Informe o valor' }]}
+                              >
+                                <InputNumber
+                                  min={0.01}
+                                  step={0.01}
+                                  precision={2}
+                                  decimalSeparator=","
+                                  style={{ width: '100%' }}
+                                  placeholder="Ex: 5,00"
+                                />
+                              </Form.Item>
+                              <Form.Item
+                                name="subscriptionDueDay"
+                                label="Dia de vencimento (todo mês)"
+                                rules={[{ required: true, message: 'Informe o dia' }]}
+                              >
+                                <InputNumber min={1} max={28} style={{ width: '100%' }} placeholder="Ex: 20" />
+                              </Form.Item>
+                              <Form.Item
+                                name="subscriptionGraceDays"
+                                label="Limite de tolerância (dias após vencimento)"
+                                rules={[{ required: true, message: 'Informe os dias' }]}
+                              >
+                                <InputNumber min={0} max={60} style={{ width: '100%' }} placeholder="Ex: 5" />
+                              </Form.Item>
+                            </>
+                          ) : null
+                        }
+                      </Form.Item>
+                    </Card>
+                    <Form.Item name="active" label="Ativo" valuePropName="checked" initialValue={true}>
+                      <Switch />
+                    </Form.Item>
+                  </>
                 )}
               </Form>
             )}

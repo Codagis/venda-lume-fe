@@ -20,6 +20,7 @@ const DEFAULT_MODULES = [
   { code: 'CASHIERS', name: 'Operadores de Caixa', icon: 'UserOutlined', route: '/cashiers', component: 'Cashiers', displayOrder: 18 },
   { code: 'MODULES', name: 'Módulos', icon: 'AppstoreOutlined', route: '/modules', component: 'Modules', displayOrder: 20 },
   { code: 'USERS', name: 'Usuários', icon: 'TeamOutlined', route: '/users', component: 'Users', displayOrder: 30 },
+  { code: 'SUBSCRIPTION', name: 'Mensalidades', icon: 'CreditCardOutlined', route: '/subscriptions', component: 'Subscription', displayOrder: 95 },
   { code: 'SETTINGS', name: 'Configurações', icon: 'SettingOutlined', route: '/settings', component: 'Settings', displayOrder: 100 },
 ]
 

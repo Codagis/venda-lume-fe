@@ -4,6 +4,7 @@ import { PublicRoute } from './PublicRoute'
 import Login from '../pages/Login/Login'
 import MainLayout from './MainLayout'
 import ModuleRoute from './ModuleRoute'
+import { getModuleComponent } from '../config/componentRegistry'
 import { useModules } from '../contexts/ModulesContext'
 import { Spin } from 'antd'
 
@@ -36,7 +37,10 @@ export default function DynamicAppRoutes() {
           </ProtectedRoute>
         }
       >
-        {modules.map((m) => {
+        <Route path="subscriptions" element={getModuleComponent('Subscription')} />
+        {modules
+          .filter((m) => m.route !== '/subscriptions')
+          .map((m) => {
           if (m.route === '/') {
             return (
               <Route

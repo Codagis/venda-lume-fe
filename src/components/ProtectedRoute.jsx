@@ -3,7 +3,7 @@ import { Spin } from 'antd'
 import { useAuth } from '../contexts/AuthContext'
 
 export function ProtectedRoute({ children }) {
-  const { isAuthenticated, loading } = useAuth()
+  const { isAuthenticated, loading, user } = useAuth()
   const location = useLocation()
 
   if (loading) {
@@ -16,6 +16,12 @@ export function ProtectedRoute({ children }) {
 
   if (!isAuthenticated) {
     return <Navigate to="/login" state={{ from: location }} replace />
+  }
+
+  const subscriptionBlocked =
+    user?.isRoot !== true && user?.subscriptionAccessAllowed === false
+  if (subscriptionBlocked && !location.pathname.startsWith('/subscriptions')) {
+    return <Navigate to="/subscriptions" replace />
   }
 
   return children

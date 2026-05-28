@@ -43,6 +43,7 @@ export const MENU_GROUPS = [
       { moduleCode: 'COST_CONTROL', route: '/cost-control' },
       { moduleCode: 'EMPLOYEES', route: '/employees' },
       { moduleCode: 'FISCAL', route: '/fiscal-notes' },
+      { moduleCode: 'SUBSCRIPTION', route: '/subscriptions' },
     ],
   },
   {
