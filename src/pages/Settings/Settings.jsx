@@ -242,6 +242,13 @@ export default function Settings() {
           subscriptionMonthlyAmount: t.subscriptionMonthlyAmount ?? undefined,
           subscriptionDueDay: t.subscriptionDueDay ?? undefined,
           subscriptionGraceDays: t.subscriptionGraceDays ?? 0,
+          emitsFiscalReceipt: t.emitsFiscalReceipt ?? !!(
+            t.stateRegistration ||
+            t.municipalRegistration ||
+            t.codigoMunicipio ||
+            t.csc ||
+            t.certificadoPfxUrl
+          ),
         })
         loadCardMachines(id)
       }).catch((e) => message.error(e?.message || 'Erro ao carregar empresa.'))
@@ -249,6 +256,7 @@ export default function Settings() {
     if (type === 'tenant' && !id) {
       setCardMachines([])
       setPendingCardMachines([])
+      form.setFieldsValue({ emitsFiscalReceipt: false, subscriptionEnabled: false, active: true })
     }
     if (type === 'permission' && id) {
       const p = permissions.find((x) => x.id === id)
@@ -286,17 +294,37 @@ export default function Settings() {
   const onFinishTenant = async (values) => {
     setSaving(true)
     try {
+      const registerFiscal = values.emitsFiscalReceipt === true
       const payload = {
         ...values,
+        emitsFiscalReceipt: registerFiscal,
         logoUrl: values.logoUrl || undefined,
-        certificadoPfxBase64: certificadoPfxBase64 || undefined,
-        certificadoPassword: values.certificadoPassword || undefined,
-        crtNfe: values.crtNfe ?? null,
-        ambienteNfe: values.ambienteNfe ?? null,
+        certificadoPfxBase64: registerFiscal ? (certificadoPfxBase64 || undefined) : undefined,
+        certificadoPassword: registerFiscal ? (values.certificadoPassword || undefined) : undefined,
+        crtNfe: registerFiscal ? (values.crtNfe ?? null) : null,
+        ambienteNfe: registerFiscal ? (values.ambienteNfe ?? null) : null,
       }
-      if (isRoot && payload.subscriptionMonthlyAmount != null) {
-        payload.subscriptionMonthlyAmount =
-          Math.round(Number(payload.subscriptionMonthlyAmount) * 100) / 100
+      if (!registerFiscal) {
+        delete payload.stateRegistration
+        delete payload.municipalRegistration
+        delete payload.codigoMunicipio
+        delete payload.crt
+        delete payload.idCsc
+        delete payload.csc
+        delete payload.ambienteFiscal
+        delete payload.certificadoPassword
+      }
+      if (isRoot) {
+        payload.subscriptionEnabled = payload.subscriptionEnabled === true
+        if (payload.subscriptionEnabled && payload.subscriptionMonthlyAmount != null) {
+          payload.subscriptionMonthlyAmount =
+            Math.round(Number(payload.subscriptionMonthlyAmount) * 100) / 100
+        }
+        if (!payload.subscriptionEnabled) {
+          delete payload.subscriptionMonthlyAmount
+          delete payload.subscriptionDueDay
+          delete payload.subscriptionGraceDays
+        }
       }
       if (!isRoot && modal.id) {
         delete payload.active
@@ -914,23 +942,59 @@ export default function Settings() {
                     <Select placeholder="UF" options={UF_OPTIONS} showSearch optionFilterProp="label" allowClear style={{ width: '100%' }} />
                   </Form.Item>
                 </Card>
-                <Divider orientation="left">Dados fiscais e Nuvem Fiscal</Divider>
-                <div style={{ marginBottom: 20, color: 'var(--ant-color-text-secondary)', fontSize: 12 }}>
-                  Configure IE/IM e dados fiscais para emissão de NFC-e e NF-e. A emissão é controlada por produto (em Produtos).
-                </div>
                 <Form.Item
-                  name="stateRegistration"
-                  label="Inscrição Estadual (IE)"
+                  name="emitsFiscalReceipt"
+                  label="Cadastrar fiscal (Fiscal Simplify)"
+                  valuePropName="checked"
+                  extra="Marque para configurar NFC-e/NF-e e enviar os dados ao Fiscal Simplify. Desmarque para cadastrar apenas os dados básicos da empresa."
                 >
-                  <Input placeholder="IE ou ISENTO" />
+                  <Switch />
                 </Form.Item>
-                <Form.Item
-                  name="municipalRegistration"
-                  label="Inscrição Municipal (IM)"
-                >
-                  <Input placeholder="IM ou ISENTO" />
-                </Form.Item>
-                <Card size="small" title="Dados do município (fiscal)" style={{ marginBottom: 20 }}>
+                <Form.Item noStyle shouldUpdate={(prev, curr) => prev.emitsFiscalReceipt !== curr.emitsFiscalReceipt}>
+                  {({ getFieldValue }) =>
+                    getFieldValue('emitsFiscalReceipt') ? (
+                      <>
+                        <Divider orientation="left">Dados fiscais e Nuvem Fiscal</Divider>
+                        <div style={{ marginBottom: 20, color: 'var(--ant-color-text-secondary)', fontSize: 12 }}>
+                          Configure IE/IM e dados fiscais para emissão de NFC-e e NF-e. A emissão é controlada por produto (em Produtos).
+                        </div>
+                        <Form.Item
+                          name="stateRegistration"
+                          label="Inscrição Estadual (IE)"
+                          dependencies={['municipalRegistration']}
+                          rules={[
+                            ({ getFieldValue }) => ({
+                              validator(_, value) {
+                                const im = getFieldValue('municipalRegistration')
+                                if ((value && String(value).trim()) || (im && String(im).trim())) {
+                                  return Promise.resolve()
+                                }
+                                return Promise.reject(new Error('Informe IE ou IM (o outro pode ser ISENTO)'))
+                              },
+                            }),
+                          ]}
+                        >
+                          <Input placeholder="IE ou ISENTO" />
+                        </Form.Item>
+                        <Form.Item
+                          name="municipalRegistration"
+                          label="Inscrição Municipal (IM)"
+                          dependencies={['stateRegistration']}
+                          rules={[
+                            ({ getFieldValue }) => ({
+                              validator(_, value) {
+                                const ie = getFieldValue('stateRegistration')
+                                if ((value && String(value).trim()) || (ie && String(ie).trim())) {
+                                  return Promise.resolve()
+                                }
+                                return Promise.reject(new Error('Informe IE ou IM (o outro pode ser ISENTO)'))
+                              },
+                            }),
+                          ]}
+                        >
+                          <Input placeholder="IM ou ISENTO" />
+                        </Form.Item>
+                        <Card size="small" title="Dados do município (fiscal)" style={{ marginBottom: 20 }}>
                           <div style={{ fontSize: 12, color: 'var(--ant-color-text-secondary)', marginBottom: 8 }}>
                             Código IBGE do município. Cidade e estado vêm do endereço da empresa acima.
                           </div>
@@ -938,13 +1002,28 @@ export default function Settings() {
                             name="codigoMunicipio"
                             label="Código Município IBGE (7 dígitos)"
                             extra="Ex: 2304400 (Fortaleza/CE), 3550308 (São Paulo/SP)"
+                            dependencies={['addressState']}
+                            rules={[
+                              { required: true, message: 'Informe o código IBGE do município' },
+                              {
+                                pattern: /^\d{7}$/,
+                                message: 'Informe exatamente 7 dígitos numéricos',
+                              },
+                              ({ getFieldValue }) => ({
+                                validator() {
+                                  const uf = getFieldValue('addressState')
+                                  if (uf && String(uf).trim()) return Promise.resolve()
+                                  return Promise.reject(new Error('Informe o estado (UF) no endereço acima'))
+                                },
+                              }),
+                            ]}
                           >
                             <Input placeholder="Ex: 2304400" maxLength={7} />
                           </Form.Item>
                         </Card>
 
                         <Card size="small" title="NFC-e — Cupom fiscal" style={{ marginBottom: 20 }}>
-                          <Form.Item name="crt" label="CRT — Regime Tributário">
+                          <Form.Item name="crt" label="CRT — Regime Tributário" rules={[{ required: true, message: 'Selecione o CRT' }]}>
                             <Select placeholder="Selecione o CRT" options={CRT_OPTIONS} allowClear style={{ width: '100%' }} />
                           </Form.Item>
                           <Form.Item name="idCsc" label="ID do CSC" initialValue={0}>
@@ -1005,6 +1084,10 @@ export default function Settings() {
                             <Input.Password placeholder="Senha do arquivo PFX" allowClear />
                           </Form.Item>
                         </Card>
+                      </>
+                    ) : null
+                  }
+                </Form.Item>
                 <Card size="small" title="Maquininhas" style={{ marginBottom: 20 }}>
                   <div style={{ fontSize: 12, color: 'var(--ant-color-text-secondary)', marginBottom: 12 }}>
                     Cadastre quantas maquininhas precisar. No PDV o atendente escolhe qual usar. Cada uma com nome e taxa própria.
